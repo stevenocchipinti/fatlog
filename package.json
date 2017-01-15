@@ -12,6 +12,8 @@
     "react-scripts": "0.8.4"
   },
   "dependencies": {
+    "amcharts3": "amcharts/amcharts3",
+    "amcharts3-react": "amcharts/amcharts3-react",
     "firebase": "^3.6.4",
     "material-ui": "^0.16.6",
     "react": "^15.4.1",
