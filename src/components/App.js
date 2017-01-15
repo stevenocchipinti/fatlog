@@ -5,6 +5,7 @@ import { loadState, saveState, clearState } from "../localStorage";
 import { registerServiceWorker } from "../registerServiceWorker";
 
 import Homepage from "./Homepage";
+import CheckinChart from "./CheckinChart";
 import CheckinTable from "./CheckinTable";
 import NewCheckinDialog from "./NewCheckinDialog";
 import AppBar from "./AppBar";
@@ -109,12 +110,14 @@ class App extends Component {
           offline={this.state.offline}
         />
 
-        <NewCheckinDialog onSubmit={ checkin => this.handleCreate(checkin) }/>
+        <CheckinChart checkins={ this.state.checkins } />
 
         <CheckinTable
           checkins={ this.state.checkins }
           onDelete={ (key) => this.handleDelete(key) }
         />
+
+        <NewCheckinDialog onSubmit={ checkin => this.handleCreate(checkin) }/>
 
         <footer style={{ height: "100px" }} />
 
