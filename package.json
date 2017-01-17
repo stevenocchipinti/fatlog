@@ -17,7 +17,8 @@
     "react": "^15.4.1",
     "react-dom": "^15.4.1",
     "react-tap-event-plugin": "^2.0.1",
-    "sw-precache": "^4.2.3"
+    "sw-precache": "^4.2.3",
+    "victory": "^0.15.0"
   },
   "scripts": {
     "start": "react-scripts start",

@@ -60,9 +60,9 @@ const backend = {
     let newCheckinRef = backend.checkinsRef().push();
     return newCheckinRef.set({
       createdAt: checkin.date.toISOString(),
-      weight: checkin.weight,
-      fat: checkin.fat,
-      waist: checkin.waist
+      weight: parseFloat(checkin.weight),
+      fat: parseFloat(checkin.fat),
+      waist: parseFloat(checkin.waist)
     });
   },
 
