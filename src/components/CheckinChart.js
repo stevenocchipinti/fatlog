@@ -2,6 +2,10 @@ import React, { Component } from "react";
 import { VictoryChart, VictoryLine, VictoryZoom, VictoryTheme, VictoryScatter } from "victory";
 
 export default class CheckinChart extends Component {
+  constructor(props) {
+    super(props);
+    this.state = { zoomDomain: this.sixMonthPeriod() };
+  }
 
   sixMonthPeriod(endDate = new Date()) {
     let startDate = new Date(endDate);
@@ -11,7 +15,10 @@ export default class CheckinChart extends Component {
 
   render() {
     return (
-      <VictoryZoom zoomDomain={{x: this.sixMonthPeriod()}}>
+      <VictoryZoom
+        zoomDomain={{x: this.state.zoomDomain}}
+        onDomainChange={ domain => console.log(domain) }
+      >
         <VictoryChart
           scale={{x: "time", y: "linear"}}
           theme={ VictoryTheme.material }
