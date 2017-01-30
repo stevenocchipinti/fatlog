@@ -18,7 +18,7 @@ export default (props) => {
   const linePath = lineGenerator(props.data);
 
   return (
-    <g>
+    <g transform={props.transform}>
       { points }
       <path
         className="line"
