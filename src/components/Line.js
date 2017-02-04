@@ -7,7 +7,7 @@ export default (props) => {
       <circle
         cx={props.x(dataPoint)}
         cy={props.y(dataPoint)}
-        r={2}
+        r={1}
         key={index}
         fill={props.color}
       />

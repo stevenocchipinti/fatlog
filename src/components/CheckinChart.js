@@ -5,6 +5,7 @@ import { zoom } from "d3-zoom";
 import { select } from "d3-selection";
 import Line from "./Line";
 import XAxis from "./XAxis";
+import YAxis from "./YAxis";
 import Paper from "material-ui/Paper";
 import { lightBlue500, orange500, green500 } from "material-ui/styles/colors";
 
@@ -17,6 +18,7 @@ class CheckinChart extends Component {
   render() {
     const margin = 10;
     const width = this.props.width - margin * 2;
+    const height = this.props.height;
     const verticalPadding = 20;
     const horizontalPadding = 10;
 
@@ -29,7 +31,7 @@ class CheckinChart extends Component {
     const yScale = (data, accessor) => {
       return scaleLinear()
         .domain([ min(data, accessor), max(data, accessor) ])
-        .range([ this.props.height - verticalPadding * 2, verticalPadding ]);
+        .range([ height - verticalPadding * 2, verticalPadding ]);
     };
 
     const date = d => new Date(d.date);
@@ -37,11 +39,12 @@ class CheckinChart extends Component {
 
     const zoomed = () => {
       var e = require("d3-selection").event;
-      this.setState({transform: `scale(${e.transform.k}, 1)`});
+
+      // TODO: use the x scale from state everywhere to allow changes
+      this.setState({xScale: e.transform.rescaleX(this.state.dateScale)});
+
       console.log("zooooooom", e);
     };
-    const d1 = new Date("2017-01-01T00:00:00.000Z");
-    const d2 = new Date("2017-02-01T00:00:00.000Z");
     const zx = zoom().on("zoom", zoomed);
 
     const fat = d => d.fat;
@@ -59,29 +62,27 @@ class CheckinChart extends Component {
 
     return (
       <Paper style={{ margin }} zDepth={1}>
-        <svg ref={svgRef} width={width} height={this.props.height}>
+        <svg ref={svgRef} width={width} height={height}>
+          <XAxis position={height - verticalPadding} scale={dateScale} />
+          <YAxis position={horizontalPadding} width={width - horizontalPadding * 2} scale={dateScale} />
           <Line
-            transform={this.state.transform} 
             x={d => dateScale(date(d))}
             y={d => fatScale(fat(d))}
             data={this.props.checkins}
             color={lightBlue500}
           />
           <Line
-            transform={this.state.transform} 
             x={d => dateScale(date(d))}
             y={d => weightScale(weight(d))}
             data={this.props.checkins}
             color={green500}
           />
           <Line
-            transform={this.state.transform} 
             x={d => dateScale(date(d))}
             y={d => waistScale(waist(d))}
             data={this.props.checkins}
             color={orange500}
           />
-          <XAxis position={this.props.height - verticalPadding} scale={dateScale} />
         </svg>
       </Paper>
     );

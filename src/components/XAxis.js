@@ -13,7 +13,7 @@ export default class Axis extends React.Component {
 
   renderAxis() {
     select(this.refs.axis).call(
-      axisBottom(this.props.scale).ticks(10)
+      axisBottom(this.props.scale).ticks(4)
     );
   }
 

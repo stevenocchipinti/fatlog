@@ -43,3 +43,10 @@ body {
     url('assets/fonts/Roboto-Bold.woff2') format('woff2'),
     url('assets/fonts/Roboto-Bold.woff') format('woff');
 }
+
+.yaxis path {
+  display: none;
+}
+.yaxis line {
+  stroke: #eee;
+}
