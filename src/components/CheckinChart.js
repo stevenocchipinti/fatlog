@@ -10,9 +10,25 @@ import Paper from "material-ui/Paper";
 import { lightBlue500, orange500, green500 } from "material-ui/styles/colors";
 
 class CheckinChart extends Component {
-  constructor() {
-    super();
-    this.state = {};
+  constructor(props) {
+    super(props);
+
+    const margin = 10;
+    const width = props.width - margin * 2;
+    const horizontalPadding = 10;
+
+    const xScale = (data, accessor) => {
+      return scaleTime()
+        .domain([ min(data, accessor), max(data, accessor) ])
+        .range([ horizontalPadding, width - horizontalPadding ]);
+    };
+
+    const date = d => new Date(d.date);
+
+    this.state = {
+      dateScale: xScale(props.checkins, date),
+      originalDateScale: xScale(props.checkins, date)
+    };
   }
 
   render() {
@@ -22,12 +38,6 @@ class CheckinChart extends Component {
     const verticalPadding = 20;
     const horizontalPadding = 10;
 
-    const xScale = (data, accessor) => {
-      return scaleTime()
-        .domain([ min(data, accessor), max(data, accessor) ])
-        .range([ horizontalPadding, width - horizontalPadding ]);
-    };
-
     const yScale = (data, accessor) => {
       return scaleLinear()
         .domain([ min(data, accessor), max(data, accessor) ])
@@ -35,15 +45,14 @@ class CheckinChart extends Component {
     };
 
     const date = d => new Date(d.date);
-    const dateScale = xScale(this.props.checkins, date);
 
     const zoomed = () => {
       var e = require("d3-selection").event;
-
-      // TODO: use the x scale from state everywhere to allow changes
-      this.setState({xScale: e.transform.rescaleX(this.state.dateScale)});
-
-      console.log("zooooooom", e);
+      this.setState({
+        dateScale: this.state.dateScale.domain(
+          e.transform.rescaleX(this.state.originalDateScale).domain()
+        )
+      });
     };
     const zx = zoom().on("zoom", zoomed);
 
@@ -56,33 +65,46 @@ class CheckinChart extends Component {
     const waist = d => d.waist;
     const waistScale = yScale(this.props.checkins, waist);
 
-    const svgRef = (ref) => {
+    const zoomRef = (ref) => {
       zx(select(ref));
     };
 
     return (
       <Paper style={{ margin }} zDepth={1}>
-        <svg ref={svgRef} width={width} height={height}>
-          <XAxis position={height - verticalPadding} scale={dateScale} />
-          <YAxis position={horizontalPadding} width={width - horizontalPadding * 2} scale={dateScale} />
+        <svg width={width} height={height}>
+          <defs>
+            <clipPath id="clip">
+              <rect width={width} height={height}/>
+            </clipPath>
+          </defs>
+
+          <XAxis position={height - verticalPadding} scale={this.state.dateScale} />
+          <YAxis position={horizontalPadding} width={width - horizontalPadding * 2} scale={this.state.dateScale} />
           <Line
-            x={d => dateScale(date(d))}
+            x={d => this.state.dateScale(date(d))}
             y={d => fatScale(fat(d))}
             data={this.props.checkins}
             color={lightBlue500}
           />
           <Line
-            x={d => dateScale(date(d))}
+            x={d => this.state.dateScale(date(d))}
             y={d => weightScale(weight(d))}
             data={this.props.checkins}
             color={green500}
           />
           <Line
-            x={d => dateScale(date(d))}
+            x={d => this.state.dateScale(date(d))}
             y={d => waistScale(waist(d))}
             data={this.props.checkins}
             color={orange500}
           />
+          <rect
+            ref={zoomRef}
+            className="zoom"
+            height={height}
+            width={width}
+            style={{ cursor: "move", fill: "none", pointerEvents: "all" }}
+          ></rect>
         </svg>
       </Paper>
     );
