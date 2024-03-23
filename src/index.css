@@ -3,43 +3,86 @@ body {
   padding: 0;
   background-color: #f7f7f7;
 }
+
 * {
   font-family: Roboto, sans-serif;
   box-sizing: border-box;
 }
 
+main {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2rem;
+  height: 100vh;
+}
+main p {
+  text-align: center;
+  font-size: 1.25rem;
+  line-height: 1.5;
+}
+
+main p a {
+  color: #007bff;
+  text-decoration: none;
+}
+
+main p a:hover {
+  text-decoration: underline;
+}
+
+.link-button {
+  padding: 1rem 1.5rem;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 0.25rem;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.link-button:hover {
+  background-color: #0056b3;
+}
+
 @font-face {
-  font-family: 'Roboto';
+  font-family: "Roboto";
   font-style: normal;
   font-weight: 300;
-  src: local('Roboto Light'),
-    url('assets/fonts/Roboto-Light.woff2') format('woff2'),
-    url('assets/fonts/Roboto-Light.woff') format('woff');
+  src:
+    local("Roboto Light"),
+    url("assets/fonts/Roboto-Light.woff2") format("woff2"),
+    url("assets/fonts/Roboto-Light.woff") format("woff");
 }
 
 @font-face {
-  font-family: 'Roboto';
+  font-family: "Roboto";
   font-style: normal;
   font-weight: 400;
-  src: local('Roboto-Regular'),
-    url('assets/fonts/Roboto-Regular.woff2') format('woff2'),
-    url('assets/fonts/Roboto-Regular.woff') format('woff');
+  src:
+    local("Roboto-Regular"),
+    url("assets/fonts/Roboto-Regular.woff2") format("woff2"),
+    url("assets/fonts/Roboto-Regular.woff") format("woff");
 }
 
 @font-face {
-  font-family: 'Roboto';
+  font-family: "Roboto";
   font-style: normal;
   font-weight: 500;
-  src: local('Roboto Medium'),
-    url('assets/fonts/Roboto-Medium.woff2') format('woff2'),
-    url('assets/fonts/Roboto-Medium.woff') format('woff');
+  src:
+    local("Roboto Medium"),
+    url("assets/fonts/Roboto-Medium.woff2") format("woff2"),
+    url("assets/fonts/Roboto-Medium.woff") format("woff");
 }
 
 @font-face {
-  font-family: 'Roboto';
+  font-family: "Roboto";
   font-style: normal;
   font-weight: 700;
-  src: local('Roboto Bold'),
-    url('assets/fonts/Roboto-Bold.woff2') format('woff2'),
-    url('assets/fonts/Roboto-Bold.woff') format('woff');
+  src:
+    local("Roboto Bold"),
+    url("assets/fonts/Roboto-Bold.woff2") format("woff2"),
+    url("assets/fonts/Roboto-Bold.woff") format("woff");
 }
