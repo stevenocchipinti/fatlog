@@ -1,5 +1,18 @@
 {
   "projects": {
     "default": "fatlog-app"
-  }
+  },
+  "targets": {
+    "fatlog-app": {
+      "hosting": {
+        "redirect-site": [
+          "fatlog-app"
+        ],
+        "fatlog": [
+          "fatlog"
+        ]
+      }
+    }
+  },
+  "etags": {}
 }

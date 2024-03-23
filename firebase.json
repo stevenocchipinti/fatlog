@@ -2,24 +2,37 @@
   "database": {
     "rules": "database.rules.json"
   },
-  "hosting": {
-    "public": "build",
-    "rewrites": [
-      {
-        "source": "**",
-        "destination": "/index.html"
-      }
-    ],
-    "headers": [
-      {
-        "source" : "/service-worker.js",
-        "headers" : [
-          {
-            "key" : "Cache-Control",
-            "value" : "max-age=0"
-          }
-        ]
-      }
-    ]
-  }
+  "hosting": [
+    {
+      "target": "redirect-site",
+      "public": "build",
+      "rewrites": [
+        {
+          "source": "**",
+          "destination": "/index.html"
+        }
+      ]
+    },
+    {
+      "target": "fatlog",
+      "public": "build",
+      "rewrites": [
+        {
+          "source": "**",
+          "destination": "/index.html"
+        }
+      ],
+      "headers": [
+        {
+          "source": "/service-worker.js",
+          "headers": [
+            {
+              "key": "Cache-Control",
+              "value": "max-age=0"
+            }
+          ]
+        }
+      ]
+    }
+  ]
 }
