@@ -9,11 +9,13 @@ import theme from "./theme";
 import "./index.css";
 
 initializeApp({
-  apiKey: "AIzaSyCk78H-sLkJt6WbwqM9tAP9DIeZe9iWOTA",
+  apiKey: "AIzaSyCyYXcQs1e2hnLKYwInQ_78EIJJcFSN25Y",
   authDomain: "fatlog-app.firebaseapp.com",
   databaseURL: "https://fatlog-app.firebaseio.com",
+  projectId: "fatlog-app",
   storageBucket: "fatlog-app.appspot.com",
-  messagingSenderId: "893039177685"
+  messagingSenderId: "893039177685",
+  appId: "1:893039177685:web:6663b406d4ca051cc7175c"
 });
 
 injectTapEventPlugin();
