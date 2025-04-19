@@ -10,7 +10,7 @@ import "./index.css";
 
 initializeApp({
   apiKey: "AIzaSyCyYXcQs1e2hnLKYwInQ_78EIJJcFSN25Y",
-  authDomain: "fatlog-app.firebaseapp.com",
+  authDomain: "fatlog.web.app",
   databaseURL: "https://fatlog-app.firebaseio.com",
   projectId: "fatlog-app",
   storageBucket: "fatlog-app.appspot.com",

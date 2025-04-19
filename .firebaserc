@@ -1,5 +1,17 @@
 {
   "projects": {
     "default": "fatlog-app"
+  },
+  "targets": {
+    "fatlog-app": {
+      "hosting": {
+        "redirect-site": [
+          "fatlog-app"
+        ],
+        "fatlog": [
+          "1:893039177685:web:6663b406d4ca051cc7175c"
+        ]
+      }
+    }
   }
 }
