@@ -19,7 +19,6 @@ import {
   endOfDay,
   max as maxDate,
   startOfDay,
-  subDays,
   subMonths,
   subYears,
 } from 'date-fns'
@@ -35,7 +34,6 @@ import type {
   LegendOptions,
   LinearScaleOptions,
   PluginOptionsByType,
-  ScriptableContext,
   TimeScaleOptions,
   TooltipOptions,
 } from 'chart.js'
@@ -80,19 +78,22 @@ interface VisibleLines {
   waist: boolean
 }
 interface BodyMetricsChartProps {
-  data: Array<BodyMetricDataPoint>
+  data: BodyMetricDataPoint[]
   timeScale?: TimeScaleOption
   visibleLines?: VisibleLines
   onPointSelect?: (dataPoint: BodyMetricDataPoint | null) => void
   className?: string
 }
 
+const styles = getComputedStyle(document.documentElement)
+const chart1 = styles.getPropertyValue('--chart-1')
+const chart2 = styles.getPropertyValue('--chart-2')
+const chart3 = styles.getPropertyValue('--chart-3')
+
 const COLORS = {
-  weight: '#3b82f6',
-  fat: '#ef4444',
-  waist: '#22c55e',
-  selectedBorder: '#000000',
-  selectedBg: '#ffffff',
+  weight: chart1,
+  fat: chart2,
+  waist: chart3,
 }
 
 type BodyMetricsChartOptionsType = ChartOptions<'line'> & {
@@ -112,8 +113,6 @@ type BodyMetricsChartOptionsType = ChartOptions<'line'> & {
   interaction?: Partial<InteractionOptions>
 }
 
-type PointContext = ScriptableContext<'line'> & { dataIndex: number }
-
 export const BodyMetricsChart: React.FC<BodyMetricsChartProps> = ({
   data,
   timeScale = 'ALL',
@@ -123,12 +122,12 @@ export const BodyMetricsChart: React.FC<BodyMetricsChartProps> = ({
 }) => {
   const chartRef = useRef<ChartJS<
     'line',
-    Array<{ x: number; y: number | null }>,
+    { x: number; y: number | null }[],
     number
   > | null>(null)
   const [selectedDataPoint, setSelectedDataPoint] =
     useState<BodyMetricDataPoint | null>(null)
-  const [sortedData, setSortedData] = useState<Array<BodyMetricDataPoint>>([])
+  const [sortedData, setSortedData] = useState<BodyMetricDataPoint[]>([])
 
   useEffect(() => {
     const newSortedData = [...data].sort(
@@ -141,36 +140,42 @@ export const BodyMetricsChart: React.FC<BodyMetricsChartProps> = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [data])
 
-  const globalMinMax = useMemo(() => {
-    const minMax = {
-      weight: { min: Infinity, max: -Infinity },
-      fat: { min: Infinity, max: -Infinity },
-      waist: { min: Infinity, max: -Infinity },
-    }
-
-    data.forEach((point) => {
-      if (point.weight !== undefined) {
-        minMax.weight.min = Math.min(minMax.weight.min, point.weight)
-        minMax.weight.max = Math.max(minMax.weight.max, point.weight)
-      }
-      if (point.fat !== undefined) {
-        minMax.fat.min = Math.min(minMax.fat.min, point.fat)
-        minMax.fat.max = Math.max(minMax.fat.max, point.fat)
-      }
-      if (point.waist !== undefined) {
-        minMax.waist.min = Math.min(minMax.waist.min, point.waist)
-        minMax.waist.max = Math.max(minMax.waist.max, point.waist)
-      }
-    })
-
-    return minMax
-  }, [data])
+  // TODO: Work out if I want this or not.
+  // When it is used, the graph does not use the vertical space very well
+  // becaues of some more extreme points that are out of view.
+  // When it is not used, there are some lines that go from visible points out
+  // of bounds to invisible points (outside of the currently zoomed area)
+  //
+  // const globalMinMax = useMemo(() => {
+  //   const minMax = {
+  //     weight: { min: Infinity, max: -Infinity },
+  //     fat: { min: Infinity, max: -Infinity },
+  //     waist: { min: Infinity, max: -Infinity },
+  //   }
+  //
+  //   data.forEach((point) => {
+  //     if (point.weight !== undefined) {
+  //       minMax.weight.min = Math.min(minMax.weight.min, point.weight)
+  //       minMax.weight.max = Math.max(minMax.weight.max, point.weight)
+  //     }
+  //     if (point.fat !== undefined) {
+  //       minMax.fat.min = Math.min(minMax.fat.min, point.fat)
+  //       minMax.fat.max = Math.max(minMax.fat.max, point.fat)
+  //     }
+  //     if (point.waist !== undefined) {
+  //       minMax.waist.min = Math.min(minMax.waist.min, point.waist)
+  //       minMax.waist.max = Math.max(minMax.waist.max, point.waist)
+  //     }
+  //   })
+  //
+  //   return minMax
+  // }, [data])
 
   const { chartData, chartOptions } = useMemo(() => {
     if (sortedData.length === 0) {
       const emptyChartData: ChartData<
         'line',
-        Array<{ x: number; y: number | null }>,
+        { x: number; y: number | null }[],
         number
       > = { datasets: [] }
       const emptyChartOptions = {} as BodyMetricsChartOptionsType
@@ -197,9 +202,6 @@ export const BodyMetricsChart: React.FC<BodyMetricsChartProps> = ({
       let startDate: Date
 
       switch (timeScale) {
-        case '1W':
-          startDate = subDays(endDate, 7)
-          break
         case '1M':
           startDate = subMonths(endDate, 1)
           break
@@ -262,12 +264,6 @@ export const BodyMetricsChart: React.FC<BodyMetricsChartProps> = ({
         tension: 0.1,
         pointRadius: pointRadius,
         pointHoverRadius: pointRadius + 2,
-        pointBorderColor: (ctx: PointContext) =>
-          ctx.dataIndex === selectedIndex ? COLORS.selectedBorder : color,
-        pointBackgroundColor: (ctx: PointContext) =>
-          ctx.dataIndex === selectedIndex ? COLORS.selectedBg : color,
-        pointBorderWidth: (ctx: PointContext) =>
-          ctx.dataIndex === selectedIndex ? 2 : 1,
         yAxisID: yAxisID,
         borderWidth: 2,
         spanGaps: true,
@@ -294,12 +290,12 @@ export const BodyMetricsChart: React.FC<BodyMetricsChartProps> = ({
 
     const chartDataConfig: ChartData<
       'line',
-      Array<{ x: number; y: number | null }>,
+      { x: number; y: number | null }[],
       number
     > = {
       datasets: datasets as ChartData<
         'line',
-        Array<{ x: number; y: number | null }>,
+        { x: number; y: number | null }[],
         number
       >['datasets'],
     }
@@ -345,8 +341,7 @@ export const BodyMetricsChart: React.FC<BodyMetricsChartProps> = ({
             maxRotation: 0,
             autoSkip: true,
             autoSkipPadding: 15,
-            maxTicksLimit:
-              timeScale === '1W' ? 8 : timeScale === '1M' ? 12 : 15,
+            maxTicksLimit: timeScale === '1M' ? 12 : 15,
             display: true,
             callback: (value) => {
               const date = new Date(value as number)
@@ -383,8 +378,8 @@ export const BodyMetricsChart: React.FC<BodyMetricsChartProps> = ({
             },
             grid: { display: false },
             ticks: { maxTicksLimit: 5, color: COLORS.weight },
-            min: globalMinMax.weight.min,
-            max: globalMinMax.weight.max,
+            // min: globalMinMax.weight.min,
+            // max: globalMinMax.weight.max,
           },
         }),
         ...(visibleLines.fat && {
@@ -406,8 +401,8 @@ export const BodyMetricsChart: React.FC<BodyMetricsChartProps> = ({
               maxTicksLimit: 5,
               color: COLORS.fat,
             },
-            min: globalMinMax.fat.min,
-            max: globalMinMax.fat.max,
+            // min: globalMinMax.fat.min,
+            // max: globalMinMax.fat.max,
           },
         }),
         ...(visibleLines.waist && {
@@ -429,8 +424,8 @@ export const BodyMetricsChart: React.FC<BodyMetricsChartProps> = ({
               maxTicksLimit: 5,
               color: COLORS.waist,
             },
-            min: globalMinMax.waist.min,
-            max: globalMinMax.waist.max,
+            // min: globalMinMax.waist.min,
+            // max: globalMinMax.waist.max,
           },
         }),
       },
@@ -447,7 +442,7 @@ export const BodyMetricsChart: React.FC<BodyMetricsChartProps> = ({
           },
         },
       },
-      onClick: (_event: ChartEvent, elements: Array<ActiveElement>) => {
+      onClick: (_event: ChartEvent, elements: ActiveElement[]) => {
         if (!onPointSelect) return
         const chart = chartRef.current
 

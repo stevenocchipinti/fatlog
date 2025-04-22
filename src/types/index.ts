@@ -6,4 +6,4 @@ export interface BodyMetricDataPoint {
   waist?: number
 }
 
-export type TimeScaleOption = "1W" | "1M" | "3M" | "6M" | "1Y" | "ALL"
+export type TimeScaleOption = '1M' | '3M' | '6M' | '1Y' | 'ALL'
