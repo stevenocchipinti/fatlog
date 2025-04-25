@@ -85,6 +85,7 @@ interface BodyMetricsChartProps {
   className?: string
 }
 
+// TODO: This should probably be moved to a useEffect
 const styles = getComputedStyle(document.documentElement)
 const chart1 = styles.getPropertyValue('--chart-1')
 const chart2 = styles.getPropertyValue('--chart-2')
@@ -261,8 +262,8 @@ export const BodyMetricsChart: React.FC<BodyMetricsChartProps> = ({
         })),
         borderColor: color,
         backgroundColor: color,
-        tension: 0.1,
-        pointRadius: pointRadius,
+        tension: 0.3,
+        pointRadius: 0, // TODO: Probably still need this: pointRadius
         pointHoverRadius: pointRadius + 2,
         yAxisID: yAxisID,
         borderWidth: 2,

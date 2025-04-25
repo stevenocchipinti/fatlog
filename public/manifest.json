@@ -2,6 +2,7 @@
   "short_name": "Fatlog",
   "name": "A web app to track your fat loss journey",
   "version": "0.1.0",
+  "manifest_version": 2,
   "icons": [
     {
       "src": "favicon.ico",
