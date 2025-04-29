@@ -18,3 +18,10 @@ npm-debug.log
 dist
 dist-ssr
 *.local
+
+# Firebase
+.firebase
+firebase-debug.log
+database-debug.log
+firestore-debug.log
+ui-debug.log
