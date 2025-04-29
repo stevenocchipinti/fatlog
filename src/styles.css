@@ -18,6 +18,10 @@ code {
     source-code-pro, Menlo, Monaco, Consolas, 'Courier New', monospace;
 }
 
+input[type='date']::-webkit-calendar-picker-indicator {
+  opacity: 65%;
+}
+
 :root {
   --background: var(--color-gray-50);
   --foreground: oklch(0.141 0.005 285.823);

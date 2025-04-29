@@ -1,7 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { format } from 'date-fns'
 import { enAU } from 'date-fns/locale'
-import { CalendarIcon, Edit, MoreVertical, Trash2 } from 'lucide-react'
+import { Edit, MoreVertical, Trash2 } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
 
 import type { BodyMetricDataPoint, TimeScaleOption } from '../types'
@@ -39,12 +39,6 @@ import {
 } from '@/components/ui/drawer'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Calendar } from '@/components/ui/calendar'
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@/components/ui/popover'
 
 export const Route = createFileRoute('/')({
   component: App,
@@ -73,7 +67,7 @@ function App() {
     null,
   )
 
-  const [date, setDate] = useState<Date | undefined>(new Date())
+  const [date, setDate] = useState<Date>(new Date())
   const [weight, setWeight] = useState<number>(74.2)
   const [fatPercentage, setFatPercentage] = useState<number>(17.8)
   const [waistMeasurement, setWaistMeasurement] = useState<number>(81.5)
@@ -267,30 +261,12 @@ function App() {
                     <Label htmlFor="date" className="text-sm">
                       Date
                     </Label>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <Button
-                          variant="outline"
-                          className="mt-1 h-9 w-full justify-start text-left font-normal"
-                          id="date"
-                        >
-                          <CalendarIcon className="mr-2 h-4 w-4" />
-                          {date ? (
-                            format(date, 'PPP')
-                          ) : (
-                            <span>Pick a date</span>
-                          )}
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0">
-                        <Calendar
-                          mode="single"
-                          selected={date}
-                          onSelect={setDate}
-                          initialFocus
-                        />
-                      </PopoverContent>
-                    </Popover>
+                    <Input
+                      id="date"
+                      type="date"
+                      value={date.toISOString().split('T')[0]}
+                      onChange={(e) => setDate(new Date(e.target.value))}
+                    />
                   </div>
 
                   <div className="grid grid-cols-[1fr_auto] items-center gap-x-2 gap-y-1">
