@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router"
 import { format } from "date-fns"
 import { enAU } from "date-fns/locale"
-import { Edit, MoreVertical, Trash2 } from "lucide-react"
+import { Edit, LogIn, LogOut, MoreVertical, Trash2 } from "lucide-react"
 import { useCallback, useEffect, useState } from "react"
 
 import type { BodyMetricDataPoint, TimeScaleOption } from "../types"
@@ -39,12 +39,15 @@ import {
 } from "@/components/ui/drawer"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { useAuth } from "@/lib/auth"
 
 export const Route = createFileRoute("/")({
   component: App,
 })
 
 function App() {
+  const { user, login, logout } = useAuth()
+
   const [chartData] = useState<BodyMetricDataPoint[]>(sampleData)
 
   const [selectedTimeScale, setSelectedTimeScale] =
@@ -139,10 +142,37 @@ function App() {
             Fatlog
           </span>
         </h1>
-        <Avatar>
-          <AvatarImage src="https://github.com/stevenocchipinti.png" />
-          <AvatarFallback>SO</AvatarFallback>
-        </Avatar>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" className="h-8 w-8 rounded-full p-0">
+              <Avatar>
+                {user?.photoURL && <AvatarImage src={user.photoURL} />}
+                {user?.displayName && (
+                  <AvatarFallback>{user.displayName[0] || "✅"}</AvatarFallback>
+                )}
+                {!user && <AvatarFallback>⨯</AvatarFallback>}
+              </Avatar>
+              <span className="sr-only">Open menu</span>
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <div className="p-2">{user ? "Logged in" : "Logged out"}</div>
+            <DropdownMenuItem
+              onClick={() => login()}
+              className="flex cursor-pointer items-center"
+            >
+              <LogIn className="mr-2 h-4 w-4" />
+              <span>Login</span>
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={() => logout()}
+              className="flex cursor-pointer items-center"
+            >
+              <LogOut className="mr-2 h-4 w-4" />
+              <span>Logout</span>
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </header>
       {chartData.length === 0 ? (
         <p className="py-10 text-center text-gray-500">
@@ -169,7 +199,7 @@ function App() {
                   <TableHead>
                     <Button
                       variant="ghost"
-                      className="p-0 font-semibold text-(--chart-1)"
+                      className="p-0 px-4 font-semibold text-(--chart-1)"
                       onClick={() => toggleLine("weight")}
                     >
                       Weight
@@ -178,7 +208,7 @@ function App() {
                   <TableHead>
                     <Button
                       variant="ghost"
-                      className="p-0 font-semibold text-(--chart-2)"
+                      className="p-0 px-4 font-semibold text-(--chart-2)"
                       onClick={() => toggleLine("fat")}
                     >
                       Fat
@@ -187,7 +217,7 @@ function App() {
                   <TableHead>
                     <Button
                       variant="ghost"
-                      className="p-0 font-semibold text-(--chart-3)"
+                      className="p-0 px-4 font-semibold text-(--chart-3)"
                       onClick={() => toggleLine("waist")}
                     >
                       Waist
@@ -244,7 +274,7 @@ function App() {
 
           <Drawer>
             <DrawerTrigger asChild>
-              <Button className="absolute right-4 bottom-4 left-4 rounded-4xl py-5 opacity-95">
+              <Button className="absolute right-4 bottom-4 left-4 mx-auto max-w-sm rounded-4xl py-6 opacity-95">
                 Record Measurements
               </Button>
             </DrawerTrigger>
