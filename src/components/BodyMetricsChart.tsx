@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react'
+import React, { useEffect, useMemo, useRef, useState } from "react"
 
 import {
   CategoryScale,
@@ -10,19 +10,19 @@ import {
   TimeScale,
   Title,
   Tooltip,
-} from 'chart.js'
+} from "chart.js"
 
-import { Line } from 'react-chartjs-2'
-import 'chartjs-adapter-date-fns'
-import { enAU } from 'date-fns/locale'
+import { Line } from "react-chartjs-2"
+import "chartjs-adapter-date-fns"
+import { enAU } from "date-fns/locale"
 import {
   endOfDay,
   max as maxDate,
   startOfDay,
   subMonths,
   subYears,
-} from 'date-fns'
-import zoomPlugin from 'chartjs-plugin-zoom'
+} from "date-fns"
+import zoomPlugin from "chartjs-plugin-zoom"
 
 import type {
   ActiveElement,
@@ -36,26 +36,26 @@ import type {
   PluginOptionsByType,
   TimeScaleOptions,
   TooltipOptions,
-} from 'chart.js'
+} from "chart.js"
 
-import type { BodyMetricDataPoint, TimeScaleOption } from '../types'
+import type { BodyMetricDataPoint, TimeScaleOption } from "../types"
 
 interface ZoomPluginOptions {
   pan?: {
     enabled?: boolean
-    mode?: 'x' | 'y' | 'xy'
+    mode?: "x" | "y" | "xy"
     threshold?: number
-    modifierKey?: 'ctrl' | 'alt' | 'shift' | 'meta' | null
+    modifierKey?: "ctrl" | "alt" | "shift" | "meta" | null
   }
   zoom?: {
     wheel?: {
       enabled?: boolean
       speed?: number
-      modifierKey?: 'ctrl' | 'alt' | 'shift' | 'meta' | null
+      modifierKey?: "ctrl" | "alt" | "shift" | "meta" | null
     }
     drag?: { enabled?: boolean }
     pinch?: { enabled?: boolean }
-    mode?: 'x' | 'y' | 'xy'
+    mode?: "x" | "y" | "xy"
     enabled?: boolean
   }
 }
@@ -87,9 +87,9 @@ interface BodyMetricsChartProps {
 
 // TODO: This should probably be moved to a useEffect
 const styles = getComputedStyle(document.documentElement)
-const chart1 = styles.getPropertyValue('--chart-1')
-const chart2 = styles.getPropertyValue('--chart-2')
-const chart3 = styles.getPropertyValue('--chart-3')
+const chart1 = styles.getPropertyValue("--chart-1")
+const chart2 = styles.getPropertyValue("--chart-2")
+const chart3 = styles.getPropertyValue("--chart-3")
 
 const COLORS = {
   weight: chart1,
@@ -97,11 +97,11 @@ const COLORS = {
   waist: chart3,
 }
 
-type BodyMetricsChartOptionsType = ChartOptions<'line'> & {
-  plugins?: PluginOptionsByType<'line'> & {
+type BodyMetricsChartOptionsType = ChartOptions<"line"> & {
+  plugins?: PluginOptionsByType<"line"> & {
     zoom?: ZoomPluginOptions
-    legend?: Partial<LegendOptions<'line'>>
-    tooltip?: Partial<TooltipOptions<'line'>>
+    legend?: Partial<LegendOptions<"line">>
+    tooltip?: Partial<TooltipOptions<"line">>
   }
   scales?: {
     x?: TimeScaleOptions
@@ -116,13 +116,13 @@ type BodyMetricsChartOptionsType = ChartOptions<'line'> & {
 
 export const BodyMetricsChart: React.FC<BodyMetricsChartProps> = ({
   data,
-  timeScale = 'ALL',
+  timeScale = "ALL",
   visibleLines = { weight: true, fat: true, waist: true },
   onPointSelect,
-  className = '',
+  className = "",
 }) => {
   const chartRef = useRef<ChartJS<
-    'line',
+    "line",
     { x: number; y: number | null }[],
     number
   > | null>(null)
@@ -175,7 +175,7 @@ export const BodyMetricsChart: React.FC<BodyMetricsChartProps> = ({
   const { chartData, chartOptions } = useMemo(() => {
     if (sortedData.length === 0) {
       const emptyChartData: ChartData<
-        'line',
+        "line",
         { x: number; y: number | null }[],
         number
       > = { datasets: [] }
@@ -186,8 +186,7 @@ export const BodyMetricsChart: React.FC<BodyMetricsChartProps> = ({
 
     const selectedIndex = selectedDataPoint
       ? sortedData.findIndex(
-          (p) =>
-            p.createdAt.getTime() === selectedDataPoint.createdAt.getTime(),
+          p => p.createdAt.getTime() === selectedDataPoint.createdAt.getTime(),
         )
       : -1
 
@@ -196,23 +195,23 @@ export const BodyMetricsChart: React.FC<BodyMetricsChartProps> = ({
     const lastDataPointDate = sortedData[sortedData.length - 1]?.createdAt
     const firstDataPointDate = sortedData[0]?.createdAt
 
-    if (timeScale !== 'ALL') {
+    if (timeScale !== "ALL") {
       const endDate = endOfDay(lastDataPointDate)
 
       maxTs = endDate.getTime()
       let startDate: Date
 
       switch (timeScale) {
-        case '1M':
+        case "1M":
           startDate = subMonths(endDate, 1)
           break
-        case '3M':
+        case "3M":
           startDate = subMonths(endDate, 3)
           break
-        case '6M':
+        case "6M":
           startDate = subMonths(endDate, 6)
           break
-        case '1Y':
+        case "1Y":
           startDate = subYears(endDate, 1)
           break
         default:
@@ -227,16 +226,16 @@ export const BodyMetricsChart: React.FC<BodyMetricsChartProps> = ({
       maxTs = endOfDay(lastDataPointDate).getTime()
     }
 
-    let timeUnit: 'day' | 'week' | 'month' | 'year' = 'day'
+    let timeUnit: "day" | "week" | "month" | "year" = "day"
 
     if (minTs && maxTs) {
       const visibleDurationMs = maxTs - minTs
       const visibleDays = visibleDurationMs / (1000 * 60 * 60 * 24)
 
-      if (visibleDays > 730) timeUnit = 'year'
-      else if (visibleDays > 180) timeUnit = 'month'
-      else if (visibleDays > 30) timeUnit = 'week'
-      else timeUnit = 'day'
+      if (visibleDays > 730) timeUnit = "year"
+      else if (visibleDays > 180) timeUnit = "month"
+      else if (visibleDays > 30) timeUnit = "week"
+      else timeUnit = "day"
     }
 
     const createDataset = (
@@ -248,7 +247,7 @@ export const BodyMetricsChart: React.FC<BodyMetricsChartProps> = ({
     ) => {
       if (!visibleLines[key]) return null
       const pointRadius =
-        sortedData.length > 100 && timeScale === 'ALL'
+        sortedData.length > 100 && timeScale === "ALL"
           ? 1
           : sortedData.length > 50
             ? 2
@@ -256,7 +255,7 @@ export const BodyMetricsChart: React.FC<BodyMetricsChartProps> = ({
 
       return {
         label: label,
-        data: sortedData.map((point) => ({
+        data: sortedData.map(point => ({
           x: point.createdAt.getTime(),
           y: dataExtractor(point) ?? null,
         })),
@@ -273,66 +272,66 @@ export const BodyMetricsChart: React.FC<BodyMetricsChartProps> = ({
     }
     const datasets = [
       createDataset(
-        'weight',
-        'Weight (kg)',
-        'yWeight',
+        "weight",
+        "Weight (kg)",
+        "yWeight",
         COLORS.weight,
-        (p) => p.weight,
+        p => p.weight,
       ),
-      createDataset('fat', 'Fat %', 'yFat', COLORS.fat, (p) => p.fat),
+      createDataset("fat", "Fat %", "yFat", COLORS.fat, p => p.fat),
       createDataset(
-        'waist',
-        'Waist (cm)',
-        'yWaist',
+        "waist",
+        "Waist (cm)",
+        "yWaist",
         COLORS.waist,
-        (p) => p.waist,
+        p => p.waist,
       ),
     ].filter(Boolean)
 
     const chartDataConfig: ChartData<
-      'line',
+      "line",
       { x: number; y: number | null }[],
       number
     > = {
       datasets: datasets as ChartData<
-        'line',
+        "line",
         { x: number; y: number | null }[],
         number
-      >['datasets'],
+      >["datasets"],
     }
 
     const chartOptionsConfig: ChartOptions = {
       responsive: true,
       maintainAspectRatio: false,
       interaction: {
-        mode: 'index',
+        mode: "index",
         intersect: false,
-        axis: 'x',
+        axis: "x",
         includeInvisible: false,
       },
       scales: {
         x: {
-          type: 'time',
+          type: "time",
           min: minTs,
           max: maxTs,
           time: {
             unit: timeUnit,
-            tooltipFormat: 'PPpp',
+            tooltipFormat: "PPpp",
             displayFormats: {
-              day: 'd MMM',
-              week: 'd MMM yyyy',
-              month: 'MMM yyyy',
-              year: 'yyyy',
+              day: "d MMM",
+              week: "d MMM yyyy",
+              month: "MMM yyyy",
+              year: "yyyy",
             },
             parser: undefined,
-            round: 'day',
+            round: "day",
             isoWeekday: false,
-            minUnit: 'millisecond',
+            minUnit: "millisecond",
           },
           title: {
             display: false,
-            text: 'Date',
-            align: 'center',
+            text: "Date",
+            align: "center",
             color: undefined,
             font: {} as FontSpec,
             padding: 0,
@@ -342,17 +341,17 @@ export const BodyMetricsChart: React.FC<BodyMetricsChartProps> = ({
             maxRotation: 0,
             autoSkip: true,
             autoSkipPadding: 15,
-            maxTicksLimit: timeScale === '1M' ? 12 : 15,
+            maxTicksLimit: timeScale === "1M" ? 12 : 15,
             display: true,
-            callback: (value) => {
+            callback: value => {
               const date = new Date(value as number)
 
-              return date.toLocaleDateString('en-AU', {
-                day: '2-digit',
-                month: 'short',
+              return date.toLocaleDateString("en-AU", {
+                day: "2-digit",
+                month: "short",
                 year:
-                  timeScale === 'ALL' || timeScale === '1Y'
-                    ? 'numeric'
+                  timeScale === "ALL" || timeScale === "1Y"
+                    ? "numeric"
                     : undefined,
               })
             },
@@ -367,14 +366,14 @@ export const BodyMetricsChart: React.FC<BodyMetricsChartProps> = ({
         ...(visibleLines.weight && {
           yWeight: {
             display: false,
-            type: 'linear',
-            position: 'left',
+            type: "linear",
+            position: "left",
             title: {
               display: true,
-              text: 'Weight (kg)',
+              text: "Weight (kg)",
               font: { size: 10 },
               color: COLORS.weight,
-              align: 'center',
+              align: "center",
               padding: 0,
             },
             grid: { display: false },
@@ -386,14 +385,14 @@ export const BodyMetricsChart: React.FC<BodyMetricsChartProps> = ({
         ...(visibleLines.fat && {
           yFat: {
             display: false,
-            type: 'linear',
-            position: 'right',
+            type: "linear",
+            position: "right",
             title: {
               display: true,
-              text: 'Fat %',
+              text: "Fat %",
               font: { size: 10 },
               color: COLORS.fat,
-              align: 'center',
+              align: "center",
               padding: 0,
             },
             grid: { drawOnChartArea: false },
@@ -409,14 +408,14 @@ export const BodyMetricsChart: React.FC<BodyMetricsChartProps> = ({
         ...(visibleLines.waist && {
           yWaist: {
             display: false,
-            type: 'linear',
-            position: 'right',
+            type: "linear",
+            position: "right",
             title: {
               display: true,
-              text: 'Waist (cm)',
+              text: "Waist (cm)",
               font: { size: 10 },
               color: COLORS.waist,
-              align: 'center',
+              align: "center",
               padding: 0,
             },
             grid: { drawOnChartArea: false },
@@ -434,12 +433,12 @@ export const BodyMetricsChart: React.FC<BodyMetricsChartProps> = ({
         legend: { display: false },
         tooltip: { enabled: false },
         zoom: {
-          pan: { enabled: true, mode: 'x', threshold: 5 },
+          pan: { enabled: true, mode: "x", threshold: 5 },
           zoom: {
             wheel: { enabled: false, speed: 0.1 },
             drag: { enabled: false },
             pinch: { enabled: false },
-            mode: 'x',
+            mode: "x",
           },
         },
       },
@@ -465,7 +464,7 @@ export const BodyMetricsChart: React.FC<BodyMetricsChartProps> = ({
 
             chart.options.scales!.x!.min = currentMin
             chart.options.scales!.x!.max = currentMax
-            chart.update('none')
+            chart.update("none")
           }
         } else if (selectedDataPoint) {
           setSelectedDataPoint(null)
@@ -474,7 +473,7 @@ export const BodyMetricsChart: React.FC<BodyMetricsChartProps> = ({
       },
       animation: {
         duration: 500,
-        easing: 'easeOutQuad',
+        easing: "easeOutQuad",
       },
     }
 

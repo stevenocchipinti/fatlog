@@ -1,12 +1,12 @@
-'use client'
+"use client"
 
-import { useRef, useState } from 'react'
-import { motion } from 'framer-motion'
+import { useRef, useState } from "react"
+import { motion } from "framer-motion"
 
-import type { KeyboardEvent } from 'react'
-import type { TimeScaleOption } from '../types'
+import type { KeyboardEvent } from "react"
+import type { TimeScaleOption } from "../types"
 
-import { cn } from '@/lib/utils'
+import { cn } from "@/lib/utils"
 
 interface TimePeriodSwitcherProps {
   defaultValue?: TimeScaleOption
@@ -15,20 +15,20 @@ interface TimePeriodSwitcherProps {
 }
 
 export default function TimePeriodSwitcher({
-  defaultValue = '1M',
+  defaultValue = "1M",
   onChange,
   className,
 }: TimePeriodSwitcherProps) {
   const [selected, setSelected] = useState<TimeScaleOption>(defaultValue)
   const containerRef = useRef<HTMLDivElement>(null)
 
-  const options: TimeScaleOption[] = ['1M', '3M', '6M', '1Y', 'ALL']
+  const options: TimeScaleOption[] = ["1M", "3M", "6M", "1Y", "ALL"]
   const friendlyOptions: Record<TimeScaleOption, string> = {
-    '1M': '1 month',
-    '3M': '3 months',
-    '6M': '6 months',
-    '1Y': '1 year',
-    ALL: 'all time',
+    "1M": "1 month",
+    "3M": "3 months",
+    "6M": "6 months",
+    "1Y": "1 year",
+    ALL: "all time",
   }
 
   const handleSelect = (option: TimeScaleOption) => {
@@ -40,13 +40,13 @@ export default function TimePeriodSwitcher({
     e: KeyboardEvent<HTMLButtonElement>,
     index: number,
   ) => {
-    if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+    if (e.key === "ArrowRight" || e.key === "ArrowDown") {
       e.preventDefault()
       const nextIndex = (index + 1) % options.length
       handleSelect(options[nextIndex])
       const buttons = containerRef.current?.querySelectorAll('[role="radio"]')
       ;(buttons?.[nextIndex] as HTMLElement).focus()
-    } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+    } else if (e.key === "ArrowLeft" || e.key === "ArrowUp") {
       e.preventDefault()
       const prevIndex = (index - 1 + options.length) % options.length
       handleSelect(options[prevIndex])
@@ -57,7 +57,7 @@ export default function TimePeriodSwitcher({
 
   return (
     <div
-      className={cn('flex items-center justify-center p-4', className)}
+      className={cn("flex items-center justify-center p-4", className)}
       role="radiogroup"
       aria-label="Time period selection"
       ref={containerRef}
@@ -70,13 +70,13 @@ export default function TimePeriodSwitcher({
             aria-checked={selected === option}
             tabIndex={selected === option ? 0 : -1}
             onClick={() => handleSelect(option)}
-            onKeyDown={(e) => handleKeyDown(e, index)}
+            onKeyDown={e => handleKeyDown(e, index)}
             className={cn(
-              'relative z-10 rounded-full px-4 py-2 text-sm font-medium transition-colors duration-200',
-              'focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2',
+              "relative z-10 rounded-full px-4 py-2 text-sm font-medium transition-colors duration-200",
+              "focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2",
               selected === option
-                ? 'text-gray-800 dark:text-gray-200'
-                : 'text-gray-500 hover:text-gray-700',
+                ? "text-gray-800 dark:text-gray-200"
+                : "text-gray-500 hover:text-gray-700",
             )}
           >
             {option}
@@ -85,7 +85,7 @@ export default function TimePeriodSwitcher({
                 layoutId="switcher-pill"
                 className="bg-card absolute inset-0 rounded-full border shadow-sm"
                 transition={{
-                  type: 'spring',
+                  type: "spring",
                   stiffness: 500,
                   damping: 30,
                 }}

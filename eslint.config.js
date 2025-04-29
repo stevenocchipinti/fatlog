@@ -1,17 +1,17 @@
 //  @ts-check
 
-import { tanstackConfig } from '@tanstack/eslint-config'
-import reactHooks from 'eslint-plugin-react-hooks'
+import { tanstackConfig } from "@tanstack/eslint-config"
+import reactHooks from "eslint-plugin-react-hooks"
 
 export default [
   ...tanstackConfig,
-  reactHooks.configs['recommended-latest'],
+  reactHooks.configs["recommended-latest"],
   {
     rules: {
-      '@typescript-eslint/array-type': [
-        'warn',
+      "@typescript-eslint/array-type": [
+        "warn",
         {
-          default: 'array',
+          default: "array",
         },
       ],
     },

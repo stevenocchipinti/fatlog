@@ -1,22 +1,22 @@
-import { createFileRoute } from '@tanstack/react-router'
-import { format } from 'date-fns'
-import { enAU } from 'date-fns/locale'
-import { Edit, MoreVertical, Trash2 } from 'lucide-react'
-import { useCallback, useEffect, useState } from 'react'
+import { createFileRoute } from "@tanstack/react-router"
+import { format } from "date-fns"
+import { enAU } from "date-fns/locale"
+import { Edit, MoreVertical, Trash2 } from "lucide-react"
+import { useCallback, useEffect, useState } from "react"
 
-import type { BodyMetricDataPoint, TimeScaleOption } from '../types'
+import type { BodyMetricDataPoint, TimeScaleOption } from "../types"
 
-import { BodyMetricsChart } from '@/components/BodyMetricsChart'
-import TimePeriodSwitcher from '@/components/TimePeriodSwitcher'
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { Button } from '@/components/ui/button'
-import { Card } from '@/components/ui/card'
+import { BodyMetricsChart } from "@/components/BodyMetricsChart"
+import TimePeriodSwitcher from "@/components/TimePeriodSwitcher"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Button } from "@/components/ui/button"
+import { Card } from "@/components/ui/card"
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
+} from "@/components/ui/dropdown-menu"
 import {
   Table,
   TableBody,
@@ -24,8 +24,8 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table'
-import sampleData from '@/sampleData'
+} from "@/components/ui/table"
+import sampleData from "@/sampleData"
 
 import {
   Drawer,
@@ -36,11 +36,11 @@ import {
   DrawerHeader,
   DrawerTitle,
   DrawerTrigger,
-} from '@/components/ui/drawer'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
+} from "@/components/ui/drawer"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
 
-export const Route = createFileRoute('/')({
+export const Route = createFileRoute("/")({
   component: App,
 })
 
@@ -48,7 +48,7 @@ function App() {
   const [chartData] = useState<BodyMetricDataPoint[]>(sampleData)
 
   const [selectedTimeScale, setSelectedTimeScale] =
-    useState<TimeScaleOption>('6M')
+    useState<TimeScaleOption>("6M")
 
   const [visibleLines, setVisibleLines] = useState({
     weight: true,
@@ -60,7 +60,7 @@ function App() {
     useState<BodyMetricDataPoint | null>(null)
 
   useEffect(() => {
-    console.log('Selected point:', selectedPoint)
+    console.log("Selected point:", selectedPoint)
   }, [selectedPoint])
 
   const [_selectedPointInfo, setSelectedPointInfo] = useState<string | null>(
@@ -83,7 +83,7 @@ function App() {
   const handlePointSelect = useCallback(
     (dataPoint: BodyMetricDataPoint | null) => {
       if (dataPoint) {
-        const formattedDate = format(dataPoint.createdAt, 'PPP p', {
+        const formattedDate = format(dataPoint.createdAt, "PPP p", {
           locale: enAU,
         })
         const infoLines = [
@@ -99,7 +99,7 @@ function App() {
 
         // Filter out null lines (where data was missing) and join with newlines
         setSelectedPoint(dataPoint)
-        setSelectedPointInfo(infoLines.filter(Boolean).join('\n'))
+        setSelectedPointInfo(infoLines.filter(Boolean).join("\n"))
       } else {
         // If null is received (clicked outside points), clear the info display
         setSelectedPoint(null)
@@ -109,10 +109,10 @@ function App() {
     [],
   )
 
-  const tableDateFormat = (date: Date) => {
-    const day = date.getDate().toString().padStart(2, '0')
-    const month = (date.getMonth() + 1).toString().padStart(2, '0')
-    const year = date.getFullYear()
+  const tableDateFormat = (d: Date) => {
+    const day = d.getDate().toString().padStart(2, "0")
+    const month = (d.getMonth() + 1).toString().padStart(2, "0")
+    const year = d.getFullYear()
 
     return (
       <div className="flex flex-col">
@@ -124,7 +124,7 @@ function App() {
     )
   }
   const toggleLine = (line: keyof typeof visibleLines) => {
-    setVisibleLines((prev) => ({
+    setVisibleLines(prev => ({
       ...prev,
       [line]: !prev[line],
     }))
@@ -159,7 +159,7 @@ function App() {
           />
           <TimePeriodSwitcher
             defaultValue={selectedTimeScale}
-            onChange={(value) => setSelectedTimeScale(value)}
+            onChange={value => setSelectedTimeScale(value)}
           />
           <Card className="container mx-auto flex flex-1 flex-col gap-0 overflow-hidden rounded-b-none">
             <Table className="mt-[-2px] border-separate border-spacing-0 pb-16">
@@ -170,7 +170,7 @@ function App() {
                     <Button
                       variant="ghost"
                       className="p-0 font-semibold text-(--chart-1)"
-                      onClick={() => toggleLine('weight')}
+                      onClick={() => toggleLine("weight")}
                     >
                       Weight
                     </Button>
@@ -179,7 +179,7 @@ function App() {
                     <Button
                       variant="ghost"
                       className="p-0 font-semibold text-(--chart-2)"
-                      onClick={() => toggleLine('fat')}
+                      onClick={() => toggleLine("fat")}
                     >
                       Fat
                     </Button>
@@ -188,7 +188,7 @@ function App() {
                     <Button
                       variant="ghost"
                       className="p-0 font-semibold text-(--chart-3)"
-                      onClick={() => toggleLine('waist')}
+                      onClick={() => toggleLine("waist")}
                     >
                       Waist
                     </Button>
@@ -197,7 +197,7 @@ function App() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {chartData.map((entry) => (
+                {chartData.map(entry => (
                   <TableRow key={entry.createdAt.toISOString()}>
                     <TableCell>{tableDateFormat(entry.createdAt)}</TableCell>
                     <TableCell>
@@ -264,8 +264,8 @@ function App() {
                     <Input
                       id="date"
                       type="date"
-                      value={date.toISOString().split('T')[0]}
-                      onChange={(e) => setDate(new Date(e.target.value))}
+                      value={date.toISOString().split("T")[0]}
+                      onChange={e => setDate(new Date(e.target.value))}
                     />
                   </div>
 
@@ -282,7 +282,7 @@ function App() {
                       type="number"
                       step="0.1"
                       value={weight}
-                      onChange={(e) =>
+                      onChange={e =>
                         setWeight(Number.parseFloat(e.target.value))
                       }
                       aria-label={`Weight in kilograms, previous value was ${previousData.weight}`}
@@ -310,7 +310,7 @@ function App() {
                       type="number"
                       step="0.1"
                       value={fatPercentage}
-                      onChange={(e) =>
+                      onChange={e =>
                         setFatPercentage(Number.parseFloat(e.target.value))
                       }
                       aria-label={`Fat percentage, previous value was ${previousData.fatPercentage}`}
@@ -338,7 +338,7 @@ function App() {
                       type="number"
                       step="0.1"
                       value={waistMeasurement}
-                      onChange={(e) =>
+                      onChange={e =>
                         setWaistMeasurement(Number.parseFloat(e.target.value))
                       }
                       aria-label={`Waist measurement in centimeters, previous value was ${previousData.waistMeasurement}`}
