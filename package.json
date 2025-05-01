@@ -13,7 +13,7 @@
     "check": "prettier --write . && eslint --fix",
     "emulators": "firebase emulators:start --only auth,database,hosting",
     "ci": "npm run lint && npm run test",
-    "deploy": "firebase deploy --only hosting"
+    "deploy": "firebase deploy --only hosting:bodymetrics"
   },
   "dependencies": {
     "@radix-ui/react-avatar": "^1.1.6",

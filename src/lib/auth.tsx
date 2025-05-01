@@ -13,7 +13,7 @@ type AuthState = "LOGGED_OUT" | "LOGGED_IN" | "LOADING"
 
 export interface AuthContext {
   login: () => void
-  logout: () => void
+  logout: () => Promise<void>
   user: User | null
   state: AuthState
 }

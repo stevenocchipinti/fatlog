@@ -10,61 +10,125 @@
 
 // Import Routes
 
-import { Route as rootRoute } from "./routes/__root"
-import { Route as IndexImport } from "./routes/index"
+import { Route as rootRoute } from './routes/__root'
+import { Route as AuthImport } from './routes/_auth'
+import { Route as IndexImport } from './routes/index'
+import { Route as AuthMetricsImport } from './routes/_auth.metrics'
+import { Route as AuthDietImport } from './routes/_auth.diet'
 
 // Create/Update Routes
 
-const IndexRoute = IndexImport.update({
-  id: "/",
-  path: "/",
+const AuthRoute = AuthImport.update({
+  id: '/_auth',
   getParentRoute: () => rootRoute,
+} as any)
+
+const IndexRoute = IndexImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => rootRoute,
+} as any)
+
+const AuthMetricsRoute = AuthMetricsImport.update({
+  id: '/metrics',
+  path: '/metrics',
+  getParentRoute: () => AuthRoute,
+} as any)
+
+const AuthDietRoute = AuthDietImport.update({
+  id: '/diet',
+  path: '/diet',
+  getParentRoute: () => AuthRoute,
 } as any)
 
 // Populate the FileRoutesByPath interface
 
-declare module "@tanstack/react-router" {
+declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    "/": {
-      id: "/"
-      path: "/"
-      fullPath: "/"
+    '/': {
+      id: '/'
+      path: '/'
+      fullPath: '/'
       preLoaderRoute: typeof IndexImport
       parentRoute: typeof rootRoute
+    }
+    '/_auth': {
+      id: '/_auth'
+      path: ''
+      fullPath: ''
+      preLoaderRoute: typeof AuthImport
+      parentRoute: typeof rootRoute
+    }
+    '/_auth/diet': {
+      id: '/_auth/diet'
+      path: '/diet'
+      fullPath: '/diet'
+      preLoaderRoute: typeof AuthDietImport
+      parentRoute: typeof AuthImport
+    }
+    '/_auth/metrics': {
+      id: '/_auth/metrics'
+      path: '/metrics'
+      fullPath: '/metrics'
+      preLoaderRoute: typeof AuthMetricsImport
+      parentRoute: typeof AuthImport
     }
   }
 }
 
 // Create and export the route tree
 
+interface AuthRouteChildren {
+  AuthDietRoute: typeof AuthDietRoute
+  AuthMetricsRoute: typeof AuthMetricsRoute
+}
+
+const AuthRouteChildren: AuthRouteChildren = {
+  AuthDietRoute: AuthDietRoute,
+  AuthMetricsRoute: AuthMetricsRoute,
+}
+
+const AuthRouteWithChildren = AuthRoute._addFileChildren(AuthRouteChildren)
+
 export interface FileRoutesByFullPath {
-  "/": typeof IndexRoute
+  '/': typeof IndexRoute
+  '': typeof AuthRouteWithChildren
+  '/diet': typeof AuthDietRoute
+  '/metrics': typeof AuthMetricsRoute
 }
 
 export interface FileRoutesByTo {
-  "/": typeof IndexRoute
+  '/': typeof IndexRoute
+  '': typeof AuthRouteWithChildren
+  '/diet': typeof AuthDietRoute
+  '/metrics': typeof AuthMetricsRoute
 }
 
 export interface FileRoutesById {
   __root__: typeof rootRoute
-  "/": typeof IndexRoute
+  '/': typeof IndexRoute
+  '/_auth': typeof AuthRouteWithChildren
+  '/_auth/diet': typeof AuthDietRoute
+  '/_auth/metrics': typeof AuthMetricsRoute
 }
 
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: "/"
+  fullPaths: '/' | '' | '/diet' | '/metrics'
   fileRoutesByTo: FileRoutesByTo
-  to: "/"
-  id: "__root__" | "/"
+  to: '/' | '' | '/diet' | '/metrics'
+  id: '__root__' | '/' | '/_auth' | '/_auth/diet' | '/_auth/metrics'
   fileRoutesById: FileRoutesById
 }
 
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AuthRoute: typeof AuthRouteWithChildren
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AuthRoute: AuthRouteWithChildren,
 }
 
 export const routeTree = rootRoute
@@ -77,11 +141,27 @@ export const routeTree = rootRoute
     "__root__": {
       "filePath": "__root.tsx",
       "children": [
-        "/"
+        "/",
+        "/_auth"
       ]
     },
     "/": {
       "filePath": "index.tsx"
+    },
+    "/_auth": {
+      "filePath": "_auth.tsx",
+      "children": [
+        "/_auth/diet",
+        "/_auth/metrics"
+      ]
+    },
+    "/_auth/diet": {
+      "filePath": "_auth.diet.tsx",
+      "parent": "/_auth"
+    },
+    "/_auth/metrics": {
+      "filePath": "_auth.metrics.tsx",
+      "parent": "/_auth"
     }
   }
 }
