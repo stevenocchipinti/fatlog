@@ -1,4 +1,3 @@
-import { Avatar, AvatarFallback, AvatarImage } from "@radix-ui/react-avatar"
 import {
   Link,
   Outlet,
@@ -14,6 +13,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Button } from "@/components/ui/button"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { useAuth } from "@/lib/auth"
 
 export const Route = createFileRoute("/_auth")({
@@ -56,10 +56,7 @@ const AuthComponent = () => {
         </h1>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button
-              variant="ghost"
-              className="h-8 w-8 rounded-full bg-gradient-to-r from-blue-600 to-violet-600 font-bold text-white"
-            >
+            <Button variant="ghost">
               <Avatar>
                 {user?.photoURL && <AvatarImage src={user.photoURL} />}
                 {user?.displayName && (
