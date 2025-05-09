@@ -47,7 +47,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   return (
     <AuthContext.Provider value={{ login, logout, user, state }}>
-      {state === "LOADING" ? <div>Loading...</div> : children}
+      {state === "LOADING" ? <div>Logging you in...</div> : children}
     </AuthContext.Provider>
   )
 }
