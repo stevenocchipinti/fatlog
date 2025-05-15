@@ -4,7 +4,7 @@ import ReactDOM from "react-dom/client"
 
 // Import the generated route tree
 import { routeTree } from "./routeTree.gen"
-import { AuthProvider, useAuth } from "./lib/auth"
+import { FirebaseProvider, useAuth } from "./lib/firebase"
 
 import reportWebVitals from "./reportWebVitals.ts"
 import "./styles.css"
@@ -35,9 +35,9 @@ function InnerApp() {
 
 function App() {
   return (
-    <AuthProvider>
+    <FirebaseProvider>
       <InnerApp />
-    </AuthProvider>
+    </FirebaseProvider>
   )
 }
 

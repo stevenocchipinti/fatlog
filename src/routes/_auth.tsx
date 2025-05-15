@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { useAuth } from "@/lib/auth"
+import { useAuth } from "@/lib/firebase"
 
 export const Route = createFileRoute("/_auth")({
   beforeLoad: ({ context }) => {

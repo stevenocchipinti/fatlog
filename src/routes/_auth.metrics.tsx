@@ -11,6 +11,7 @@ import BodyMetricsDialog from "@/components/BodyMetricsDialog"
 import BodyMetricsTable from "@/components/BodyMetricsTable"
 
 import sampleData from "@/sampleData"
+import { useCheckins } from "@/lib/firebase"
 
 export const Route = createFileRoute("/_auth/metrics")({
   component: App,
@@ -65,6 +66,8 @@ function App() {
     },
     [],
   )
+
+  useCheckins(checkins => console.log({ checkins }))
 
   const toggleLine = (line: keyof typeof visibleLines) => {
     setVisibleLines(prev => ({

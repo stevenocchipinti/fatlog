@@ -1,5 +1,4 @@
 import { Edit, MoreVertical, Trash2 } from "lucide-react"
-
 import { useEffect, useRef } from "react"
 import type { BodyMetricDataPoint } from "@/types"
 
@@ -49,6 +48,7 @@ const BodyMetricsTable = ({
   onRowSelect,
 }: BodyMetricsTableProps) => {
   const tableRef = useRef<HTMLTableElement>(null)
+
   useEffect(() => {
     tableRef.current?.querySelector("tr[aria-selected=true]")?.scrollIntoView({
       behavior: "smooth",
@@ -96,54 +96,60 @@ const BodyMetricsTable = ({
         </TableHeader>
 
         <TableBody>
-          {data.map(entry => (
-            <TableRow
-              key={entry.createdAt.toISOString()}
-              className={`hover:bg-muted cursor-pointer transition-colors ${
-                selectedPoint?.createdAt === entry.createdAt
-                  ? "bg-muted"
-                  : "bg-transparent"
-              }`}
-              aria-selected={selectedPoint?.createdAt === entry.createdAt}
-              onClick={() => {
-                onRowSelect(entry)
-              }}
-            >
-              <TableCell>{tableDateFormat(entry.createdAt)}</TableCell>
-              <TableCell>
-                {entry.weight?.toFixed(1)}
-                <span className="text-muted-foreground pl-0.5 text-xs">kg</span>
-              </TableCell>
-              <TableCell>
-                {entry.fat?.toFixed(1)}
-                <span className="text-muted-foreground text-xs">%</span>
-              </TableCell>
-              <TableCell>
-                {entry.waist?.toFixed(1)}
-                <span className="text-muted-foreground pl-0.5 text-xs">cm</span>
-              </TableCell>
-              <TableCell>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" className="h-8 w-8 p-0">
-                      <MoreVertical className="h-4 w-4" />
-                      <span className="sr-only">Open menu</span>
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuItem className="flex cursor-pointer items-center">
-                      <Edit className="mr-2 h-4 w-4" />
-                      <span>Edit</span>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem className="text-destructive flex cursor-pointer items-center">
-                      <Trash2 className="mr-2 h-4 w-4" />
-                      <span>Delete</span>
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </TableCell>
-            </TableRow>
-          ))}
+          {data
+            .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
+            .map(entry => (
+              <TableRow
+                key={entry.createdAt.toISOString()}
+                className={`hover:bg-muted cursor-pointer transition-colors ${
+                  selectedPoint?.createdAt === entry.createdAt
+                    ? "bg-muted"
+                    : "bg-transparent"
+                }`}
+                aria-selected={selectedPoint?.createdAt === entry.createdAt}
+                onClick={() => {
+                  onRowSelect(entry)
+                }}
+              >
+                <TableCell>{tableDateFormat(entry.createdAt)}</TableCell>
+                <TableCell>
+                  {entry.weight?.toFixed(1)}
+                  <span className="text-muted-foreground pl-0.5 text-xs">
+                    kg
+                  </span>
+                </TableCell>
+                <TableCell>
+                  {entry.fat?.toFixed(1)}
+                  <span className="text-muted-foreground text-xs">%</span>
+                </TableCell>
+                <TableCell>
+                  {entry.waist?.toFixed(1)}
+                  <span className="text-muted-foreground pl-0.5 text-xs">
+                    cm
+                  </span>
+                </TableCell>
+                <TableCell>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" className="h-8 w-8 p-0">
+                        <MoreVertical className="h-4 w-4" />
+                        <span className="sr-only">Open menu</span>
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem className="flex cursor-pointer items-center">
+                        <Edit className="mr-2 h-4 w-4" />
+                        <span>Edit</span>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem className="text-destructive flex cursor-pointer items-center">
+                        <Trash2 className="mr-2 h-4 w-4" />
+                        <span>Delete</span>
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </TableCell>
+              </TableRow>
+            ))}
         </TableBody>
       </Table>
     </Card>
