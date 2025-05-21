@@ -12,13 +12,14 @@ import {
   onValue,
   push,
   ref,
+  remove,
   set,
 } from "firebase/database"
 import { createContext, useContext, useEffect, useState } from "react"
 
 import type { User } from "firebase/auth"
 import type { ReactNode } from "react"
-import type { UserCheckin } from "@/types"
+import type { NewBodyMetricDataPoint, BodyMetricDataPoint } from "@/types"
 
 const firebaseConfig = {
   apiKey: "AIzaSyCyYXcQs1e2hnLKYwInQ_78EIJJcFSN25Y",
@@ -49,16 +50,24 @@ export interface AuthContext {
   user: User | null
   state: AuthState
 }
-const AuthContext = createContext<AuthContext | null>(null)
+
+export interface FirebaseContext {
+  auth: AuthContext
+  checkins: {
+    data: BodyMetricDataPoint[]
+  }
+}
+const FirebaseContext = createContext<FirebaseContext | null>(null)
 
 export const FirebaseProvider = ({ children }: { children: ReactNode }) => {
   const provider = new GoogleAuthProvider()
 
   const [user, setUser] = useState<User | null>(null)
-  const [state, setState] = useState<AuthState>("LOGGED_OUT")
+  const [authState, setAuthState] = useState<AuthState>("LOGGED_OUT")
+  const [checkins, setCheckins] = useState<BodyMetricDataPoint[]>([])
 
   const login = () => {
-    setState("LOADING")
+    setAuthState("LOADING")
     signInWithRedirect(auth, provider)
   }
 
@@ -67,54 +76,82 @@ export const FirebaseProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     const unsubscribeAuth = onAuthStateChanged(auth, fb_user => {
       if (fb_user) {
-        setState("LOGGED_IN")
+        setAuthState("LOGGED_IN")
         setUser(fb_user)
       } else {
-        setState("LOGGED_OUT")
+        setAuthState("LOGGED_OUT")
         setUser(null)
       }
     })
     return unsubscribeAuth
   }, [])
 
+  useEffect(() => {
+    if (!user) return
+    return onValue(ref(db, `/checkins/${user.uid}`), snapshot => {
+      const val = snapshot.val() as Record<
+        string,
+        Record<string, string | number>
+      > | null
+
+      setCheckins(
+        val
+          ? Object.entries(val).map(([key, value]) => ({
+              id: key,
+              createdAt: new Date(value.createdAt),
+              weight: +value.weight,
+              fat: +value.fat,
+              waist: +value.waist,
+            }))
+          : [],
+      )
+    })
+  }, [user])
+
   return (
-    <AuthContext.Provider value={{ login, logout, user, state }}>
-      {state === "LOADING" ? <div>Logging you in...</div> : children}
-    </AuthContext.Provider>
+    <FirebaseContext.Provider
+      value={{
+        auth: { login, logout, user, state: authState },
+        checkins: { data: checkins },
+      }}
+    >
+      {authState === "LOADING" ? <div>Logging you in...</div> : children}
+    </FirebaseContext.Provider>
   )
 }
 
 export const useAuth = () => {
-  const context = useContext(AuthContext)
+  const context = useContext(FirebaseContext)
   if (!context) throw new Error("useAuth must be used within an AuthProvider")
-  return context
+  return context.auth
 }
 
-export const useCheckins = (cb?: (v: any) => void) => {
-  const { user } = useAuth()
+export const useCheckins = () => {
+  const context = useContext(FirebaseContext)
+  if (!context)
+    throw new Error("useCheckins must be used within a FirebaseProvider")
 
-  useEffect(() => {
-    if (!user || !cb) return
-    return onValue(ref(db, `/checkins/${user.uid}`), snapshot =>
-      cb(snapshot.val()),
-    )
-  }, [user, cb])
+  const {
+    auth: { user },
+    checkins: { data },
+  } = context
 
   return {
-    addCheckin: (checkin: UserCheckin) => {
+    checkins: data,
+
+    addCheckin: (checkin: NewBodyMetricDataPoint) => {
       if (!user) return false
       const newCheckinRef = push(ref(db, `/checkins/${user.uid}`))
       return set(newCheckinRef, {
-        createdAt: checkin.date.toISOString(),
+        createdAt: checkin.createdAt.toISOString(),
         weight: checkin.weight,
         fat: checkin.fat,
         waist: checkin.waist,
       })
     },
 
-    // deleteCheckin: checkinKey => {
-    //   if (!backend.currentUser()) return false
-    //   return backend.checkinsRef().child(checkinKey).remove()
-    // },
+    deleteCheckin: (checkinKey: string) => {
+      return remove(ref(db, `/checkins/${user?.uid}/${checkinKey}`))
+    },
   }
 }

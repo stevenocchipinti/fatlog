@@ -1,6 +1,6 @@
 import { Edit, MoreVertical, Trash2 } from "lucide-react"
 import { useEffect, useRef } from "react"
-import type { BodyMetricDataPoint } from "@/types"
+import type { BodyMetricDataPoint, BodyMetrics } from "@/types"
 
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
@@ -34,18 +34,19 @@ const tableDateFormat = (d: Date) => {
   )
 }
 
-type Lines = Omit<BodyMetricDataPoint, "createdAt">
 type BodyMetricsTableProps = {
   data: BodyMetricDataPoint[]
   selectedPoint: BodyMetricDataPoint | null
-  toggleLine: (line: keyof Lines) => void
+  toggleLine: (line: keyof BodyMetrics) => void
   onRowSelect: (point: BodyMetricDataPoint | null) => void
+  onRowDelete: (point: BodyMetricDataPoint) => void
 }
 const BodyMetricsTable = ({
   data,
   selectedPoint,
   toggleLine,
   onRowSelect,
+  onRowDelete,
 }: BodyMetricsTableProps) => {
   const tableRef = useRef<HTMLTableElement>(null)
 
@@ -100,7 +101,7 @@ const BodyMetricsTable = ({
             .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
             .map(entry => (
               <TableRow
-                key={entry.createdAt.toISOString()}
+                key={entry.id}
                 className={`hover:bg-muted cursor-pointer transition-colors ${
                   selectedPoint?.createdAt === entry.createdAt
                     ? "bg-muted"
@@ -137,11 +138,17 @@ const BodyMetricsTable = ({
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
+                      <pre>{entry.id}</pre>
                       <DropdownMenuItem className="flex cursor-pointer items-center">
                         <Edit className="mr-2 h-4 w-4" />
                         <span>Edit</span>
                       </DropdownMenuItem>
-                      <DropdownMenuItem className="text-destructive flex cursor-pointer items-center">
+                      <DropdownMenuItem
+                        onClick={() => {
+                          onRowDelete(entry)
+                        }}
+                        className="text-destructive flex cursor-pointer items-center"
+                      >
                         <Trash2 className="mr-2 h-4 w-4" />
                         <span>Delete</span>
                       </DropdownMenuItem>

@@ -10,7 +10,6 @@ import TimePeriodSwitcher from "@/components/TimePeriodSwitcher"
 import BodyMetricsDialog from "@/components/BodyMetricsDialog"
 import BodyMetricsTable from "@/components/BodyMetricsTable"
 
-import sampleData from "@/sampleData"
 import { useCheckins } from "@/lib/firebase"
 
 export const Route = createFileRoute("/_auth/metrics")({
@@ -18,7 +17,7 @@ export const Route = createFileRoute("/_auth/metrics")({
 })
 
 function App() {
-  const [chartData] = useState<BodyMetricDataPoint[]>(sampleData)
+  const { checkins: chartData, deleteCheckin } = useCheckins()
 
   const [selectedTimeScale, setSelectedTimeScale] =
     useState<TimeScaleOption>("6M")
@@ -40,6 +39,7 @@ function App() {
 
   const handlePointSelect = useCallback(
     (dataPoint: BodyMetricDataPoint | null) => {
+      console.log("Select point:", dataPoint)
       if (dataPoint) {
         const formattedDate = format(dataPoint.createdAt, "PPP p", {
           locale: enAU,
@@ -67,7 +67,9 @@ function App() {
     [],
   )
 
-  useCheckins(checkins => console.log({ checkins }))
+  const handlePointDelete = (dataPoint: BodyMetricDataPoint) => {
+    deleteCheckin(dataPoint.id)
+  }
 
   const toggleLine = (line: keyof typeof visibleLines) => {
     setVisibleLines(prev => ({
@@ -78,41 +80,34 @@ function App() {
 
   return (
     <>
-      {chartData.length === 0 ? (
-        <p className="py-10 text-center text-gray-500">
-          No data available to display the chart.
-        </p>
-      ) : (
-        <>
-          <BodyMetricsChart
-            data={chartData}
-            timeScale={selectedTimeScale}
-            visibleLines={visibleLines}
-            onPointSelect={point => {
-              console.log("Selected point:", selectedPoint)
-              handlePointSelect(point)
-            }}
-            className="px-2"
-          />
+      <BodyMetricsChart
+        data={chartData}
+        timeScale={selectedTimeScale}
+        visibleLines={visibleLines}
+        onPointSelect={point => {
+          handlePointSelect(point)
+        }}
+        className="px-2"
+      />
 
-          <TimePeriodSwitcher
-            defaultValue={selectedTimeScale}
-            onChange={value => setSelectedTimeScale(value)}
-          />
+      <TimePeriodSwitcher
+        defaultValue={selectedTimeScale}
+        onChange={value => setSelectedTimeScale(value)}
+      />
 
-          <BodyMetricsTable
-            data={chartData}
-            selectedPoint={selectedPoint}
-            toggleLine={toggleLine}
-            onRowSelect={point => {
-              console.log("Row selected:", point)
-              handlePointSelect(point)
-            }}
-          />
+      <BodyMetricsTable
+        data={chartData}
+        selectedPoint={selectedPoint}
+        toggleLine={toggleLine}
+        onRowSelect={point => {
+          handlePointSelect(point)
+        }}
+        onRowDelete={point => {
+          handlePointDelete(point)
+        }}
+      />
 
-          <BodyMetricsDialog>Record Measurements</BodyMetricsDialog>
-        </>
-      )}
+      <BodyMetricsDialog>Record Measurements</BodyMetricsDialog>
     </>
   )
 }

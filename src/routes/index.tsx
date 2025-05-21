@@ -7,7 +7,7 @@ export const Route = createFileRoute("/")({
 })
 
 function App() {
-  const { user, login, state } = useAuth()
+  const { user, login, state: authState } = useAuth()
   const navigate = useNavigate()
 
   useEffect(() => {
@@ -64,9 +64,9 @@ function App() {
           <button
             className="inline-flex cursor-pointer items-center justify-center gap-x-3 rounded-md border border-transparent bg-linear-to-tl from-blue-600 to-violet-600 px-4 py-3 text-center text-sm font-medium text-white transition-transform hover:from-violet-600 hover:to-blue-600 focus:from-violet-600 focus:to-blue-600 focus:outline-hidden active:scale-105"
             onClick={() => login()}
-            disabled={state !== "LOGGED_OUT"}
+            disabled={authState !== "LOGGED_OUT"}
           >
-            {state === "LOGGED_IN" ? (
+            {authState === "LOGGED_IN" ? (
               "Loading..."
             ) : (
               <>

@@ -18,10 +18,12 @@ type BodyMetricsDialogProps = {
   children: React.ReactNode
 }
 const BodyMetricsDialog = ({ children }: BodyMetricsDialogProps) => {
-  const [date, setDate] = useState<Date>(new Date())
+  const [createdAt, setCreatedAt] = useState<Date>(new Date())
   const [weight, setWeight] = useState<number>(74.2)
   const [fat, setFat] = useState<number>(17.8)
   const [waist, setWaist] = useState<number>(81.5)
+
+  const [open, setOpen] = useState(false)
 
   const { addCheckin } = useCheckins()
 
@@ -34,7 +36,7 @@ const BodyMetricsDialog = ({ children }: BodyMetricsDialogProps) => {
   }
 
   return (
-    <Drawer>
+    <Drawer onOpenChange={setOpen} open={open}>
       <DrawerTrigger asChild>
         <Button className="absolute right-4 bottom-4 left-4 mx-auto max-w-sm rounded-4xl py-6 opacity-95">
           {children}
@@ -46,11 +48,12 @@ const BodyMetricsDialog = ({ children }: BodyMetricsDialogProps) => {
             onSubmit={e => {
               e.preventDefault()
               addCheckin({
-                date,
+                createdAt,
                 weight,
                 fat,
                 waist,
               })
+              setOpen(false)
             }}
           >
             <DrawerHeader className="pb-2">
@@ -67,8 +70,8 @@ const BodyMetricsDialog = ({ children }: BodyMetricsDialogProps) => {
                 <Input
                   id="date"
                   type="date"
-                  value={date.toISOString().split("T")[0]}
-                  onChange={e => setDate(new Date(e.target.value))}
+                  value={createdAt.toISOString().split("T")[0]}
+                  onChange={e => setCreatedAt(new Date(e.target.value))}
                 />
               </div>
 

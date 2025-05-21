@@ -1,16 +1,16 @@
-export interface BodyMetricDataPoint {
+export type NewBodyMetricDataPoint = {
   createdAt: Date
-  // These are optional in case data is missing for a specific date
+} & BodyMetrics
+
+export type BodyMetricDataPoint = {
+  id: string
+  createdAt: Date
+} & BodyMetrics
+
+export type BodyMetrics = {
   weight?: number
   fat?: number
   waist?: number
-}
-
-export type UserCheckin = {
-  date: number
-  weight: number
-  fat: number
-  waist: number
 }
 
 export type TimeScaleOption = "1M" | "3M" | "6M" | "1Y" | "ALL"
