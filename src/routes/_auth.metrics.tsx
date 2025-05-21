@@ -17,7 +17,7 @@ export const Route = createFileRoute("/_auth/metrics")({
 })
 
 function App() {
-  const { checkins: chartData, deleteCheckin } = useCheckins()
+  const { checkins, deleteCheckin } = useCheckins()
 
   const [selectedTimeScale, setSelectedTimeScale] =
     useState<TimeScaleOption>("6M")
@@ -78,10 +78,12 @@ function App() {
     }))
   }
 
+  // TODO: Some of these components get their own data using the hook and others
+  // get it passed it, this should probably be consistent
   return (
     <>
       <BodyMetricsChart
-        data={chartData}
+        data={checkins}
         timeScale={selectedTimeScale}
         visibleLines={visibleLines}
         onPointSelect={point => {
@@ -96,7 +98,7 @@ function App() {
       />
 
       <BodyMetricsTable
-        data={chartData}
+        data={checkins}
         selectedPoint={selectedPoint}
         toggleLine={toggleLine}
         onRowSelect={point => {
@@ -107,7 +109,9 @@ function App() {
         }}
       />
 
-      <BodyMetricsDialog>Record Measurements</BodyMetricsDialog>
+      <BodyMetricsDialog lastCheckin={checkins[0] || undefined}>
+        Record Measurements
+      </BodyMetricsDialog>
     </>
   )
 }

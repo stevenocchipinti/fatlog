@@ -1,4 +1,5 @@
 import { useState } from "react"
+import type { BodyMetricDataPoint } from "@/types"
 import {
   Drawer,
   DrawerClose,
@@ -16,24 +17,31 @@ import { useCheckins } from "@/lib/firebase"
 
 type BodyMetricsDialogProps = {
   children: React.ReactNode
+  lastCheckin?: BodyMetricDataPoint
 }
-const BodyMetricsDialog = ({ children }: BodyMetricsDialogProps) => {
+const BodyMetricsDialog = ({
+  children,
+  lastCheckin,
+}: BodyMetricsDialogProps) => {
   const [createdAt, setCreatedAt] = useState<Date>(new Date())
-  const [weight, setWeight] = useState<number>(74.2)
-  const [fat, setFat] = useState<number>(17.8)
-  const [waist, setWaist] = useState<number>(81.5)
+  const [weight, setWeight] = useState<number>()
+  const [fat, setFat] = useState<number>()
+  const [waist, setWaist] = useState<number>()
 
   const [open, setOpen] = useState(false)
 
   const { addCheckin } = useCheckins()
 
-  // TODO: Previous measurements for reference
-  const previousData: Record<string, any> = {
-    date: new Date(2023, 3, 15),
-    weight: 75.5,
-    fat: 18.2,
-    waist: 82.3,
+  const formatPreviousValue = (current?: number, previous?: number) => {
+    if (!previous) return ""
+    if (!current) return previous
+    if (current === previous) return `${previous}  ●`
+    if (previous > current) return `${previous}  ↓`
+    if (previous < current) return `${previous}  ↑`
   }
+
+  // TODO: Enforce the date field not be deleted too
+  const validInputs = weight && fat && waist
 
   return (
     <Drawer onOpenChange={setOpen} open={open}>
@@ -47,12 +55,16 @@ const BodyMetricsDialog = ({ children }: BodyMetricsDialogProps) => {
           <form
             onSubmit={e => {
               e.preventDefault()
+              if (!validInputs) return
               addCheckin({
                 createdAt,
                 weight,
                 fat,
                 waist,
               })
+              setWeight(undefined)
+              setFat(undefined)
+              setWaist(undefined)
               setOpen(false)
             }}
           >
@@ -87,13 +99,16 @@ const BodyMetricsDialog = ({ children }: BodyMetricsDialogProps) => {
                   id="weight"
                   type="number"
                   step="0.1"
-                  value={weight}
-                  onChange={e => setWeight(Number.parseFloat(e.target.value))}
-                  aria-label={`Weight in kilograms, previous value was ${previousData.weight}`}
+                  value={weight || ""}
+                  onChange={e =>
+                    setWeight(Number.parseFloat(e.target.value) || undefined)
+                  }
+                  aria-label={`Weight in kilograms, previous value was ${lastCheckin?.weight}`}
                   className="h-9"
+                  autoFocus
                 />
                 <Input
-                  value={previousData.weight}
+                  value={formatPreviousValue(weight, lastCheckin?.weight)}
                   readOnly
                   tabIndex={-1}
                   aria-label="Previous weight"
@@ -113,13 +128,15 @@ const BodyMetricsDialog = ({ children }: BodyMetricsDialogProps) => {
                   id="fat"
                   type="number"
                   step="0.1"
-                  value={fat}
-                  onChange={e => setFat(Number.parseFloat(e.target.value))}
-                  aria-label={`Fat, previous value was ${previousData.fat}`}
+                  value={fat || ""}
+                  onChange={e =>
+                    setFat(Number.parseFloat(e.target.value) || undefined)
+                  }
+                  aria-label={`Fat, previous value was ${lastCheckin?.fat}`}
                   className="h-9"
                 />
                 <Input
-                  value={previousData.fat}
+                  value={formatPreviousValue(fat, lastCheckin?.fat)}
                   readOnly
                   tabIndex={-1}
                   aria-label="Previous fat"
@@ -139,13 +156,15 @@ const BodyMetricsDialog = ({ children }: BodyMetricsDialogProps) => {
                   id="waist"
                   type="number"
                   step="0.1"
-                  value={waist}
-                  onChange={e => setWaist(Number.parseFloat(e.target.value))}
-                  aria-label={`Waist in centimeters, previous value was ${previousData.waist}`}
+                  value={waist || ""}
+                  onChange={e =>
+                    setWaist(Number.parseFloat(e.target.value) || undefined)
+                  }
+                  aria-label={`Waist in centimeters, previous value was ${lastCheckin?.waist}`}
                   className="h-9"
                 />
                 <Input
-                  value={previousData.waist}
+                  value={formatPreviousValue(waist, lastCheckin?.waist)}
                   readOnly
                   tabIndex={-1}
                   aria-label="Previous waist"
@@ -154,7 +173,7 @@ const BodyMetricsDialog = ({ children }: BodyMetricsDialogProps) => {
               </div>
             </div>
             <DrawerFooter className="pt-2">
-              <Button>Save</Button>
+              <Button disabled={!validInputs}>Save</Button>
               <DrawerClose asChild>
                 <Button variant="outline">Cancel</Button>
               </DrawerClose>
