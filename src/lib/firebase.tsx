@@ -17,9 +17,11 @@ import {
 } from "firebase/database"
 import { createContext, useContext, useEffect, useState } from "react"
 
+import useLocalStorage from "./useLocalStorage"
+
+import type { BodyMetricDataPoint, NewBodyMetricDataPoint } from "@/types"
 import type { User } from "firebase/auth"
 import type { ReactNode } from "react"
-import type { NewBodyMetricDataPoint, BodyMetricDataPoint } from "@/types"
 
 const firebaseConfig = {
   apiKey: "AIzaSyCyYXcQs1e2hnLKYwInQ_78EIJJcFSN25Y",
@@ -42,33 +44,74 @@ if (import.meta.env.DEV) {
   })
 }
 
-type AuthState = "LOGGED_OUT" | "LOGGED_IN" | "LOADING"
+type FirebaseCheckin = Record<string, string | number>
+const parseCheckin = (id: string, record: FirebaseCheckin) => {
+  return {
+    id,
+    createdAt: new Date(record.createdAt),
+    weight: +record.weight,
+    fat: +record.fat,
+    waist: +record.waist,
+  } as BodyMetricDataPoint
+}
 
-export interface AuthContext {
+type AuthState =
+  | "INITIALIZING"
+  | "CACHED"
+  | "LOADING"
+  | "LOGGED_OUT"
+  | "LOGGED_IN"
+type CheckinsState = "INITIALIZING" | "LOADED"
+
+export type AuthContext = {
   login: () => void
   logout: () => Promise<void>
   user: User | null
   state: AuthState
 }
 
-export interface FirebaseContext {
+export type CheckinsContext = {
+  data: BodyMetricDataPoint[]
+  state: CheckinsState
+}
+
+export type FirebaseContext = {
   auth: AuthContext
-  checkins: {
-    data: BodyMetricDataPoint[]
-  }
+  checkins: CheckinsContext
 }
 const FirebaseContext = createContext<FirebaseContext | null>(null)
 
 export const FirebaseProvider = ({ children }: { children: ReactNode }) => {
   const provider = new GoogleAuthProvider()
 
+  const [cachedUid, setCachedUid, clearCachedUid] = useLocalStorage<
+    string | null
+  >("user", null)
   const [user, setUser] = useState<User | null>(null)
-  const [authState, setAuthState] = useState<AuthState>("LOGGED_OUT")
-  const [checkins, setCheckins] = useState<BodyMetricDataPoint[]>([])
+  const [authState, setAuthState] = useState<AuthState>(
+    cachedUid ? "CACHED" : "INITIALIZING",
+  )
+
+  const [checkinsState, setCheckinsState] =
+    useState<CheckinsState>("INITIALIZING")
+  const [checkins, setCheckins] = useLocalStorage<BodyMetricDataPoint[]>(
+    "checkinData",
+    [],
+    x =>
+      (x as Record<string, string>[]).map(
+        v =>
+          ({
+            ...v,
+            createdAt: new Date(v.createdAt),
+          }) as BodyMetricDataPoint,
+      ),
+  )
 
   const login = () => {
     setAuthState("LOADING")
-    signInWithRedirect(auth, provider)
+    signInWithRedirect(auth, provider).catch(() => {
+      setAuthState("LOGGED_OUT")
+    })
   }
 
   const logout = () => signOut(auth)
@@ -78,41 +121,35 @@ export const FirebaseProvider = ({ children }: { children: ReactNode }) => {
       if (fb_user) {
         setAuthState("LOGGED_IN")
         setUser(fb_user)
+        setCachedUid(fb_user.uid)
       } else {
         setAuthState("LOGGED_OUT")
         setUser(null)
+        clearCachedUid()
       }
     })
     return unsubscribeAuth
-  }, [])
+  }, [clearCachedUid, setCachedUid])
 
   useEffect(() => {
     if (!user) return
     return onValue(ref(db, `/checkins/${user.uid}`), snapshot => {
-      const val = snapshot.val() as Record<
-        string,
-        Record<string, string | number>
-      > | null
+      setCheckinsState("LOADED")
+      const val = snapshot.val() as Record<string, FirebaseCheckin> | null
 
       setCheckins(
         val
-          ? Object.entries(val).map(([key, value]) => ({
-              id: key,
-              createdAt: new Date(value.createdAt),
-              weight: +value.weight,
-              fat: +value.fat,
-              waist: +value.waist,
-            }))
+          ? Object.entries(val).map(([id, value]) => parseCheckin(id, value))
           : [],
       )
     })
-  }, [user])
+  }, [setCheckins, user])
 
   return (
     <FirebaseContext.Provider
       value={{
         auth: { login, logout, user, state: authState },
-        checkins: { data: checkins },
+        checkins: { data: checkins, state: checkinsState },
       }}
     >
       {authState === "LOADING" ? <div>Logging you in...</div> : children}
@@ -133,11 +170,12 @@ export const useCheckins = () => {
 
   const {
     auth: { user },
-    checkins: { data },
+    checkins: { data, state },
   } = context
 
   return {
     checkins: data,
+    state,
 
     addCheckin: (checkin: NewBodyMetricDataPoint) => {
       if (!user) return false

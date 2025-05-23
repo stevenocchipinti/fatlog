@@ -60,43 +60,6 @@ interface ZoomPluginOptions {
   }
 }
 
-ChartJS.register(
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  Title,
-  Tooltip,
-  Legend,
-  TimeScale,
-  zoomPlugin,
-)
-
-interface VisibleLines {
-  weight: boolean
-  fat: boolean
-  waist: boolean
-}
-interface BodyMetricsChartProps {
-  data: BodyMetricDataPoint[]
-  timeScale?: TimeScaleOption
-  visibleLines?: VisibleLines
-  onPointSelect?: (dataPoint: BodyMetricDataPoint | null) => void
-  className?: string
-}
-
-// TODO: This should probably be moved to a useEffect
-const styles = getComputedStyle(document.documentElement)
-const chart1 = styles.getPropertyValue("--chart-1")
-const chart2 = styles.getPropertyValue("--chart-2")
-const chart3 = styles.getPropertyValue("--chart-3")
-
-const COLORS = {
-  weight: chart1,
-  fat: chart2,
-  waist: chart3,
-}
-
 type BodyMetricsChartOptionsType = ChartOptions<"line"> & {
   plugins?: PluginOptionsByType<"line"> & {
     zoom?: ZoomPluginOptions
@@ -112,6 +75,45 @@ type BodyMetricsChartOptionsType = ChartOptions<"line"> & {
     [key: string]: any // Allow additional scale definitions if necessary
   }
   interaction?: Partial<InteractionOptions>
+}
+
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Legend,
+  TimeScale,
+  zoomPlugin,
+)
+
+// TODO: This should probably be moved to a useEffect
+const styles = getComputedStyle(document.documentElement)
+const chart1 = styles.getPropertyValue("--chart-1")
+const chart2 = styles.getPropertyValue("--chart-2")
+const chart3 = styles.getPropertyValue("--chart-3")
+
+const COLORS = {
+  weight: chart1,
+  fat: chart2,
+  waist: chart3,
+}
+
+interface VisibleLines {
+  weight: boolean
+  fat: boolean
+  waist: boolean
+}
+
+interface BodyMetricsChartProps {
+  data: BodyMetricDataPoint[]
+  loading: boolean
+  timeScale?: TimeScaleOption
+  visibleLines?: VisibleLines
+  className?: string
+  onPointSelect?: (dataPoint: BodyMetricDataPoint | null) => void
 }
 
 export const BodyMetricsChart: React.FC<BodyMetricsChartProps> = ({
@@ -173,6 +175,7 @@ export const BodyMetricsChart: React.FC<BodyMetricsChartProps> = ({
   // }, [data])
 
   const { chartData, chartOptions } = useMemo(() => {
+    console.log({ sortedData: sortedData })
     if (sortedData.length === 0) {
       const emptyChartData: ChartData<
         "line",
@@ -484,8 +487,10 @@ export const BodyMetricsChart: React.FC<BodyMetricsChartProps> = ({
 
   return (
     <div className={`relative ${className} min-h-48`}>
-      {chartData.datasets.length > 0 && (
+      {chartData.datasets.length > 0 ? (
         <Line ref={chartRef} data={chartData} options={chartOptions as any} />
+      ) : (
+        <pre>loading...</pre>
       )}
     </div>
   )

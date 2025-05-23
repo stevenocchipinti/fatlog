@@ -17,7 +17,8 @@ export const Route = createFileRoute("/_auth/metrics")({
 })
 
 function App() {
-  const { checkins, deleteCheckin } = useCheckins()
+  const { checkins, state, deleteCheckin } = useCheckins()
+  const loading = state !== "LOADED"
 
   const [selectedTimeScale, setSelectedTimeScale] =
     useState<TimeScaleOption>("6M")
@@ -83,6 +84,7 @@ function App() {
   return (
     <>
       <BodyMetricsChart
+        loading={loading}
         data={checkins}
         timeScale={selectedTimeScale}
         visibleLines={visibleLines}
@@ -98,6 +100,7 @@ function App() {
       />
 
       <BodyMetricsTable
+        loading={loading}
         data={checkins}
         selectedPoint={selectedPoint}
         toggleLine={toggleLine}
@@ -109,7 +112,10 @@ function App() {
         }}
       />
 
-      <BodyMetricsDialog lastCheckin={checkins[0] || undefined}>
+      <BodyMetricsDialog
+        loading={loading}
+        lastCheckin={checkins[0] || undefined}
+      >
         Record Measurements
       </BodyMetricsDialog>
     </>

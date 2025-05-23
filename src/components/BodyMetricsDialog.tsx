@@ -18,10 +18,12 @@ import { useCheckins } from "@/lib/firebase"
 type BodyMetricsDialogProps = {
   children: React.ReactNode
   lastCheckin?: BodyMetricDataPoint
+  loading?: boolean
 }
 const BodyMetricsDialog = ({
   children,
   lastCheckin,
+  loading,
 }: BodyMetricsDialogProps) => {
   const [createdAt, setCreatedAt] = useState<Date>(new Date())
   const [weight, setWeight] = useState<number>()
@@ -173,7 +175,7 @@ const BodyMetricsDialog = ({
               </div>
             </div>
             <DrawerFooter className="pt-2">
-              <Button disabled={!validInputs}>Save</Button>
+              <Button disabled={loading || !validInputs}>Save</Button>
               <DrawerClose asChild>
                 <Button variant="outline">Cancel</Button>
               </DrawerClose>

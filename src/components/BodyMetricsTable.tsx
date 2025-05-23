@@ -36,6 +36,7 @@ const tableDateFormat = (d: Date) => {
 
 type BodyMetricsTableProps = {
   data: BodyMetricDataPoint[]
+  loading: boolean
   selectedPoint: BodyMetricDataPoint | null
   toggleLine: (line: keyof BodyMetrics) => void
   onRowSelect: (point: BodyMetricDataPoint | null) => void
@@ -43,6 +44,7 @@ type BodyMetricsTableProps = {
 }
 const BodyMetricsTable = ({
   data,
+  loading,
   selectedPoint,
   toggleLine,
   onRowSelect,
@@ -62,7 +64,7 @@ const BodyMetricsTable = ({
         ref={tableRef}
         className="mt-[-2px] border-separate border-spacing-0 pb-16"
       >
-        <TableHeader>
+        <TableHeader className="z-1">
           <TableRow>
             <TableHead>Date</TableHead>
             <TableHead>
@@ -106,7 +108,7 @@ const BodyMetricsTable = ({
                   selectedPoint?.createdAt === entry.createdAt
                     ? "bg-muted"
                     : "bg-transparent"
-                }`}
+                } ${loading && "opacity-40"}`}
                 aria-selected={selectedPoint?.createdAt === entry.createdAt}
                 onClick={() => {
                   onRowSelect(entry)
@@ -138,12 +140,15 @@ const BodyMetricsTable = ({
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
-                      <pre>{entry.id}</pre>
-                      <DropdownMenuItem className="flex cursor-pointer items-center">
+                      <DropdownMenuItem
+                        disabled={loading}
+                        className="flex cursor-pointer items-center"
+                      >
                         <Edit className="mr-2 h-4 w-4" />
                         <span>Edit</span>
                       </DropdownMenuItem>
                       <DropdownMenuItem
+                        disabled={loading}
                         onClick={() => {
                           onRowDelete(entry)
                         }}
