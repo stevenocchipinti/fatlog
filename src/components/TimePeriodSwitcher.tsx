@@ -1,6 +1,4 @@
-"use client"
-
-import { useRef, useState } from "react"
+import { useRef } from "react"
 import { motion } from "framer-motion"
 
 import type { KeyboardEvent } from "react"
@@ -9,17 +7,17 @@ import type { TimeScaleOption } from "../types"
 import { cn } from "@/lib/utils"
 
 interface TimePeriodSwitcherProps {
-  defaultValue?: TimeScaleOption
+  value: TimeScaleOption
   onChange?: (value: TimeScaleOption) => void
   className?: string
 }
 
 export default function TimePeriodSwitcher({
-  defaultValue = "1M",
+  value,
   onChange,
   className,
 }: TimePeriodSwitcherProps) {
-  const [selected, setSelected] = useState<TimeScaleOption>(defaultValue)
+  const selected = value
   const containerRef = useRef<HTMLDivElement>(null)
 
   const options: TimeScaleOption[] = ["1M", "3M", "6M", "1Y", "ALL"]
@@ -32,8 +30,7 @@ export default function TimePeriodSwitcher({
   }
 
   const handleSelect = (option: TimeScaleOption) => {
-    setSelected(option)
-    onChange?.(option)
+    if (option !== selected) onChange?.(option)
   }
 
   const handleKeyDown = (

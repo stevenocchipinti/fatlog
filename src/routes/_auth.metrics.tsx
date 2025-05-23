@@ -93,7 +93,7 @@ function App() {
       />
 
       <TimePeriodSwitcher
-        defaultValue={selectedTimeScale}
+        value={selectedTimeScale}
         onChange={value => setSelectedTimeScale(value)}
       />
 
