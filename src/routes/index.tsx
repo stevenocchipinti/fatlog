@@ -7,12 +7,13 @@ export const Route = createFileRoute("/")({
 })
 
 function App() {
-  const { user, login, state: authState } = useAuth()
+  const { user, login, state } = useAuth()
   const navigate = useNavigate()
 
   useEffect(() => {
-    if (user !== null) navigate({ to: "/metrics" })
-  }, [navigate, user])
+    if (state === "LOGGED_IN" || state === "CACHED")
+      navigate({ to: "/metrics" })
+  }, [navigate, state, user])
 
   return (
     <div className="relative overflow-hidden before:absolute before:start-1/2 before:top-0 before:-z-1 before:size-full before:-translate-x-1/2 before:transform before:bg-[url('https://preline.co/assets/svg/examples/polygon-bg-element.svg')] before:bg-cover before:bg-top before:bg-no-repeat">
@@ -64,9 +65,9 @@ function App() {
           <button
             className="inline-flex cursor-pointer items-center justify-center gap-x-3 rounded-md border border-transparent bg-linear-to-tl from-blue-600 to-violet-600 px-4 py-3 text-center text-sm font-medium text-white transition-transform hover:from-violet-600 hover:to-blue-600 focus:from-violet-600 focus:to-blue-600 focus:outline-hidden active:scale-105"
             onClick={() => login()}
-            disabled={authState !== "LOGGED_OUT"}
+            disabled={state !== "LOGGED_OUT"}
           >
-            {authState === "LOGGED_IN" ? (
+            {state === "LOGGED_IN" ? (
               "Loading..."
             ) : (
               <>

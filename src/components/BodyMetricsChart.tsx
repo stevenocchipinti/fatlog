@@ -490,7 +490,9 @@ export const BodyMetricsChart: React.FC<BodyMetricsChartProps> = ({
       {chartData.datasets.length > 0 ? (
         <Line ref={chartRef} data={chartData} options={chartOptions as any} />
       ) : (
-        <pre>loading...</pre>
+        <p className="text-muted-foreground absolute flex h-full w-full items-center justify-center">
+          No data yet
+        </p>
       )}
     </div>
   )
