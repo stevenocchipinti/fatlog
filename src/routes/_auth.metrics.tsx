@@ -86,7 +86,10 @@ function App() {
           handlePointSelect(point)
         }}
         onRowDelete={point => {
-          deleteCheckin(point.id)
+          const confirmDelete = window.confirm(
+            "Are you sure you want to delete this check-in?",
+          )
+          if (confirmDelete) deleteCheckin(point.id)
         }}
         onRowEdit={point => {
           setCheckinToEdit(point)
