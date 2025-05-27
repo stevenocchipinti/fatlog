@@ -41,6 +41,7 @@ type BodyMetricsTableProps = {
   toggleLine: (line: keyof BodyMetrics) => void
   onRowSelect: (point: BodyMetricDataPoint | null) => void
   onRowDelete: (point: BodyMetricDataPoint) => void
+  onRowEdit: (point: BodyMetricDataPoint) => void
 }
 const BodyMetricsTable = ({
   data,
@@ -49,6 +50,7 @@ const BodyMetricsTable = ({
   toggleLine,
   onRowSelect,
   onRowDelete,
+  onRowEdit,
 }: BodyMetricsTableProps) => {
   const tableRef = useRef<HTMLTableElement>(null)
 
@@ -142,6 +144,9 @@ const BodyMetricsTable = ({
                     <DropdownMenuContent align="end">
                       <DropdownMenuItem
                         disabled={loading}
+                        onClick={() => {
+                          onRowEdit(entry)
+                        }}
                         className="flex cursor-pointer items-center"
                       >
                         <Edit className="mr-2 h-4 w-4" />

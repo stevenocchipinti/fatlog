@@ -16,11 +16,11 @@ function App() {
   }, [navigate, state, user])
 
   return (
-    <div className="relative overflow-hidden before:absolute before:start-1/2 before:top-0 before:-z-1 before:size-full before:-translate-x-1/2 before:transform before:bg-[url('https://preline.co/assets/svg/examples/polygon-bg-element.svg')] before:bg-cover before:bg-top before:bg-no-repeat">
+    <div className="relative overflow-hidden before:absolute before:start-1/2 before:top-0 before:-z-1 before:size-full before:-translate-x-1/2 before:transform before:bg-[url('https://preline.co/assets/svg/examples/polygon-bg-element.svg')] before:bg-cover before:bg-top before:bg-no-repeat dark:before:bg-[url('https://preline.co/assets/svg/examples-dark/polygon-bg-element.svg')]">
       <div className="mx-auto max-w-[85rem] px-4 pt-24 pb-10 sm:px-6 lg:px-8">
         <div className="flex justify-center">
           <a
-            className="inline-flex items-center gap-x-2 rounded-full border border-gray-200 bg-white p-1 ps-3 text-sm text-gray-800 transition hover:border-gray-300 focus:border-gray-300 focus:outline-hidden"
+            className="card card-foreground inline-flex items-center gap-x-2 rounded-full border border-gray-200 p-1 ps-3 text-sm transition hover:border-gray-300 focus:border-gray-300 focus:outline-hidden"
             href="https://github.com/stevenocchipinti/fatlog"
           >
             Under development

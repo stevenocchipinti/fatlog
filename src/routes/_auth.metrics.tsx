@@ -1,6 +1,4 @@
 import { createFileRoute } from "@tanstack/react-router"
-import { format } from "date-fns"
-import { enAU } from "date-fns/locale"
 import { useCallback, useEffect, useState } from "react"
 
 import type { BodyMetricDataPoint, TimeScaleOption } from "../types"
@@ -29,48 +27,28 @@ function App() {
     waist: true,
   })
 
+  const [addDialogOpen, setAddDialogOpen] = useState(false)
+  const [editDialogOpen, setEditDialogOpen] = useState(false)
+  const [checkinToEdit, setCheckinToEdit] = useState<
+    BodyMetricDataPoint | undefined
+  >(undefined)
+  const { addCheckin, updateCheckin } = useCheckins()
+
   const [selectedPoint, setSelectedPoint] =
     useState<BodyMetricDataPoint | null>(null)
-
   useEffect(() => {}, [selectedPoint])
-
-  const [_selectedPointInfo, setSelectedPointInfo] = useState<string | null>(
-    null,
-  )
 
   const handlePointSelect = useCallback(
     (dataPoint: BodyMetricDataPoint | null) => {
       console.log("Select point:", dataPoint)
       if (dataPoint) {
-        const formattedDate = format(dataPoint.createdAt, "PPP p", {
-          locale: enAU,
-        })
-        const infoLines = [
-          `Selected: ${formattedDate}`,
-          dataPoint.weight !== undefined
-            ? `  Weight: ${dataPoint.weight} kg`
-            : null,
-          dataPoint.fat !== undefined ? `  Fat: ${dataPoint.fat}%` : null,
-          dataPoint.waist !== undefined
-            ? `  Waist: ${dataPoint.waist} cm`
-            : null,
-        ]
-
-        // Filter out null lines (where data was missing) and join with newlines
         setSelectedPoint(dataPoint)
-        setSelectedPointInfo(infoLines.filter(Boolean).join("\n"))
       } else {
-        // If null is received (clicked outside points), clear the info display
         setSelectedPoint(null)
-        setSelectedPointInfo(null)
       }
     },
     [],
   )
-
-  const handlePointDelete = (dataPoint: BodyMetricDataPoint) => {
-    deleteCheckin(dataPoint.id)
-  }
 
   const toggleLine = (line: keyof typeof visibleLines) => {
     setVisibleLines(prev => ({
@@ -108,16 +86,54 @@ function App() {
           handlePointSelect(point)
         }}
         onRowDelete={point => {
-          handlePointDelete(point)
+          deleteCheckin(point.id)
+        }}
+        onRowEdit={point => {
+          setCheckinToEdit(point)
+          setEditDialogOpen(true)
         }}
       />
 
       <BodyMetricsDialog
+        mode="add"
+        open={addDialogOpen}
+        onOpenChange={isOpen => {
+          setAddDialogOpen(isOpen)
+          if (!isOpen) setCheckinToEdit(undefined)
+        }}
         loading={loading}
         lastCheckin={checkins[0] || undefined}
+        onSubmit={({ createdAt, weight, fat, waist }) => {
+          addCheckin({
+            createdAt,
+            weight,
+            fat,
+            waist,
+          })
+          setAddDialogOpen(false)
+        }}
       >
         Record Measurements
       </BodyMetricsDialog>
+
+      <BodyMetricsDialog
+        mode="edit"
+        open={editDialogOpen}
+        onOpenChange={setEditDialogOpen}
+        loading={loading}
+        editingCheckin={checkinToEdit}
+        onSubmit={({ createdAt, weight, fat, waist }) => {
+          if (!checkinToEdit) return
+          updateCheckin(checkinToEdit.id, {
+            createdAt,
+            weight,
+            fat,
+            waist,
+          })
+          setEditDialogOpen(false)
+          setCheckinToEdit(undefined)
+        }}
+      />
     </>
   )
 }

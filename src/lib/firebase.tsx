@@ -188,6 +188,16 @@ export const useCheckins = () => {
       })
     },
 
+    updateCheckin: (checkinKey: string, checkin: NewBodyMetricDataPoint) => {
+      if (!user) return false
+      return set(ref(db, `/checkins/${user.uid}/${checkinKey}`), {
+        createdAt: checkin.createdAt.toISOString(),
+        weight: checkin.weight,
+        fat: checkin.fat,
+        waist: checkin.waist,
+      })
+    },
+
     deleteCheckin: (checkinKey: string) => {
       return remove(ref(db, `/checkins/${user?.uid}/${checkinKey}`))
     },

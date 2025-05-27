@@ -50,7 +50,7 @@ const AuthComponent = () => {
         <h1 className="m-4 text-center text-3xl font-extrabold text-gray-900 md:text-5xl lg:text-6xl dark:text-white">
           <Link
             to="/"
-            className="bg-linear-to-tl from-blue-600 to-violet-600 bg-clip-text text-transparent"
+            className="bg-linear-to-tl from-blue-600 to-violet-600 bg-clip-text text-transparent dark:from-blue-400 dark:to-violet-400"
           >
             Fatlog
           </Link>
