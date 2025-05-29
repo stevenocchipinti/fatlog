@@ -59,7 +59,7 @@ export default function TimePeriodSwitcher({
       aria-label="Time period selection"
       ref={containerRef}
     >
-      <div className="relative flex rounded-full bg-gray-200 p-1 shadow-inner dark:bg-gray-900">
+      <div className="relative flex rounded-full bg-gray-200 p-1 shadow-inner dark:bg-zinc-900">
         {options.map((option, index) => (
           <button
             key={option}

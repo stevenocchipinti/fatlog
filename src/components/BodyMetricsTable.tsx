@@ -157,7 +157,7 @@ const BodyMetricsTable = ({
                         onClick={() => {
                           onRowDelete(entry)
                         }}
-                        className="text-destructive flex cursor-pointer items-center"
+                        className="text-destructive-foreground focus:text-destructive-foreground flex cursor-pointer items-center"
                       >
                         <Trash2 className="mr-2 h-4 w-4" />
                         <span>Delete</span>

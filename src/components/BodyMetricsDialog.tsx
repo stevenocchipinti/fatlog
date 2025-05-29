@@ -66,7 +66,11 @@ const BodyMetricsDialog = ({
     <Drawer onOpenChange={onOpenChange} open={open}>
       {children && (
         <DrawerTrigger asChild>
-          <Button className="absolute right-4 bottom-4 left-4 mx-auto max-w-sm rounded-4xl py-6 opacity-95">
+          <Button
+            size="xl"
+            variant="glass"
+            className="absolute right-4 bottom-4 left-4 mx-auto max-w-sm rounded-4xl py-6"
+          >
             {children}
           </Button>
         </DrawerTrigger>

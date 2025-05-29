@@ -116,7 +116,7 @@ function App() {
           setAddDialogOpen(false)
         }}
       >
-        Record Measurements
+        Record measurements
       </BodyMetricsDialog>
 
       <BodyMetricsDialog
