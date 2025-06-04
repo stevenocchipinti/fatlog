@@ -20,14 +20,27 @@ import {
 } from "@/components/ui/table"
 
 const tableDateFormat = (d: Date) => {
-  const day = d.getDate().toString().padStart(2, "0")
-  const month = (d.getMonth() + 1).toString().padStart(2, "0")
+  const day = d.getDate().toString()
+  const month = [
+    "Jan",
+    "Feb",
+    "Mar",
+    "Apr",
+    "May",
+    "Jun",
+    "Jul",
+    "Aug",
+    "Sep",
+    "Oct",
+    "Nov",
+    "Dec",
+  ][d.getMonth()]
   const year = d.getFullYear()
 
   return (
     <div className="flex flex-col">
       <span>
-        {day}/{month}
+        {day} {month}
       </span>
       <span className="text-muted-foreground text-xs">{year}</span>
     </div>
