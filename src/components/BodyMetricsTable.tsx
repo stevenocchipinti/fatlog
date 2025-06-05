@@ -119,7 +119,7 @@ const BodyMetricsTable = ({
             .map(entry => (
               <TableRow
                 key={entry.id}
-                className={`hover:bg-muted cursor-pointer transition-colors ${
+                className={`cursor-pointer transition-colors ${
                   selectedPoint?.createdAt === entry.createdAt
                     ? "bg-muted"
                     : "bg-transparent"
