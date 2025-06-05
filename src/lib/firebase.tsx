@@ -22,6 +22,7 @@ import useLocalStorage from "./useLocalStorage"
 import type { BodyMetricDataPoint, NewBodyMetricDataPoint } from "@/types"
 import type { User } from "firebase/auth"
 import type { ReactNode } from "react"
+import FullScreenLoading from "@/components/FullScreenLoading"
 
 const firebaseConfig = {
   apiKey: "AIzaSyCyYXcQs1e2hnLKYwInQ_78EIJJcFSN25Y",
@@ -55,12 +56,7 @@ const parseCheckin = (id: string, record: FirebaseCheckin) => {
   } as BodyMetricDataPoint
 }
 
-type AuthState =
-  | "INITIALIZING"
-  | "CACHED"
-  | "LOADING"
-  | "LOGGED_OUT"
-  | "LOGGED_IN"
+type AuthState = "INITIALIZING" | "LOADING" | "LOGGED_OUT" | "LOGGED_IN"
 type CheckinsState = "INITIALIZING" | "LOADED"
 
 export type AuthContext = {
@@ -84,12 +80,10 @@ const FirebaseContext = createContext<FirebaseContext | null>(null)
 export const FirebaseProvider = ({ children }: { children: ReactNode }) => {
   const provider = new GoogleAuthProvider()
 
-  const [cachedUid, setCachedUid, clearCachedUid] = useLocalStorage<
-    string | null
-  >("user", null)
   const [user, setUser] = useState<User | null>(null)
-  const [authState, setAuthState] = useState<AuthState>(
-    cachedUid ? "CACHED" : "INITIALIZING",
+  const [authState, setAuthState] = useLocalStorage<AuthState>(
+    "authState",
+    "INITIALIZING",
   )
 
   const [checkinsState, setCheckinsState] =
@@ -121,15 +115,13 @@ export const FirebaseProvider = ({ children }: { children: ReactNode }) => {
       if (fb_user) {
         setAuthState("LOGGED_IN")
         setUser(fb_user)
-        setCachedUid(fb_user.uid)
       } else {
         setAuthState("LOGGED_OUT")
         setUser(null)
-        clearCachedUid()
       }
     })
     return unsubscribeAuth
-  }, [clearCachedUid, setCachedUid])
+  }, [setAuthState])
 
   useEffect(() => {
     if (!user) return
@@ -152,7 +144,11 @@ export const FirebaseProvider = ({ children }: { children: ReactNode }) => {
         checkins: { data: checkins, state: checkinsState },
       }}
     >
-      {authState === "LOADING" ? <div>Logging you in...</div> : children}
+      {authState === "LOADING" ? (
+        <FullScreenLoading>Logging you in...</FullScreenLoading>
+      ) : (
+        children
+      )}
     </FirebaseContext.Provider>
   )
 }

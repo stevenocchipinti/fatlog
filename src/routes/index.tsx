@@ -1,6 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router"
 import { useEffect } from "react"
 import { useAuth } from "@/lib/firebase"
+import FullScreenLoading from "@/components/FullScreenLoading"
 
 export const Route = createFileRoute("/")({
   component: App,
@@ -11,9 +12,12 @@ function App() {
   const navigate = useNavigate()
 
   useEffect(() => {
-    if (state === "LOGGED_IN" || state === "CACHED")
-      navigate({ to: "/metrics" })
+    if (state === "LOGGED_IN") navigate({ to: "/metrics" })
   }, [navigate, state, user])
+
+  if (state === "LOGGED_IN") {
+    return <FullScreenLoading>Loading data...</FullScreenLoading>
+  }
 
   return (
     <div className="relative overflow-hidden before:absolute before:start-1/2 before:top-0 before:-z-1 before:size-full before:-translate-x-1/2 before:transform before:bg-[url('https://preline.co/assets/svg/examples/polygon-bg-element.svg')] before:bg-cover before:bg-top before:bg-no-repeat dark:before:bg-[url('https://preline.co/assets/svg/examples-dark/polygon-bg-element.svg')]">
@@ -67,7 +71,7 @@ function App() {
             onClick={() => login()}
             disabled={state !== "LOGGED_OUT"}
           >
-            {state === "LOGGED_IN" ? (
+            {state === "LOADING" ? (
               "Loading..."
             ) : (
               <>
