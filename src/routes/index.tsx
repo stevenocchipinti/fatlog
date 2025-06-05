@@ -2,6 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router"
 import { useEffect } from "react"
 import { useAuth } from "@/lib/firebase"
 import FullScreenLoading from "@/components/FullScreenLoading"
+import { Button } from "@/components/ui/button"
 
 export const Route = createFileRoute("/")({
   component: App,
@@ -49,7 +50,7 @@ function App() {
 
         <div className="mx-auto my-12 max-w-2xl text-center">
           <h1 className="block text-4xl font-bold text-gray-800 md:text-5xl lg:text-6xl">
-            <span className="bg-linear-to-tl from-blue-600 to-violet-600 bg-clip-text text-transparent">
+            <span className="from-brand-1 to-brand-2 bg-linear-to-bl bg-clip-text text-transparent">
               Fatlog
             </span>
           </h1>
@@ -58,7 +59,7 @@ function App() {
         <div className="mx-auto mt-5 max-w-3xl text-center">
           <p className="text-lg text-gray-600">
             A simple app to measure{" "}
-            <span className="bg-linear-to-tl from-blue-600 to-violet-600 bg-clip-text text-transparent">
+            <span className="from-brand-1 to-brand-2 bg-linear-to-bl bg-clip-text text-transparent">
               body weight, fat percentage, and waist measurement
             </span>{" "}
             over time.
@@ -66,8 +67,9 @@ function App() {
         </div>
 
         <div className="mt-8 flex justify-center gap-3">
-          <button
-            className="inline-flex cursor-pointer items-center justify-center gap-x-3 rounded-md border border-transparent bg-linear-to-tl from-blue-600 to-violet-600 px-4 py-3 text-center text-sm font-medium text-white transition-transform hover:from-violet-600 hover:to-blue-600 focus:from-violet-600 focus:to-blue-600 focus:outline-hidden active:scale-105"
+          <Button
+            variant="brand"
+            size="xl"
             onClick={() => login()}
             disabled={state !== "LOGGED_OUT"}
           >
@@ -92,7 +94,7 @@ function App() {
                 </svg>
               </>
             )}
-          </button>
+          </Button>
         </div>
       </div>
     </div>

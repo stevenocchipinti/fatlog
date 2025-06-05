@@ -10,6 +10,8 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
+        brand:
+          "from-brand-1 to-brand-2 inline-flex cursor-pointer items-center justify-center gap-x-3 rounded-md bg-linear-to-bl px-4 py-3 text-center text-sm font-medium text-white transition-transform hover:scale-102 active:scale-105",
         default:
           "bg-primary text-primary-foreground shadow hover:bg-primary/90",
         destructive:

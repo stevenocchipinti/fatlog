@@ -3,6 +3,8 @@
 @plugin "tailwindcss-animate";
 
 :root {
+  --brand-1: var(--color-green-500);
+  --brand-2: var(--color-blue-500);
   --background: var(--color-stone-100);
   --foreground: oklch(0.141 0.005 285.823);
   --card: oklch(1 0 0);
@@ -38,6 +40,8 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
+    --brand-1: var(--color-green-400);
+    --brand-2: var(--color-blue-400);
     --background: var(--color-stone-950);
     --foreground: oklch(0.985 0 0);
     --card: oklch(0.141 0.005 285.823);
@@ -72,6 +76,8 @@
 }
 
 @theme inline {
+  --color-brand-1: var(--brand-1);
+  --color-brand-2: var(--brand-2);
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
