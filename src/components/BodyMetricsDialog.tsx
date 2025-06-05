@@ -56,8 +56,6 @@ const BodyMetricsDialog = ({
     if (previous < current) return `${previous}  ↑`
   }
 
-  console.log(createdAt)
-
   // The date should always be valid because it shouldn't be able to be set to
   // an invalid value from the onChange handler
   const validInputs = weight && fat && waist
