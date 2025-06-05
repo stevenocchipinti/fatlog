@@ -126,7 +126,9 @@ const BodyMetricsTable = ({
                 } ${loading && "opacity-40"}`}
                 aria-selected={selectedPoint?.createdAt === entry.createdAt}
                 onClick={() => {
-                  onRowSelect(entry)
+                  onRowSelect(
+                    selectedPoint?.createdAt === entry.createdAt ? null : entry,
+                  )
                 }}
               >
                 <TableCell>{tableDateFormat(entry.createdAt)}</TableCell>

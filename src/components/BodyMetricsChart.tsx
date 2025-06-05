@@ -430,23 +430,12 @@ export const BodyMetricsChart: React.FC<BodyMetricsChartProps> = ({
           const { index } = elements[0]
           const clickedDataPoint = sortedData[index]
 
-          if (
-            selectedPoint?.createdAt.getTime() !==
-            clickedDataPoint.createdAt.getTime()
-          ) {
-            onPointSelect(clickedDataPoint)
+          const selectedPointTime = selectedPoint?.createdAt.getTime()
+          const clickedPointTime = clickedDataPoint.createdAt.getTime()
 
-            // Preserve the current visible range of the x-axis
-            const xScale = chart.scales.x
-            const currentMin = xScale.min
-            const currentMax = xScale.max
-
-            chart.options.scales!.x!.min = currentMin
-            chart.options.scales!.x!.max = currentMax
-            chart.update("none")
-          }
-        } else if (selectedPoint) {
-          onPointSelect(null)
+          onPointSelect(
+            selectedPointTime === clickedPointTime ? null : clickedDataPoint,
+          )
         }
       },
       animation: {
