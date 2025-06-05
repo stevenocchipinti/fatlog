@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router"
-import { useCallback, useEffect, useState } from "react"
+import { useEffect, useState } from "react"
 
 import type { BodyMetricDataPoint, TimeScaleOption } from "../types"
 
@@ -38,18 +38,6 @@ function App() {
     useState<BodyMetricDataPoint | null>(null)
   useEffect(() => {}, [selectedPoint])
 
-  const handlePointSelect = useCallback(
-    (dataPoint: BodyMetricDataPoint | null) => {
-      console.log("Select point:", dataPoint)
-      if (dataPoint) {
-        setSelectedPoint(dataPoint)
-      } else {
-        setSelectedPoint(null)
-      }
-    },
-    [],
-  )
-
   const toggleLine = (line: keyof typeof visibleLines) => {
     setVisibleLines(prev => ({
       ...prev,
@@ -57,17 +45,16 @@ function App() {
     }))
   }
 
-  // TODO: Some of these components get their own data using the hook and others
-  // get it passed it, this should probably be consistent
   return (
     <>
       <BodyMetricsChart
-        loading={loading}
         data={checkins}
+        loading={loading}
         timeScale={selectedTimeScale}
         visibleLines={visibleLines}
+        selectedPoint={selectedPoint}
         onPointSelect={point => {
-          handlePointSelect(point)
+          setSelectedPoint(point)
         }}
         className="px-2"
       />
@@ -78,12 +65,12 @@ function App() {
       />
 
       <BodyMetricsTable
-        loading={loading}
         data={checkins}
+        loading={loading}
         selectedPoint={selectedPoint}
         toggleLine={toggleLine}
         onRowSelect={point => {
-          handlePointSelect(point)
+          setSelectedPoint(point)
         }}
         onRowDelete={point => {
           const confirmDelete = window.confirm(
