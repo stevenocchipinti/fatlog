@@ -143,37 +143,6 @@ export const BodyMetricsChart: React.FC<BodyMetricsChartProps> = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [data])
 
-  // TODO: Work out if I want this or not.
-  // When it is used, the graph does not use the vertical space very well
-  // becaues of some more extreme points that are out of view.
-  // When it is not used, there are some lines that go from visible points out
-  // of bounds to invisible points (outside of the currently zoomed area)
-  //
-  // const globalMinMax = useMemo(() => {
-  //   const minMax = {
-  //     weight: { min: Infinity, max: -Infinity },
-  //     fat: { min: Infinity, max: -Infinity },
-  //     waist: { min: Infinity, max: -Infinity },
-  //   }
-  //
-  //   data.forEach((point) => {
-  //     if (point.weight !== undefined) {
-  //       minMax.weight.min = Math.min(minMax.weight.min, point.weight)
-  //       minMax.weight.max = Math.max(minMax.weight.max, point.weight)
-  //     }
-  //     if (point.fat !== undefined) {
-  //       minMax.fat.min = Math.min(minMax.fat.min, point.fat)
-  //       minMax.fat.max = Math.max(minMax.fat.max, point.fat)
-  //     }
-  //     if (point.waist !== undefined) {
-  //       minMax.waist.min = Math.min(minMax.waist.min, point.waist)
-  //       minMax.waist.max = Math.max(minMax.waist.max, point.waist)
-  //     }
-  //   })
-  //
-  //   return minMax
-  // }, [data])
-
   const { chartData, chartOptions } = useMemo(() => {
     if (sortedData.length === 0) {
       const emptyChartData: ChartData<
