@@ -40,7 +40,7 @@ const tableDateFormat = (d: Date) => {
   return (
     <div className="flex flex-col">
       <span>
-        {day} {month}
+        {month} {day}
       </span>
       <span className="text-muted-foreground text-xs">{year}</span>
     </div>
