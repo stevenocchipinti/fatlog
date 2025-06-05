@@ -175,7 +175,6 @@ export const BodyMetricsChart: React.FC<BodyMetricsChartProps> = ({
   // }, [data])
 
   const { chartData, chartOptions } = useMemo(() => {
-    console.log({ sortedData: sortedData })
     if (sortedData.length === 0) {
       const emptyChartData: ChartData<
         "line",
@@ -229,6 +228,13 @@ export const BodyMetricsChart: React.FC<BodyMetricsChartProps> = ({
       maxTs = endOfDay(lastDataPointDate).getTime()
     }
 
+    // Add padding to x-axis (2 extra days on each side)
+    const xPaddingDays = 2
+    if (minTs && maxTs) {
+      minTs = minTs - xPaddingDays * 24 * 60 * 60 * 1000
+      maxTs = maxTs + xPaddingDays * 24 * 60 * 60 * 1000
+    }
+
     let timeUnit: "day" | "week" | "month" | "year" = "day"
 
     if (minTs && maxTs) {
@@ -271,6 +277,7 @@ export const BodyMetricsChart: React.FC<BodyMetricsChartProps> = ({
         borderWidth: 2,
         spanGaps: true,
         parsing: false,
+        borderCapStyle: "round",
       }
     }
     const datasets = [
@@ -381,6 +388,7 @@ export const BodyMetricsChart: React.FC<BodyMetricsChartProps> = ({
             },
             grid: { display: false },
             ticks: { maxTicksLimit: 5, color: COLORS.weight },
+            grace: "10%",
             // min: globalMinMax.weight.min,
             // max: globalMinMax.weight.max,
           },
@@ -404,6 +412,7 @@ export const BodyMetricsChart: React.FC<BodyMetricsChartProps> = ({
               maxTicksLimit: 5,
               color: COLORS.fat,
             },
+            grace: "10%",
             // min: globalMinMax.fat.min,
             // max: globalMinMax.fat.max,
           },
@@ -427,6 +436,7 @@ export const BodyMetricsChart: React.FC<BodyMetricsChartProps> = ({
               maxTicksLimit: 5,
               color: COLORS.waist,
             },
+            grace: "10%",
             // min: globalMinMax.waist.min,
             // max: globalMinMax.waist.max,
           },
