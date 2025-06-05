@@ -13,3 +13,15 @@ build
 .DS_Store
 .env
 npm-debug.log
+
+# New stuff for v2
+dist
+dist-ssr
+*.local
+
+# Firebase
+.firebase
+firebase-debug.log
+database-debug.log
+firestore-debug.log
+ui-debug.log

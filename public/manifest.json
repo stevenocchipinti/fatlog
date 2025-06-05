@@ -1,21 +1,37 @@
 {
-  "name": "Fat Log",
-  "short_name": "Fat Log",
-  "description": "Log and graph your fat, weight and waist measurements",
-  "start_url": ".",
-  "theme_color": "#43a047",
-  "background_color": "#f7f7f7",
-  "display": "standalone",
+  "name": "Fatlog",
+  "short_name": "Fatlog",
+  "description": "A web app to track your fat, weight and waist measurements.",
+  "version": "0.1.0",
+  "manifest_version": 2,
   "icons": [
     {
-      "src": "\/android-chrome-192x192.png?v=A0RXpKgYnj",
+      "src": "/web-app-manifest-maskable-192x192.png",
       "sizes": "192x192",
-      "type": "image\/png"
+      "type": "image/png",
+      "purpose": "maskable"
     },
     {
-      "src": "\/android-chrome-512x512.png?v=A0RXpKgYnj",
+      "src": "/web-app-manifest-maskable-512x512.png",
       "sizes": "512x512",
-      "type": "image\/png"
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/web-app-manifest-any-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/web-app-manifest-any-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
     }
-  ]
+  ],
+  "start_url": "/metrics",
+  "theme_color": "#0c0a0a",
+  "background_color": "#0c0a0a",
+  "display": "standalone"
 }
