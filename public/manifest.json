@@ -30,7 +30,7 @@
       "purpose": "any"
     }
   ],
-  "start_url": ".",
+  "start_url": "/metrics",
   "theme_color": "#0c0a0a",
   "background_color": "#0c0a0a",
   "display": "standalone"
