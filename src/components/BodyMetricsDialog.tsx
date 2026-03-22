@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import type { BodyMetricDataPoint, NewBodyMetricDataPoint } from "@/types"
 import {
   Drawer,
@@ -38,6 +38,10 @@ const BodyMetricsDialog = ({
   const [weight, setWeight] = useState<number>()
   const [fat, setFat] = useState<number>()
   const [waist, setWaist] = useState<number>()
+
+  const weightInputRef = useRef<HTMLInputElement>(null)
+  const fatInputRef = useRef<HTMLInputElement>(null)
+  const waistInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     if (editingCheckin) {
@@ -123,6 +127,7 @@ const BodyMetricsDialog = ({
                 )}
 
                 <Input
+                  ref={weightInputRef}
                   id="weight"
                   type="number"
                   step="0.1"
@@ -144,7 +149,14 @@ const BodyMetricsDialog = ({
                     readOnly
                     tabIndex={-1}
                     aria-label="Previous weight"
-                    onClick={() => setWeight(lastCheckin.weight)}
+                    // Use onMouseDown instead of onClick to prevent focus from leaving the
+                    // current input field. This keeps the virtual keyboard visible on mobile
+                    // devices when tapping to copy previous values.
+                    onMouseDown={e => {
+                      e.preventDefault()
+                      setWeight(lastCheckin.weight)
+                      weightInputRef.current?.focus()
+                    }}
                     className="bg-muted hover:bg-muted/80 h-9 w-20 cursor-pointer text-sm"
                   />
                 )}
@@ -167,6 +179,7 @@ const BodyMetricsDialog = ({
                 )}
 
                 <Input
+                  ref={fatInputRef}
                   id="fat"
                   type="number"
                   step="0.1"
@@ -187,7 +200,14 @@ const BodyMetricsDialog = ({
                     readOnly
                     tabIndex={-1}
                     aria-label="Previous fat"
-                    onClick={() => setFat(lastCheckin.fat)}
+                    // Use onMouseDown instead of onClick to prevent focus from leaving the
+                    // current input field. This keeps the virtual keyboard visible on mobile
+                    // devices when tapping to copy previous values.
+                    onMouseDown={e => {
+                      e.preventDefault()
+                      setFat(lastCheckin.fat)
+                      fatInputRef.current?.focus()
+                    }}
                     className="bg-muted hover:bg-muted/80 h-9 w-20 cursor-pointer text-sm"
                   />
                 )}
@@ -210,6 +230,7 @@ const BodyMetricsDialog = ({
                 )}
 
                 <Input
+                  ref={waistInputRef}
                   id="waist"
                   type="number"
                   step="0.1"
@@ -230,7 +251,14 @@ const BodyMetricsDialog = ({
                     readOnly
                     tabIndex={-1}
                     aria-label="Previous waist"
-                    onClick={() => setWaist(lastCheckin.waist)}
+                    // Use onMouseDown instead of onClick to prevent focus from leaving the
+                    // current input field. This keeps the virtual keyboard visible on mobile
+                    // devices when tapping to copy previous values.
+                    onMouseDown={e => {
+                      e.preventDefault()
+                      setWaist(lastCheckin.waist)
+                      waistInputRef.current?.focus()
+                    }}
                     className="bg-muted hover:bg-muted/80 h-9 w-20 cursor-pointer text-sm"
                   />
                 )}
