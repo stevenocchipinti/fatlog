@@ -144,7 +144,8 @@ const BodyMetricsDialog = ({
                     readOnly
                     tabIndex={-1}
                     aria-label="Previous weight"
-                    className="bg-muted h-9 w-20 text-sm"
+                    onClick={() => setWeight(lastCheckin.weight)}
+                    className="bg-muted hover:bg-muted/80 h-9 w-20 cursor-pointer text-sm"
                   />
                 )}
               </div>
@@ -186,7 +187,8 @@ const BodyMetricsDialog = ({
                     readOnly
                     tabIndex={-1}
                     aria-label="Previous fat"
-                    className="bg-muted h-9 w-20 text-sm"
+                    onClick={() => setFat(lastCheckin.fat)}
+                    className="bg-muted hover:bg-muted/80 h-9 w-20 cursor-pointer text-sm"
                   />
                 )}
               </div>
@@ -228,7 +230,8 @@ const BodyMetricsDialog = ({
                     readOnly
                     tabIndex={-1}
                     aria-label="Previous waist"
-                    className="bg-muted h-9 w-20 text-sm"
+                    onClick={() => setWaist(lastCheckin.waist)}
+                    className="bg-muted hover:bg-muted/80 h-9 w-20 cursor-pointer text-sm"
                   />
                 )}
               </div>
