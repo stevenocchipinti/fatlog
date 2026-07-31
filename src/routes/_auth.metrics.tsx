@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router"
-import { useEffect, useState } from "react"
+import { useCallback, useEffect, useState } from "react"
 
 import type { BodyMetricDataPoint, TimeScaleOption } from "../types"
 
@@ -9,6 +9,7 @@ import BodyMetricsDialog from "@/components/BodyMetricsDialog"
 import BodyMetricsTable from "@/components/BodyMetricsTable"
 
 import { useCheckins } from "@/lib/firebase"
+import { useRegisterPrimaryAction } from "@/lib/primaryAction"
 
 export const Route = createFileRoute("/_auth/metrics")({
   component: App,
@@ -37,6 +38,13 @@ function App() {
   const [selectedPoint, setSelectedPoint] =
     useState<BodyMetricDataPoint | null>(null)
   useEffect(() => {}, [selectedPoint])
+
+  // The shared bottom nav's `+` button opens the metrics recording drawer while
+  // this route is active.
+  useRegisterPrimaryAction(
+    "Record metrics",
+    useCallback(() => setAddDialogOpen(true), []),
+  )
 
   const toggleLine = (line: keyof typeof visibleLines) => {
     setVisibleLines(prev => ({
@@ -102,9 +110,7 @@ function App() {
           })
           setAddDialogOpen(false)
         }}
-      >
-        Record measurements
-      </BodyMetricsDialog>
+      />
 
       <BodyMetricsDialog
         mode="edit"
