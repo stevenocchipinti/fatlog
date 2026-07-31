@@ -14,6 +14,8 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import BottomNavigation from "@/components/BottomNavigation"
+import { PrimaryActionProvider } from "@/lib/primaryAction"
 import { useAuth } from "@/lib/firebase"
 
 export const Route = createFileRoute("/_auth")({
@@ -44,53 +46,67 @@ const AuthComponent = () => {
   }
 
   return (
-    <div className="flex h-dvh flex-col gap-4">
-      <header className="grid grid-cols-[4rem_1fr_4rem] place-items-center">
-        <span />
-        <h1 className="m-4 text-center text-3xl font-extrabold text-gray-900 md:text-5xl lg:text-6xl dark:text-white">
-          <Link
-            to="/"
-            className="from-brand-1 to-brand-2 bg-linear-to-tl bg-clip-text text-transparent"
-          >
-            Fatlog
-          </Link>
-        </h1>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost">
-              <Avatar>
-                {user?.photoURL && <AvatarImage src={user.photoURL} />}
-                {user?.displayName && (
-                  <AvatarFallback>{user.displayName[0] || "✅"}</AvatarFallback>
-                )}
-                {!user && <AvatarFallback>⨯</AvatarFallback>}
-              </Avatar>
-              <span className="sr-only">Open menu</span>
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <div className="p-2">{user ? user.displayName : "Logged out"}</div>
-            {user ? (
-              <DropdownMenuItem
-                onClick={() => handleLogout()}
-                className="flex cursor-pointer items-center"
-              >
-                <LogOut className="mr-2 h-4 w-4" />
-                <span>Logout</span>
-              </DropdownMenuItem>
-            ) : (
-              <DropdownMenuItem
-                onClick={() => login()}
-                className="flex cursor-pointer items-center"
-              >
-                <LogIn className="mr-2 h-4 w-4" />
-                <span>Login</span>
-              </DropdownMenuItem>
-            )}
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </header>
-      <Outlet />
-    </div>
+    <PrimaryActionProvider>
+      <div className="flex h-dvh flex-col gap-4">
+        <header className="grid grid-cols-[4rem_1fr_4rem] place-items-center">
+          <span />
+          <h1 className="m-4 text-center text-3xl font-extrabold text-gray-900 md:text-5xl lg:text-6xl dark:text-white">
+            <Link
+              to="/"
+              className="from-brand-1 to-brand-2 bg-linear-to-tl bg-clip-text text-transparent"
+            >
+              Fatlog
+            </Link>
+          </h1>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost">
+                <Avatar>
+                  {user?.photoURL && <AvatarImage src={user.photoURL} />}
+                  {user?.displayName && (
+                    <AvatarFallback>
+                      {user.displayName[0] || "✅"}
+                    </AvatarFallback>
+                  )}
+                  {!user && <AvatarFallback>⨯</AvatarFallback>}
+                </Avatar>
+                <span className="sr-only">Open menu</span>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <div className="p-2">
+                {user ? user.displayName : "Logged out"}
+              </div>
+              {user ? (
+                <DropdownMenuItem
+                  onClick={() => handleLogout()}
+                  className="flex cursor-pointer items-center"
+                >
+                  <LogOut className="mr-2 h-4 w-4" />
+                  <span>Logout</span>
+                </DropdownMenuItem>
+              ) : (
+                <DropdownMenuItem
+                  onClick={() => login()}
+                  className="flex cursor-pointer items-center"
+                >
+                  <LogIn className="mr-2 h-4 w-4" />
+                  <span>Login</span>
+                </DropdownMenuItem>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </header>
+        {/*
+          The bottom nav is absolutely positioned, so this scroll container is
+          the positioning context and reserves space at the bottom (pb-28) so
+          content is never hidden behind the nav or its raised primary action.
+        */}
+        <main className="relative flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto pb-28">
+          <Outlet />
+        </main>
+        <BottomNavigation />
+      </div>
+    </PrimaryActionProvider>
   )
 }
