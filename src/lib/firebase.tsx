@@ -72,7 +72,7 @@ const parseCheckin = (id: string, record: FirebaseCheckin) => {
 type FirebaseFoodGroup = {
   emoji: string
   name: string
-  order: number
+  order?: number
   archived?: boolean
 }
 const parseFoodGroup = (id: string, record: FirebaseFoodGroup): FoodGroup => ({
@@ -226,10 +226,7 @@ export const FirebaseProvider = ({ children }: { children: ReactNode }) => {
       ref(db, `/foodGroups/${user.uid}`),
       snapshot => {
         setDietState("LOADED")
-        const val = snapshot.val() as Record<
-          string,
-          FirebaseFoodGroup
-        > | null
+        const val = snapshot.val() as Record<string, FirebaseFoodGroup> | null
         setFoodGroups(
           val
             ? Object.entries(val).map(([id, value]) =>

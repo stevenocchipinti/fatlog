@@ -30,9 +30,7 @@ export const PrimaryActionProvider = ({
 }) => {
   const [primaryAction, setPrimaryAction] = useState<PrimaryAction | null>(null)
   return (
-    <PrimaryActionContext.Provider
-      value={{ primaryAction, setPrimaryAction }}
-    >
+    <PrimaryActionContext.Provider value={{ primaryAction, setPrimaryAction }}>
       {children}
     </PrimaryActionContext.Provider>
   )

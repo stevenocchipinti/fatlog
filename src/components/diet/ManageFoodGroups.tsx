@@ -1,5 +1,11 @@
 import { useState } from "react"
-import { ArchiveRestore, ArchiveX, ChevronDown, ChevronUp, Trash2 } from "lucide-react"
+import {
+  ArchiveRestore,
+  ArchiveX,
+  ChevronDown,
+  ChevronUp,
+  Trash2,
+} from "lucide-react"
 
 import type { FoodGroup, NewFoodGroup } from "@/types"
 
@@ -45,9 +51,7 @@ export default function ManageFoodGroups({
 
   const nextOrder = active.reduce((max, g) => Math.max(max, g.order), -1) + 1
 
-  const usedNames = new Set(
-    foodGroups.map(g => g.name.trim().toLowerCase()),
-  )
+  const usedNames = new Set(foodGroups.map(g => g.name.trim().toLowerCase()))
   const remainingStarters = STARTER_FOOD_GROUPS.filter(
     s => !usedNames.has(s.name.toLowerCase()),
   )
@@ -68,8 +72,9 @@ export default function ManageFoodGroups({
 
   const move = (group: FoodGroup, direction: -1 | 1) => {
     const index = active.findIndex(g => g.id === group.id)
-    const swapWith = active[index + direction]
-    if (!swapWith) return
+    const swapIndex = index + direction
+    if (swapIndex < 0 || swapIndex >= active.length) return
+    const swapWith = active[swapIndex]
     onUpdate(group.id, { ...toNew(group), order: swapWith.order })
     onUpdate(swapWith.id, { ...toNew(swapWith), order: group.order })
   }
@@ -95,7 +100,9 @@ export default function ManageFoodGroups({
       </div>
 
       <div className="space-y-2">
-        <Label className="text-muted-foreground text-xs">Add a food group</Label>
+        <Label className="text-muted-foreground text-xs">
+          Add a food group
+        </Label>
         {remainingStarters.length > 0 && (
           <div className="flex flex-wrap gap-1.5">
             {remainingStarters.map(starter => (
@@ -140,7 +147,11 @@ export default function ManageFoodGroups({
             aria-label="Food group name"
             className="flex-1"
           />
-          <Button type="button" onClick={create} disabled={!emoji.trim() || !name.trim()}>
+          <Button
+            type="button"
+            onClick={create}
+            disabled={!emoji.trim() || !name.trim()}
+          >
             Add
           </Button>
         </div>

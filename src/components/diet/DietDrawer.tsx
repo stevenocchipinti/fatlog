@@ -22,10 +22,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import FoodGroupPicker from "@/components/diet/FoodGroupPicker"
 import ManageFoodGroups from "@/components/diet/ManageFoodGroups"
-import {
-  rangesOverlap,
-  todayLocalDate,
-} from "@/lib/localDate"
+import { rangesOverlap, todayLocalDate } from "@/lib/localDate"
 import { cn } from "@/lib/utils"
 
 type DietTab = "exception" | "rule"
@@ -172,7 +169,8 @@ export default function DietDrawer(props: DietDrawerProps) {
         r.id !== editingRuleId &&
         rangesOverlap(r.startDate, r.endDate, ruleStart, end),
     )
-    if (end && end < ruleStart) return "End date must be on or after the start date."
+    if (end && end < ruleStart)
+      return "End date must be on or after the start date."
     return clash ? "This overlaps an existing rule for this food group." : null
   })()
 
@@ -246,9 +244,8 @@ export default function DietDrawer(props: DietDrawerProps) {
                       aria-pressed={tab === t}
                       disabled={
                         // Editing locks the tab to the record being edited.
-                        (editingExceptionId && t === "rule") ||
-                        (editingRuleId && t === "exception") ||
-                        false
+                        (!!editingExceptionId && t === "rule") ||
+                        (!!editingRuleId && t === "exception")
                       }
                       className={cn(
                         "rounded-md py-1.5 text-sm font-medium capitalize transition-colors disabled:opacity-40",
@@ -285,7 +282,9 @@ export default function DietDrawer(props: DietDrawerProps) {
                       id="ex-date"
                       type="date"
                       value={exDate}
-                      onChange={e => e.target.value && setExDate(e.target.value)}
+                      onChange={e =>
+                        e.target.value && setExDate(e.target.value)
+                      }
                     />
                   </div>
                   <div>
@@ -370,7 +369,9 @@ export default function DietDrawer(props: DietDrawerProps) {
                     />
                   </div>
                   {ruleOverlapError && (
-                    <p className="text-destructive text-sm">{ruleOverlapError}</p>
+                    <p className="text-destructive text-sm">
+                      {ruleOverlapError}
+                    </p>
                   )}
                   <div className="flex flex-col gap-2 pt-2">
                     <Button

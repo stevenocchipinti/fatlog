@@ -1,6 +1,10 @@
 import type { DietException, DietRule, FoodGroup, LocalDate } from "@/types"
 
-import { buildTimelineRows, gapLabel, ruleActiveOn } from "@/components/diet/timeline"
+import {
+  buildTimelineRows,
+  gapLabel,
+  ruleActiveOn,
+} from "@/components/diet/timeline"
 import { fromLocalDate } from "@/lib/localDate"
 import { cn } from "@/lib/utils"
 
@@ -95,7 +99,11 @@ export default function DietTimeline({
         {rows.map((row, index) => {
           if (row.kind === "gap") {
             return (
-              <div key={`gap-${index}`} className="grid gap-x-1" style={gridStyle}>
+              <div
+                key={`gap-${index}`}
+                className="grid gap-x-1"
+                style={gridStyle}
+              >
                 <div className="text-muted-foreground/70 flex items-center justify-end pr-2 text-[0.65rem]">
                   {gapLabel(row.days)}
                 </div>
@@ -164,7 +172,7 @@ export default function DietTimeline({
                         aria-label={`Edit exception for ${group.name}`}
                         title={exception.note || undefined}
                         onClick={() => onSelectException(exception)}
-                        className="bg-brand-2 relative z-10 size-3 rounded-full ring-2 ring-background transition-transform hover:scale-125"
+                        className="bg-brand-2 ring-background relative z-10 size-3 rounded-full ring-2 transition-transform hover:scale-125"
                       />
                     ) : (
                       <button
@@ -208,6 +216,6 @@ function crossesGap(
 ): boolean {
   const newer = rows[gapIndex - 1]
   const older = rows[gapIndex + 1]
-  if (newer?.kind !== "event" || older?.kind !== "event") return false
+  if (newer.kind !== "event" || older.kind !== "event") return false
   return ruleActiveOn(rule, newer.date) && ruleActiveOn(rule, older.date)
 }

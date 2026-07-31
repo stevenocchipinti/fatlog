@@ -33,7 +33,7 @@ export default function BottomNavigation() {
         onClick={() => primaryAction?.onTrigger()}
         disabled={!primaryAction}
         aria-label={primaryAction?.label ?? "Record"}
-        className="from-brand-1 to-brand-2 bg-linear-to-bl pointer-events-auto -mb-1 flex size-16 shrink-0 items-center justify-center rounded-full text-white shadow-lg ring-4 ring-background transition-transform hover:scale-105 active:scale-110 disabled:opacity-50"
+        className="from-brand-1 to-brand-2 ring-background pointer-events-auto -mb-1 flex size-16 shrink-0 items-center justify-center rounded-full bg-linear-to-bl text-white shadow-lg ring-4 transition-transform hover:scale-105 active:scale-110 disabled:opacity-50"
       >
         <Plus className="!size-7" strokeWidth={2.5} />
       </button>
@@ -43,11 +43,7 @@ export default function BottomNavigation() {
   )
 }
 
-function NavPill({
-  mode,
-}: {
-  mode: (typeof modes)[number]
-}) {
+function NavPill({ mode }: { mode: (typeof modes)[number] }) {
   return (
     <Link
       to={mode.to}
