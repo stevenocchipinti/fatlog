@@ -26,12 +26,12 @@ import FullScreenLoading from "@/components/FullScreenLoading"
 
 const firebaseConfig = {
   apiKey: "AIzaSyCyYXcQs1e2hnLKYwInQ_78EIJJcFSN25Y",
-  authDomain: "fatlog.web.app",
+  authDomain: import.meta.env.VITE_AUTH_DOMAIN ?? "fatlog.web.app",
   databaseURL: "https://fatlog-app.firebaseio.com",
   projectId: "fatlog-app",
   storageBucket: "fatlog-app.appspot.com",
   messagingSenderId: "893039177685",
-  appId: "1:893039177685:web:b2d4cae60f09a1f5c7175c",
+  appId: "1:893039177685:web:6663b406d4ca051cc7175c",
 }
 
 const app = initializeApp(firebaseConfig)

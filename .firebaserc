@@ -5,14 +5,11 @@
   "targets": {
     "fatlog-app": {
       "hosting": {
-        "redirect-site": [
-          "fatlog-app"
-        ],
-        "fatlog": [
+        "prod": [
           "fatlog"
         ],
-        "bodymetrics": [
-          "bodymetrics"
+        "staging": [
+          "fatlog-staging-app"
         ]
       }
     }

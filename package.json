@@ -6,6 +6,7 @@
     "dev": "vite --port 3000 --host",
     "start": "vite --port 3000 --host",
     "build": "vite build && tsc",
+    "build:staging": "vite build --mode staging && tsc",
     "serve": "vite preview",
     "test": "vitest run",
     "lint": "eslint",
@@ -13,7 +14,8 @@
     "check": "prettier --write . && eslint --fix",
     "emulators": "firebase emulators:start --only auth,database,hosting",
     "ci": "npm run lint && npm run test",
-    "deploy": "firebase deploy --only hosting:fatlog"
+    "deploy": "firebase deploy --only hosting:prod",
+    "deploy:staging": "npm run build:staging && firebase deploy --only hosting:staging"
   },
   "dependencies": {
     "@radix-ui/react-avatar": "^1.1.6",
