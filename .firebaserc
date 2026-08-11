@@ -8,8 +8,8 @@
         "prod": [
           "fatlog"
         ],
-        "staging": [
-          "fatlog-staging-app"
+        "beta": [
+          "fatlog-beta"
         ]
       }
     }
