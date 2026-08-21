@@ -379,7 +379,8 @@ export const useDiet = () => {
       )
     },
     deleteFoodGroup: (id: string) => {
-      return remove(ref(db, `/foodGroups/${user?.uid}/${id}`))
+      if (!user) return false
+      return remove(ref(db, `/foodGroups/${user.uid}/${id}`))
     },
 
     addRule: (rule: NewDietRule) => {
@@ -395,7 +396,8 @@ export const useDiet = () => {
       )
     },
     deleteRule: (id: string) => {
-      return remove(ref(db, `/dietRules/${user?.uid}/${id}`))
+      if (!user) return false
+      return remove(ref(db, `/dietRules/${user.uid}/${id}`))
     },
 
     addException: (exception: NewDietException) => {
@@ -411,7 +413,8 @@ export const useDiet = () => {
       )
     },
     deleteException: (id: string) => {
-      return remove(ref(db, `/dietExceptions/${user?.uid}/${id}`))
+      if (!user) return false
+      return remove(ref(db, `/dietExceptions/${user.uid}/${id}`))
     },
   }
 }

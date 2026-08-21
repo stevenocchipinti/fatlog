@@ -50,7 +50,14 @@ export default function DietTimeline({
     .filter(g => !g.archived)
     .sort((a, b) => a.order - b.order)
 
-  const rows = buildTimelineRows(rules, exceptions)
+  const visibleGroupIds = new Set(columns.map(group => group.id))
+  const visibleRules = rules.filter(rule =>
+    visibleGroupIds.has(rule.foodGroupId),
+  )
+  const visibleExceptions = exceptions.filter(exception =>
+    visibleGroupIds.has(exception.foodGroupId),
+  )
+  const rows = buildTimelineRows(visibleRules, visibleExceptions)
 
   if (columns.length === 0) {
     return (
@@ -68,10 +75,14 @@ export default function DietTimeline({
   }
 
   const exceptionAt = (foodGroupId: string, date: LocalDate) =>
-    exceptions.find(e => e.foodGroupId === foodGroupId && e.date === date)
+    visibleExceptions.find(
+      e => e.foodGroupId === foodGroupId && e.date === date,
+    )
 
   const ruleAt = (foodGroupId: string, date: LocalDate) =>
-    rules.find(r => r.foodGroupId === foodGroupId && ruleActiveOn(r, date))
+    visibleRules.find(
+      r => r.foodGroupId === foodGroupId && ruleActiveOn(r, date),
+    )
 
   return (
     <div className="mx-auto w-full max-w-3xl overflow-x-auto px-2">
@@ -111,7 +122,7 @@ export default function DietTimeline({
                   <Lane
                     key={group.id}
                     // A rule spanning this gap keeps its lane drawn through it.
-                    active={rules.some(
+                    active={visibleRules.some(
                       r =>
                         r.foodGroupId === group.id &&
                         // Active on the newer boundary implies it crosses the gap
@@ -163,8 +174,10 @@ export default function DietTimeline({
                         type="button"
                         aria-label={`Edit rule for ${group.name}`}
                         onClick={() => onSelectRule(rule)}
-                        className="bg-brand-1/70 absolute inset-y-0 left-1/2 w-1.5 -translate-x-1/2 rounded-full"
-                      />
+                        className="absolute inset-y-0 left-1/2 z-10 w-6 -translate-x-1/2"
+                      >
+                        <span className="bg-brand-1/70 absolute inset-y-0 left-1/2 w-1.5 -translate-x-1/2 rounded-full" />
+                      </button>
                     )}
                     {exception ? (
                       <button
@@ -172,14 +185,14 @@ export default function DietTimeline({
                         aria-label={`Edit exception for ${group.name}`}
                         title={exception.note || undefined}
                         onClick={() => onSelectException(exception)}
-                        className="bg-brand-2 ring-background relative z-10 size-3 rounded-full ring-2 transition-transform hover:scale-125"
+                        className="bg-brand-2 ring-background relative z-20 size-3 rounded-full ring-2 transition-transform hover:scale-125"
                       />
                     ) : (
                       <button
                         type="button"
                         aria-label={`Record for ${group.name} on ${date}`}
                         onClick={() => onSelectCell(group.id, date)}
-                        className="absolute inset-0"
+                        className="absolute inset-0 z-0"
                       />
                     )}
                   </div>

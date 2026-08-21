@@ -96,6 +96,7 @@ export default function DietDrawer(props: DietDrawerProps) {
     if (intent.kind === "editException") {
       setTab("exception")
       setEditingExceptionId(intent.exception.id)
+      setEditingRuleId(undefined)
       setExFoodGroupId(intent.exception.foodGroupId)
       setExDate(intent.exception.date)
       setExNote(intent.exception.note ?? "")
@@ -104,6 +105,7 @@ export default function DietDrawer(props: DietDrawerProps) {
 
     if (intent.kind === "editRule") {
       setTab("rule")
+      setEditingExceptionId(undefined)
       setEditingRuleId(intent.rule.id)
       setRuleFoodGroupId(intent.rule.foodGroupId)
       setRuleStart(intent.rule.startDate)
@@ -119,10 +121,8 @@ export default function DietDrawer(props: DietDrawerProps) {
     setExNote("")
     setRuleNote("")
     setRuleEnd("")
-    if (intent.foodGroupId) {
-      setExFoodGroupId(intent.foodGroupId)
-      setRuleFoodGroupId(intent.foodGroupId)
-    }
+    setExFoodGroupId(intent.foodGroupId)
+    setRuleFoodGroupId(intent.foodGroupId)
     if (intent.date) {
       setExDate(intent.date)
       setRuleStart(intent.date)

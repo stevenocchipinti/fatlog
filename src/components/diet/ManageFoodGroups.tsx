@@ -2,9 +2,12 @@ import { useState } from "react"
 import {
   ArchiveRestore,
   ArchiveX,
+  Check,
   ChevronDown,
   ChevronUp,
+  Pencil,
   Trash2,
+  X,
 } from "lucide-react"
 
 import type { FoodGroup, NewFoodGroup } from "@/types"
@@ -43,6 +46,9 @@ export default function ManageFoodGroups({
 }: ManageFoodGroupsProps) {
   const [emoji, setEmoji] = useState("")
   const [name, setName] = useState("")
+  const [editingId, setEditingId] = useState<string>()
+  const [editingEmoji, setEditingEmoji] = useState("")
+  const [editingName, setEditingName] = useState("")
 
   const active = foodGroups
     .filter(g => !g.archived)
@@ -79,6 +85,24 @@ export default function ManageFoodGroups({
     onUpdate(swapWith.id, { ...toNew(swapWith), order: group.order })
   }
 
+  const startEditing = (group: FoodGroup) => {
+    setEditingId(group.id)
+    setEditingEmoji(group.emoji)
+    setEditingName(group.name)
+  }
+
+  const saveEditing = (group: FoodGroup) => {
+    const trimmedEmoji = editingEmoji.trim()
+    const trimmedName = editingName.trim()
+    if (!trimmedEmoji || !trimmedName) return
+    onUpdate(group.id, {
+      ...toNew(group),
+      emoji: trimmedEmoji,
+      name: trimmedName,
+    })
+    setEditingId(undefined)
+  }
+
   const remove = (group: FoodGroup) => {
     if (hasHistory(group.id)) {
       // Preserve history: archive rather than delete.
@@ -89,6 +113,51 @@ export default function ManageFoodGroups({
       onDelete(group.id)
     }
   }
+
+  const editFields = (group: FoodGroup) => (
+    <>
+      <Input
+        value={editingEmoji}
+        onChange={event => setEditingEmoji(event.target.value)}
+        aria-label={`Emoji for ${group.name}`}
+        className="h-8 w-12 px-1 text-center text-lg"
+        maxLength={4}
+        autoFocus
+      />
+      <Input
+        value={editingName}
+        onChange={event => setEditingName(event.target.value)}
+        onKeyDown={event => {
+          if (event.key === "Enter") {
+            event.preventDefault()
+            saveEditing(group)
+          }
+          if (event.key === "Escape") setEditingId(undefined)
+        }}
+        aria-label={`Name for ${group.name}`}
+        className="h-8 min-w-0 flex-1"
+      />
+      <Button
+        variant="ghost"
+        size="icon"
+        className="size-7"
+        disabled={!editingEmoji.trim() || !editingName.trim()}
+        aria-label={`Save ${group.name}`}
+        onClick={() => saveEditing(group)}
+      >
+        <Check className="size-4" />
+      </Button>
+      <Button
+        variant="ghost"
+        size="icon"
+        className="size-7"
+        aria-label={`Cancel editing ${group.name}`}
+        onClick={() => setEditingId(undefined)}
+      >
+        <X className="size-4" />
+      </Button>
+    </>
+  )
 
   return (
     <div className="space-y-4 p-4">
@@ -161,49 +230,66 @@ export default function ManageFoodGroups({
         <ul className="divide-border divide-y rounded-md border">
           {active.map((group, index) => (
             <li key={group.id} className="flex items-center gap-2 p-2">
-              <span aria-hidden className="text-lg">
-                {group.emoji}
-              </span>
-              <span className="flex-1 text-sm">{group.name}</span>
-              <div className="flex items-center">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="size-7"
-                  disabled={index === 0}
-                  aria-label={`Move ${group.name} up`}
-                  onClick={() => move(group, -1)}
-                >
-                  <ChevronUp className="size-4" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="size-7"
-                  disabled={index === active.length - 1}
-                  aria-label={`Move ${group.name} down`}
-                  onClick={() => move(group, 1)}
-                >
-                  <ChevronDown className="size-4" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="text-muted-foreground size-7"
-                  aria-label={
-                    hasHistory(group.id)
-                      ? `Archive ${group.name}`
-                      : `Delete ${group.name}`
-                  }
-                  onClick={() => remove(group)}
-                >
-                  {hasHistory(group.id) ? (
-                    <ArchiveX className="size-4" />
-                  ) : (
-                    <Trash2 className="size-4" />
-                  )}
-                </Button>
-              </div>
+              {editingId === group.id ? (
+                editFields(group)
+              ) : (
+                <>
+                  <span aria-hidden className="text-lg">
+                    {group.emoji}
+                  </span>
+                  <span className="flex-1 text-sm">{group.name}</span>
+                </>
+              )}
+              {editingId !== group.id && (
+                <div className="flex items-center">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="size-7"
+                    aria-label={`Edit ${group.name}`}
+                    onClick={() => startEditing(group)}
+                  >
+                    <Pencil className="size-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="size-7"
+                    disabled={index === 0}
+                    aria-label={`Move ${group.name} up`}
+                    onClick={() => move(group, -1)}
+                  >
+                    <ChevronUp className="size-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="size-7"
+                    disabled={index === active.length - 1}
+                    aria-label={`Move ${group.name} down`}
+                    onClick={() => move(group, 1)}
+                  >
+                    <ChevronDown className="size-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="text-muted-foreground size-7"
+                    aria-label={
+                      hasHistory(group.id)
+                        ? `Archive ${group.name}`
+                        : `Delete ${group.name}`
+                    }
+                    onClick={() => remove(group)}
+                  >
+                    {hasHistory(group.id) ? (
+                      <ArchiveX className="size-4" />
+                    ) : (
+                      <Trash2 className="size-4" />
+                    )}
+                  </Button>
+                </div>
+              )}
             </li>
           ))}
         </ul>
@@ -215,25 +301,40 @@ export default function ManageFoodGroups({
           <ul className="divide-border divide-y rounded-md border opacity-70">
             {archived.map(group => (
               <li key={group.id} className="flex items-center gap-2 p-2">
-                <span aria-hidden className="text-lg grayscale">
-                  {group.emoji}
-                </span>
-                <span className="flex-1 text-sm">{group.name}</span>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  aria-label={`Unarchive ${group.name}`}
-                  onClick={() =>
-                    onUpdate(group.id, {
-                      ...toNew(group),
-                      archived: false,
-                      order: nextOrder,
-                    })
-                  }
-                >
-                  <ArchiveRestore className="mr-1 size-4" />
-                  Restore
-                </Button>
+                {editingId === group.id ? (
+                  editFields(group)
+                ) : (
+                  <>
+                    <span aria-hidden className="text-lg grayscale">
+                      {group.emoji}
+                    </span>
+                    <span className="flex-1 text-sm">{group.name}</span>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="size-7"
+                      aria-label={`Edit ${group.name}`}
+                      onClick={() => startEditing(group)}
+                    >
+                      <Pencil className="size-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      aria-label={`Unarchive ${group.name}`}
+                      onClick={() =>
+                        onUpdate(group.id, {
+                          ...toNew(group),
+                          archived: false,
+                          order: nextOrder,
+                        })
+                      }
+                    >
+                      <ArchiveRestore className="mr-1 size-4" />
+                      Restore
+                    </Button>
+                  </>
+                )}
               </li>
             ))}
           </ul>
