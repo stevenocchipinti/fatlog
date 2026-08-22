@@ -27,7 +27,7 @@ export default function BottomNavigation() {
     <>
       <nav
         aria-label="Primary"
-        className="bg-background absolute inset-x-0 bottom-0 z-40 mx-auto flex h-16 max-w-sm items-stretch justify-around border-t"
+        className="bg-background absolute inset-x-0 bottom-0 z-40 mx-auto flex h-16 max-w-sm items-center justify-around border-t"
       >
         {modes.map(mode => (
           <NavTab key={mode.to} mode={mode} />
@@ -51,7 +51,7 @@ function NavTab({ mode }: { mode: (typeof modes)[number] }) {
   return (
     <Link to={mode.to} aria-label={mode.label} className="flex-1">
       {({ isActive }) => (
-        <span className="flex flex-col items-center justify-center gap-0.5 pt-1">
+        <span className="flex flex-col items-center justify-center gap-0.5">
           <span
             className={cn(
               "flex items-center rounded-full px-4 py-0.5 transition-colors",

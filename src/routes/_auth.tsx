@@ -102,7 +102,7 @@ const AuthComponent = () => {
           the positioning context and reserves space at the bottom (nav bar +
           a little breathing room) so content is never hidden behind it.
         */}
-        <main className="relative flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto pb-20">
+        <main className="relative flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto pb-18">
           <Outlet />
         </main>
         <BottomNavigation />
