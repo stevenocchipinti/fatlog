@@ -16,6 +16,7 @@ import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import BottomNavigation from "@/components/BottomNavigation"
 import { PrimaryActionProvider } from "@/lib/primaryAction"
+import { NAV_VARIANTS } from "@/lib/navVariant"
 import { useAuth } from "@/lib/firebase"
 
 export const Route = createFileRoute("/_auth")({
@@ -44,6 +45,11 @@ const AuthComponent = () => {
       })
     }
   }
+
+  // Throwaway UI experiment: /nav1…/nav5 prefixes swap the bottom nav for an
+  // experimental design; every other URL keeps the production component.
+  const navId = window.location.pathname.match(/^\/(nav\d)(\/|$)/)?.[1]
+  const VariantNav = navId ? NAV_VARIANTS[navId] : undefined
 
   return (
     <PrimaryActionProvider>
@@ -105,7 +111,7 @@ const AuthComponent = () => {
         <main className="relative flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto pb-28">
           <Outlet />
         </main>
-        <BottomNavigation />
+        {VariantNav ? <VariantNav /> : <BottomNavigation />}
       </div>
     </PrimaryActionProvider>
   )
