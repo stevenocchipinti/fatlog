@@ -5,23 +5,16 @@ import ReactDOM from "react-dom/client"
 // Import the generated route tree
 import { routeTree } from "./routeTree.gen"
 import { FirebaseProvider, useAuth } from "./lib/firebase"
-import { parseNavPrefix } from "./lib/navVariant"
 
 import reportWebVitals from "./reportWebVitals.ts"
 import "./styles.css"
 
-// Throwaway UI experiment: /nav1…/nav5 URL prefixes each render the app with a
-// different experimental bottom navigation. The prefix is stripped from the
-// pathname and set as the router basepath, so every route works unchanged
-// underneath (e.g. /nav2/diet renders the diet route with variant nav2).
-const parsed = parseNavPrefix(window.location.pathname)
-export const activeNavVariant = parsed.id
+// Create a new router instance
 const router = createRouter({
   routeTree,
   context: {
     auth: undefined!,
   },
-  ...(activeNavVariant ? { basepath: `/${activeNavVariant}` } : {}),
   defaultPreload: "intent",
   scrollRestoration: true,
   defaultStructuralSharing: true,

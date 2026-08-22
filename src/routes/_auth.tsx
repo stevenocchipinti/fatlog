@@ -16,7 +16,6 @@ import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import BottomNavigation from "@/components/BottomNavigation"
 import { PrimaryActionProvider } from "@/lib/primaryAction"
-import { NAV_VARIANTS } from "@/lib/navVariant"
 import { useAuth } from "@/lib/firebase"
 
 export const Route = createFileRoute("/_auth")({
@@ -45,11 +44,6 @@ const AuthComponent = () => {
       })
     }
   }
-
-  // Throwaway UI experiment: /nav1…/nav5 prefixes swap the bottom nav for an
-  // experimental design; every other URL keeps the production component.
-  const navId = window.location.pathname.match(/^\/(nav\d)(\/|$)/)?.[1]
-  const VariantNav = navId ? NAV_VARIANTS[navId] : undefined
 
   return (
     <PrimaryActionProvider>
@@ -105,13 +99,13 @@ const AuthComponent = () => {
         </header>
         {/*
           The bottom nav is absolutely positioned, so this scroll container is
-          the positioning context and reserves space at the bottom (pb-28) so
-          content is never hidden behind the nav or its raised primary action.
+          the positioning context and reserves space at the bottom (nav bar +
+          a little breathing room) so content is never hidden behind it.
         */}
-        <main className="relative flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto pb-28">
+        <main className="relative flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto pb-20">
           <Outlet />
         </main>
-        {VariantNav ? <VariantNav /> : <BottomNavigation />}
+        <BottomNavigation />
       </div>
     </PrimaryActionProvider>
   )
