@@ -27,7 +27,7 @@ export default function BottomNavigation() {
     <>
       <nav
         aria-label="Primary"
-        className="bg-background absolute inset-x-0 bottom-0 z-40 mx-auto flex h-16 max-w-sm items-center justify-around shadow-[0_-1px_3px_rgba(0,0,0,0.05)]"
+        className="absolute inset-x-0 bottom-0 z-40 mx-auto flex h-16 max-w-sm items-center justify-around"
       >
         {modes.map(mode => (
           <NavTab key={mode.to} mode={mode} />

@@ -61,7 +61,7 @@ const AuthComponent = () => {
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost">
-                <Avatar>
+                <Avatar className="shadow-[0_0_0_3px_theme(colors.gray.200)]">
                   {user?.photoURL && <AvatarImage src={user.photoURL} />}
                   {user?.displayName && (
                     <AvatarFallback>
