@@ -369,7 +369,14 @@ export const useDiet = () => {
     addFoodGroup: (foodGroup: NewFoodGroup) => {
       if (!user) return false
       const newRef = push(ref(db, `/foodGroups/${user.uid}`))
-      return set(newRef, stripUndefined({ ...foodGroup }))
+      const id = newRef.key!
+      const record = stripUndefined({ ...foodGroup }) as Record<string, unknown>
+      // Optimistic: inject immediately so the UI updates regardless of server latency/auth
+      setFoodGroups(prev => [
+        ...prev,
+        { id, emoji: record.emoji as string, name: record.name as string, order: (record.order as number) ?? 0, archived: (record.archived as boolean) ?? false },
+      ])
+      return set(newRef, record)
     },
     updateFoodGroup: (id: string, foodGroup: NewFoodGroup) => {
       if (!user) return false
