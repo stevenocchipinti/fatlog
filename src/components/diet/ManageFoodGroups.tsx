@@ -62,6 +62,12 @@ export default function ManageFoodGroups({
     s => !usedNames.has(s.name.toLowerCase()),
   )
 
+  const handleCreate = (newGroup: NewFoodGroup) => {
+    // Populate inputs so the starter is visible and editable before persisting
+    setEmoji(newGroup.emoji)
+    setName(newGroup.name)
+  }
+
   const create = () => {
     const trimmedName = name.trim()
     const trimmedEmoji = emoji.trim()
@@ -141,7 +147,7 @@ export default function ManageFoodGroups({
         variant="ghost"
         size="icon"
         className="size-7"
-        disabled={!editingEmoji.trim() || !editingName.trim()}
+        disabled={!editingEmoji.trim() || !editingName}
         aria-label={`Save ${group.name}`}
         onClick={() => saveEditing(group)}
       >
@@ -178,14 +184,14 @@ export default function ManageFoodGroups({
               <button
                 key={starter.name}
                 type="button"
-                onClick={() =>
-                  onCreate({
+                onClick={() => {
+                  handleCreate({
                     emoji: starter.emoji,
                     name: starter.name,
                     order: nextOrder,
                     archived: false,
                   })
-                }
+                }}
                 className="bg-muted hover:bg-muted/70 flex items-center gap-1 rounded-full px-2.5 py-1 text-sm transition-colors"
               >
                 <span aria-hidden>{starter.emoji}</span>
