@@ -140,6 +140,8 @@ export type FirebaseContext = {
   checkins: CheckinsContext
   diet: DietContext & {
     setFoodGroups: (fn: (prev: FoodGroup[]) => FoodGroup[]) => void
+    setDietRules: (fn: (prev: DietRule[]) => DietRule[]) => void
+    setDietExceptions: (fn: (prev: DietException[]) => DietException[]) => void
   }
 }
 const FirebaseContext = createContext<FirebaseContext | null>(null)
@@ -283,6 +285,8 @@ export const FirebaseProvider = ({ children }: { children: ReactNode }) => {
           exceptions: dietExceptions,
           state: dietState,
           setFoodGroups,
+          setDietRules,
+          setDietExceptions,
         },
       }}
     >
@@ -360,7 +364,7 @@ export const useDiet = () => {
 
   const {
     auth: { user },
-    diet: { foodGroups, rules, exceptions, state, setFoodGroups },
+    diet: { foodGroups, rules, exceptions, state, setFoodGroups, setDietRules, setDietExceptions },
   } = context
 
   return {
@@ -396,14 +400,22 @@ export const useDiet = () => {
     addRule: (rule: NewDietRule) => {
       if (!user) return false
       const newRef = push(ref(db, `/dietRules/${user.uid}`))
-      return set(newRef, stripUndefined({ ...rule }))
+      const id = newRef.key!
+      const record = stripUndefined({ ...rule }) as Record<string, unknown>
+      // Optimistic: inject immediately so the UI updates regardless of server latency/auth
+      setDietRules(prev => [
+        ...prev,
+        { id, foodGroupId: record.foodGroupId as string, startDate: record.startDate as string, ...(record.endDate !== undefined ? { endDate: record.endDate as string } : {}), ...(record.note !== undefined ? { note: record.note as string } : {}), },
+      ])
+      return set(newRef, record)
     },
+
     updateRule: (id: string, rule: NewDietRule) => {
       if (!user) return false
-      return set(
-        ref(db, `/dietRules/${user.uid}/${id}`),
-        stripUndefined({ ...rule }),
-      )
+      const record = stripUndefined({ ...rule }) as Record<string, unknown>
+      // Optimistic: update immediately so the UI updates regardless of server latency/auth
+      setDietRules(prev => prev.map(r => r.id === id ? { ...r, ...record } : r))
+      return set(ref(db, `/dietRules/${user.uid}/${id}`), record)
     },
     deleteRule: (id: string) => {
       if (!user) return false
@@ -413,14 +425,21 @@ export const useDiet = () => {
     addException: (exception: NewDietException) => {
       if (!user) return false
       const newRef = push(ref(db, `/dietExceptions/${user.uid}`))
-      return set(newRef, stripUndefined({ ...exception }))
+      const id = newRef.key!
+      const record = stripUndefined({ ...exception }) as Record<string, unknown>
+      // Optimistic: inject immediately so the UI updates regardless of server latency/auth
+      setDietExceptions(prev => [
+        ...prev,
+        { id, foodGroupId: record.foodGroupId as string, date: record.date as string, ...(record.note !== undefined ? { note: record.note as string } : {}), },
+      ])
+      return set(newRef, record)
     },
     updateException: (id: string, exception: NewDietException) => {
       if (!user) return false
-      return set(
-        ref(db, `/dietExceptions/${user.uid}/${id}`),
-        stripUndefined({ ...exception }),
-      )
+      const record = stripUndefined({ ...exception }) as Record<string, unknown>
+      // Optimistic: update immediately so the UI updates regardless of server latency/auth
+      setDietExceptions(prev => prev.map(e => e.id === id ? { ...e, ...record } : e))
+      return set(ref(db, `/dietExceptions/${user.uid}/${id}`), record)
     },
     deleteException: (id: string) => {
       if (!user) return false
