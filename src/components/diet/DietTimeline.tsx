@@ -85,28 +85,8 @@ export default function DietTimeline({
     )
 
   return (
-    <div className="mx-auto w-full max-w-3xl overflow-x-auto px-2">
+    <div className="mx-auto w-full max-w-3xl overflow-x-auto">
       <div className="min-w-fit">
-        {/* Header: emoji-only food group columns */}
-        <div
-          className="bg-background sticky top-0 z-10 grid items-end gap-x-1 pb-1"
-          style={gridStyle}
-        >
-          <span />
-          {columns.map(group => (
-            <button
-              key={group.id}
-              type="button"
-              onClick={() => onSelectFoodGroup(group.id)}
-              aria-label={group.name}
-              title={group.name}
-              className="hover:bg-muted flex flex-col items-center rounded-md py-1 text-xl transition-colors"
-            >
-              <span aria-hidden>{group.emoji}</span>
-            </button>
-          ))}
-        </div>
-
         {rows.map((row, index) => {
           if (row.kind === "gap") {
             return (
@@ -142,7 +122,7 @@ export default function DietTimeline({
             <div
               key={date}
               className={cn(
-                "grid items-stretch gap-x-1 border-t",
+                "grid items-stretch gap-x-1",
                 row.isToday ? "border-foreground/30" : "border-border/60",
               )}
               style={gridStyle}
@@ -201,6 +181,27 @@ export default function DietTimeline({
             </div>
           )
         })}
+      </div>
+
+      <div
+        className="bg-card sticky bottom-0 z-10 grid items-center gap-x-1 rounded-3xl rounded-b-none border border-b-0 pt-2 pb-4 text-sm"
+        style={gridStyle}
+      >
+        <span className="text-muted-foreground bg-card min-w-[4.5rem] pr-2 pl-4 text-end font-semibold">
+          Date
+        </span>
+        {columns.map(group => (
+          <button
+            key={group.id}
+            type="button"
+            onClick={() => onSelectFoodGroup(group.id)}
+            aria-label={group.name}
+            title={group.name}
+            className="hover:bg-muted flex flex-col items-center rounded-md py-1 text-xl transition-colors"
+          >
+            <span aria-hidden>{group.emoji}</span>
+          </button>
+        ))}
       </div>
     </div>
   )
