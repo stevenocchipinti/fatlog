@@ -235,7 +235,7 @@ export default function DietDrawer(props: DietDrawerProps) {
 
               {/* Exception / Rule tabs */}
               <div className="px-4">
-                <div className="bg-muted grid grid-cols-2 gap-1 rounded-lg p-1">
+                <div className="grid grid-cols-2 gap-1 rounded-lg bg-stone-200 p-1 dark:bg-stone-900">
                   {(["exception", "rule"] as const).map(t => (
                     <button
                       key={t}

@@ -187,9 +187,9 @@ export default function DietTimeline({
 
       <div
         className="bg-card sticky bottom-0 z-10 grid items-center gap-x-1 rounded-3xl rounded-b-none border border-b-0 pt-2 pb-4 text-sm"
-        style={gridStyle}
+        style={{ ...gridStyle, viewTransitionName: "tab-header" }}
       >
-        <span className="text-muted-foreground bg-card min-w-[4.5rem] pr-2 pl-4 text-end font-semibold">
+        <span className="text-muted-foreground min-w-[4.5rem] pr-2 pl-4 text-end font-semibold">
           Date
         </span>
         {columns.map(group => {
