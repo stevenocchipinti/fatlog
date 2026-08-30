@@ -387,13 +387,24 @@ export const useDiet = () => {
     },
     updateFoodGroup: (id: string, foodGroup: NewFoodGroup) => {
       if (!user) return false
+      const record = stripUndefined({ ...foodGroup }) as Record<string, unknown>
+      // Optimistic: update immediately so the UI updates regardless of server latency/auth
+      setFoodGroups(prev =>
+        prev.map(g =>
+          g.id === id
+            ? { ...g, emoji: record.emoji as string, name: record.name as string, order: (record.order as number) ?? g.order, archived: (record.archived as boolean) ?? g.archived }
+            : g,
+        ),
+      )
       return set(
         ref(db, `/foodGroups/${user.uid}/${id}`),
-        stripUndefined({ ...foodGroup }),
+        record,
       )
     },
     deleteFoodGroup: (id: string) => {
       if (!user) return false
+      // Optimistic: remove immediately so the UI updates regardless of server latency/auth
+      setFoodGroups(prev => prev.filter(g => g.id !== id))
       return remove(ref(db, `/foodGroups/${user.uid}/${id}`))
     },
 
