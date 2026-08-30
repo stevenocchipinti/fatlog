@@ -4,8 +4,9 @@ import {
   buildTimelineRows,
   gapLabel,
   ruleActiveOn,
+  ruleStintLabel,
 } from "@/components/diet/timeline"
-import { fromLocalDate } from "@/lib/localDate"
+import { fromLocalDate, todayLocalDate } from "@/lib/localDate"
 import { cn } from "@/lib/utils"
 
 type DietTimelineProps = {
@@ -58,6 +59,7 @@ export default function DietTimeline({
     visibleGroupIds.has(exception.foodGroupId),
   )
   const rows = buildTimelineRows(visibleRules, visibleExceptions)
+  const today = todayLocalDate()
 
   if (columns.length === 0) {
     return (
@@ -190,18 +192,37 @@ export default function DietTimeline({
         <span className="text-muted-foreground bg-card min-w-[4.5rem] pr-2 pl-4 text-end font-semibold">
           Date
         </span>
-        {columns.map(group => (
-          <button
-            key={group.id}
-            type="button"
-            onClick={() => onSelectFoodGroup(group.id)}
-            aria-label={group.name}
-            title={group.name}
-            className="hover:bg-muted flex flex-col items-center rounded-md py-1 text-xl transition-colors"
-          >
-            <span aria-hidden>{group.emoji}</span>
-          </button>
-        ))}
+        {columns.map(group => {
+          const label = ruleStintLabel(
+            visibleRules.filter(rule => rule.foodGroupId === group.id),
+            visibleExceptions.filter(
+              exception => exception.foodGroupId === group.id,
+            ),
+            today,
+          )
+          return (
+            <button
+              key={group.id}
+              type="button"
+              onClick={() => onSelectFoodGroup(group.id)}
+              aria-label={group.name}
+              title={group.name}
+              className="hover:bg-muted flex flex-col items-center rounded-md py-1 text-xl transition-colors"
+            >
+              <span aria-hidden>{group.emoji}</span>
+              <span
+                className={cn(
+                  "text-xs",
+                  label === null
+                    ? "text-muted-foreground/40"
+                    : "text-muted-foreground",
+                )}
+              >
+                {label ?? "–"}
+              </span>
+            </button>
+          )
+        })}
       </div>
     </div>
   )

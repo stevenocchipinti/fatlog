@@ -1,8 +1,14 @@
 import { describe, expect, it } from "vitest"
 
-import { buildTimelineRows, gapLabel, ruleActiveOn } from "./timeline"
+import {
+  buildTimelineRows,
+  gapLabel,
+  ruleActiveOn,
+  ruleStintLabel,
+} from "./timeline"
 
 import type { DietException, DietRule } from "@/types"
+import { addDays } from "@/lib/localDate"
 
 describe("buildTimelineRows", () => {
   it("includes Today and orders event dates newest first", () => {
@@ -81,5 +87,78 @@ describe("ruleActiveOn", () => {
 
     expect(ruleActiveOn(openRule, "2026-08-21", "2026-08-21")).toBe(true)
     expect(ruleActiveOn(openRule, "2026-08-22", "2026-08-21")).toBe(false)
+  })
+})
+
+describe("ruleStintLabel", () => {
+  const today = "2026-08-21"
+
+  const activeRule = (daysAgo: number): DietRule => ({
+    id: "rule-1",
+    foodGroupId: "meat",
+    startDate: addDays(today, -daysAgo),
+  })
+  const endedRule = (
+    endDaysAgo: number,
+    startDaysAgo = endDaysAgo + 30,
+  ): DietRule => ({
+    id: "rule-2",
+    foodGroupId: "cheese",
+    startDate: addDays(today, -startDaysAgo),
+    endDate: addDays(today, -endDaysAgo),
+  })
+  const exception = (daysAgo: number): DietException => ({
+    id: "exception-1",
+    foodGroupId: "cheese",
+    date: addDays(today, -daysAgo),
+  })
+
+  it("shows a positive duration for an active rule", () => {
+    expect(ruleStintLabel([activeRule(5)], [], today)).toBe("+5d")
+    expect(ruleStintLabel([activeRule(21)], [], today)).toBe("+3w")
+    expect(ruleStintLabel([activeRule(95)], [], today)).toBe("+3.1m")
+    expect(ruleStintLabel([activeRule(630)], [], today)).toBe("+1.7y")
+  })
+
+  it("ignores exceptions while a rule is active", () => {
+    expect(ruleStintLabel([activeRule(5)], [exception(1)], today)).toBe("+5d")
+  })
+
+  it("treats a rule ending today as still active", () => {
+    expect(ruleStintLabel([endedRule(0, 10)], [], today)).toBe("+1w")
+  })
+
+  it("shows a negative duration since the most recent exception", () => {
+    expect(ruleStintLabel([], [exception(2)], today)).toBe("-2d")
+  })
+
+  it("uses the newest exception when there are several", () => {
+    expect(ruleStintLabel([], [exception(30), exception(2)], today)).toBe("-2d")
+  })
+
+  it("falls back to the most recent ended rule's end date", () => {
+    expect(ruleStintLabel([endedRule(21)], [], today)).toBe("-3w")
+  })
+
+  it("prefers a recent exception over an older rule end", () => {
+    expect(ruleStintLabel([endedRule(30)], [exception(2)], today)).toBe("-2d")
+  })
+
+  it("returns null with no active rule and nothing recorded", () => {
+    expect(ruleStintLabel([], [], today)).toBeNull()
+  })
+
+  it("rounds unit boundaries", () => {
+    expect(ruleStintLabel([activeRule(6)], [], today)).toBe("+6d")
+    expect(ruleStintLabel([activeRule(7)], [], today)).toBe("+1w")
+    expect(ruleStintLabel([activeRule(29)], [], today)).toBe("+4w")
+    expect(ruleStintLabel([activeRule(30)], [], today)).toBe("+1.0m")
+    expect(ruleStintLabel([activeRule(364)], [], today)).toBe("+12.0m")
+    expect(ruleStintLabel([activeRule(365)], [], today)).toBe("+1.0y")
+  })
+
+  it("rounds a same-day anchor up to one day", () => {
+    expect(ruleStintLabel([activeRule(0)], [], today)).toBe("+1d")
+    expect(ruleStintLabel([], [exception(0)], today)).toBe("-1d")
   })
 })
