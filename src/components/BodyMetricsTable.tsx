@@ -74,7 +74,7 @@ const BodyMetricsTable = ({
   }, [selectedPoint])
 
   return (
-    <Card className="container mx-auto flex flex-1 flex-col gap-0 overflow-hidden rounded-3xl shadow-none border border-b-2">
+    <Card className="container mx-auto flex flex-1 flex-col gap-0 overflow-hidden rounded-3xl rounded-b-none border border-b-0 shadow-none">
       <Table
         ref={tableRef}
         className="mt-[-2px] border-separate border-spacing-0 pb-2"

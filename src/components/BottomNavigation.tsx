@@ -27,11 +27,16 @@ export default function BottomNavigation() {
     <>
       <nav
         aria-label="Primary"
-        className="absolute inset-x-0 bottom-0 z-40 mx-auto flex h-16 max-w-sm items-center justify-around bg-white border-t border-border/50"
+        className="border-border/50 absolute inset-x-0 bottom-0 z-40 mx-auto flex h-18 items-center justify-around border-t bg-white"
       >
-        {modes.map(mode => (
-          <NavTab key={mode.to} mode={mode} />
-        ))}
+        <div
+          aria-label="Primary"
+          className="mx-auto flex h-16 w-full max-w-sm items-center justify-around"
+        >
+          {modes.map(mode => (
+            <NavTab key={mode.to} mode={mode} />
+          ))}
+        </div>
       </nav>
 
       <button
