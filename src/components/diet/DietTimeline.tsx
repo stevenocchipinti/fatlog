@@ -63,10 +63,42 @@ export default function DietTimeline({
   const today = todayLocalDate()
 
   if (columns.length === 0) {
+    // Show a skeleton grid placeholder so the view transition animates against
+    // meaningful grid content rather than jumping to data after the animation
+    // completes when Firebase subscriptions return.
+    const columnCount = 4
+    const gridStyle = {
+      gridTemplateColumns: `4.5rem repeat(${columnCount}, minmax(3rem, 1fr))`,
+    }
     return (
-      <div className="text-muted-foreground mx-auto max-w-sm px-6 py-16 text-center text-sm">
-        No food groups yet. Tap the + button to record a diet change and add
-        your first food group.
+      <div className="mx-auto w-full max-w-3xl overflow-x-auto">
+        <div className="min-w-fit">
+          {Array.from({ length: 6 }).map((_, rowIndex) => (
+            <div
+              key={rowIndex}
+              className={cn(
+                "grid items-stretch gap-x-1",
+                rowIndex === 0 ? "border-foreground/30" : "border-border/60",
+              )}
+              style={gridStyle}
+            >
+              <div className="flex flex-col items-end justify-center py-2 pr-2 text-right">
+                <span className="text-xs font-medium text-foreground">Day</span>
+                <span className="text-muted-foreground text-[0.65rem]">2024</span>
+              </div>
+              {Array.from({ length: columnCount }).map((_, colIndex) => (
+                <div
+                  key={colIndex}
+                  className="relative flex min-h-9 items-center justify-center"
+                >
+                  <div
+                    className="absolute left-1/2 -translate-x-1/2 w-2/3 h-2/3 bg-border/20 rounded-full animate-pulse"
+                  />
+                </div>
+              ))}
+            </div>
+          ))}
+        </div>
       </div>
     )
   }
