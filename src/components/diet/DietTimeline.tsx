@@ -5,8 +5,9 @@ import {
   gapLabel,
   ruleActiveOn,
   ruleStintLabel,
+  todayLocalDate,
 } from "@/components/diet/timeline"
-import { fromLocalDate, todayLocalDate } from "@/lib/localDate"
+import { fromLocalDate } from "@/lib/localDate"
 import { cn } from "@/lib/utils"
 
 type DietTimelineProps = {
@@ -89,6 +90,36 @@ export default function DietTimeline({
   return (
     <div className="mx-auto w-full max-w-3xl overflow-x-auto">
       <div className="min-w-fit">
+        {/* Header: emoji-only food group columns */}
+        <div
+          className="bg-background sticky top-0 z-10 grid items-end gap-x-1 pb-1"
+          style={gridStyle}
+        >
+          <span />
+          {columns.map(group => {
+            const hasActiveRule = rules.some(
+              rule =>
+                rule.foodGroupId === group.id &&
+                ruleActiveOn(rule, todayLocalDate()),
+            )
+            return (
+              <button
+                key={group.id}
+                type="button"
+                onClick={() => onSelectFoodGroup(group.id)}
+                aria-label={group.name}
+                title={group.name}
+                className={cn(
+                  "hover:bg-muted flex flex-col items-center rounded-md py-1 text-xl transition-colors",
+                  !hasActiveRule && "saturate-0",
+                )}
+              >
+                <span aria-hidden>{group.emoji}</span>
+              </button>
+            )
+          })}
+        </div>
+
         {rows.map((row, index) => {
           if (row.kind === "gap") {
             return (

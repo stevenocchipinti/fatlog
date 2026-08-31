@@ -1,6 +1,12 @@
 import type { DietException, DietRule, LocalDate } from "@/types"
 
-import { compareLocalDates, daysBetween, todayLocalDate } from "@/lib/localDate"
+import {
+  compareLocalDates,
+  daysBetween,
+  todayLocalDate,
+} from "@/lib/localDate"
+
+export { todayLocalDate }
 
 /**
  * A single rendered row in the diet timeline. Rows are one of:
