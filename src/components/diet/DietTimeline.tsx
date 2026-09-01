@@ -252,9 +252,11 @@ export default function DietTimeline({
               <span
                 className={cn(
                   "text-xs",
-                  label === null
-                    ? "text-muted-foreground/40"
-                    : "text-muted-foreground",
+                  hasActiveRule
+                    ? "text-brand-1"
+                    : label === null
+                      ? "text-muted-foreground/40"
+                      : "text-muted-foreground",
                 )}
               >
                 {label ?? "–"}
