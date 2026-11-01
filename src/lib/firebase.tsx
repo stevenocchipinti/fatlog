@@ -19,7 +19,16 @@ import { createContext, useContext, useEffect, useState } from "react"
 
 import useLocalStorage from "./useLocalStorage"
 
-import type { BodyMetricDataPoint, NewBodyMetricDataPoint } from "@/types"
+import type {
+  BodyMetricDataPoint,
+  DietException,
+  DietRule,
+  FoodGroup,
+  NewBodyMetricDataPoint,
+  NewDietException,
+  NewDietRule,
+  NewFoodGroup,
+} from "@/types"
 import type { User } from "firebase/auth"
 import type { ReactNode } from "react"
 import FullScreenLoading from "@/components/FullScreenLoading"
@@ -56,8 +65,56 @@ const parseCheckin = (id: string, record: FirebaseCheckin) => {
   } as BodyMetricDataPoint
 }
 
+// Diet records are stored per user alongside checkins. Unlike checkins, which
+// use ISO timestamps, diet records store local date-only strings so they are
+// persisted exactly as the user recorded them (see lib/localDate.ts).
+
+type FirebaseFoodGroup = {
+  emoji: string
+  name: string
+  order?: number
+  archived?: boolean
+}
+const parseFoodGroup = (id: string, record: FirebaseFoodGroup): FoodGroup => ({
+  id,
+  emoji: record.emoji,
+  name: record.name,
+  order: record.order ?? 0,
+  archived: record.archived ?? false,
+})
+
+type FirebaseDietRule = {
+  foodGroupId: string
+  startDate: string
+  endDate?: string
+  note?: string
+}
+const parseDietRule = (id: string, record: FirebaseDietRule): DietRule => ({
+  id,
+  foodGroupId: record.foodGroupId,
+  startDate: record.startDate,
+  ...(record.endDate ? { endDate: record.endDate } : {}),
+  ...(record.note ? { note: record.note } : {}),
+})
+
+type FirebaseDietException = {
+  foodGroupId: string
+  date: string
+  note?: string
+}
+const parseDietException = (
+  id: string,
+  record: FirebaseDietException,
+): DietException => ({
+  id,
+  foodGroupId: record.foodGroupId,
+  date: record.date,
+  ...(record.note ? { note: record.note } : {}),
+})
+
 type AuthState = "INITIALIZING" | "LOADING" | "LOGGED_OUT" | "LOGGED_IN"
 type CheckinsState = "INITIALIZING" | "LOADED"
+type DietState = "INITIALIZING" | "LOADED"
 
 export type AuthContext = {
   login: () => void
@@ -71,9 +128,21 @@ export type CheckinsContext = {
   state: CheckinsState
 }
 
+export type DietContext = {
+  foodGroups: FoodGroup[]
+  rules: DietRule[]
+  exceptions: DietException[]
+  state: DietState
+}
+
 export type FirebaseContext = {
   auth: AuthContext
   checkins: CheckinsContext
+  diet: DietContext & {
+    setFoodGroups: (fn: (prev: FoodGroup[]) => FoodGroup[]) => void
+    setDietRules: (fn: (prev: DietRule[]) => DietRule[]) => void
+    setDietExceptions: (fn: (prev: DietException[]) => DietException[]) => void
+  }
 }
 const FirebaseContext = createContext<FirebaseContext | null>(null)
 
@@ -99,6 +168,20 @@ export const FirebaseProvider = ({ children }: { children: ReactNode }) => {
             createdAt: new Date(v.createdAt),
           }) as BodyMetricDataPoint,
       ),
+  )
+
+  const [dietState, setDietState] = useState<DietState>("INITIALIZING")
+  const [foodGroups, setFoodGroups] = useLocalStorage<FoodGroup[]>(
+    "foodGroupData",
+    [],
+  )
+  const [dietRules, setDietRules] = useLocalStorage<DietRule[]>(
+    "dietRuleData",
+    [],
+  )
+  const [dietExceptions, setDietExceptions] = useLocalStorage<DietException[]>(
+    "dietExceptionData",
+    [],
   )
 
   const login = () => {
@@ -137,11 +220,74 @@ export const FirebaseProvider = ({ children }: { children: ReactNode }) => {
     })
   }, [setCheckins, user])
 
+  // Subscribe to all three diet subtrees. Diet mode only reaches "LOADED" once
+  // the food groups subtree has responded, since food groups are the columns
+  // every rule and exception hangs off; rules and exceptions can safely stream
+  // in afterwards.
+  useEffect(() => {
+    if (!user) return
+    const unsubscribeFoodGroups = onValue(
+      ref(db, `/foodGroups/${user.uid}`),
+      snapshot => {
+        setDietState("LOADED")
+        const val = snapshot.val() as Record<string, FirebaseFoodGroup> | null
+        setFoodGroups(
+          val
+            ? Object.entries(val).map(([id, value]) =>
+                parseFoodGroup(id, value),
+              )
+            : [],
+        )
+      },
+    )
+    const unsubscribeRules = onValue(
+      ref(db, `/dietRules/${user.uid}`),
+      snapshot => {
+        const val = snapshot.val() as Record<string, FirebaseDietRule> | null
+        setDietRules(
+          val
+            ? Object.entries(val).map(([id, value]) => parseDietRule(id, value))
+            : [],
+        )
+      },
+    )
+    const unsubscribeExceptions = onValue(
+      ref(db, `/dietExceptions/${user.uid}`),
+      snapshot => {
+        const val = snapshot.val() as Record<
+          string,
+          FirebaseDietException
+        > | null
+        setDietExceptions(
+          val
+            ? Object.entries(val).map(([id, value]) =>
+                parseDietException(id, value),
+              )
+            : [],
+        )
+      },
+    )
+    return () => {
+      unsubscribeFoodGroups()
+      unsubscribeRules()
+      unsubscribeExceptions()
+    }
+  }, [setFoodGroups, setDietRules, setDietExceptions, user])
+
   return (
     <FirebaseContext.Provider
       value={{
         auth: { login, logout, user, state: authState },
         checkins: { data: checkins, state: checkinsState },
+        diet: {
+          foodGroups,
+          rules: dietRules,
+          exceptions: dietExceptions,
+          state: dietState,
+          setFoodGroups,
+          setDietRules,
+          setDietExceptions,
+        },
       }}
     >
       {authState === "LOADING" ? (
@@ -196,6 +342,119 @@ export const useCheckins = () => {
 
     deleteCheckin: (checkinKey: string) => {
       return remove(ref(db, `/checkins/${user?.uid}/${checkinKey}`))
+    },
+  }
+}
+
+// Firebase Realtime Database rejects `undefined` values, so optional fields
+// (endDate, note) must be omitted entirely rather than written as undefined.
+const stripUndefined = <T extends Record<string, unknown>>(obj: T) =>
+  Object.fromEntries(
+    Object.entries(obj).filter(([, value]) => value !== undefined),
+  )
+
+/**
+ * Read/write access to a user's diet data: food groups, diet rules and diet
+ * exceptions. Mirrors the shape and conventions of useCheckins.
+ */
+export const useDiet = () => {
+  const context = useContext(FirebaseContext)
+  if (!context)
+    throw new Error("useDiet must be used within a FirebaseProvider")
+
+  const {
+    auth: { user },
+    diet: { foodGroups, rules, exceptions, state, setFoodGroups, setDietRules, setDietExceptions },
+  } = context
+
+  return {
+    foodGroups,
+    rules,
+    exceptions,
+    state,
+
+    addFoodGroup: (foodGroup: NewFoodGroup) => {
+      if (!user) return false
+      const newRef = push(ref(db, `/foodGroups/${user.uid}`))
+      const id = newRef.key!
+      const record = stripUndefined({ ...foodGroup }) as Record<string, unknown>
+      // Optimistic: inject immediately so the UI updates regardless of server latency/auth
+      setFoodGroups(prev => [
+        ...prev,
+        { id, emoji: record.emoji as string, name: record.name as string, order: (record.order as number) ?? 0, archived: (record.archived as boolean) ?? false },
+      ])
+      return set(newRef, record)
+    },
+    updateFoodGroup: (id: string, foodGroup: NewFoodGroup) => {
+      if (!user) return false
+      const record = stripUndefined({ ...foodGroup }) as Record<string, unknown>
+      // Optimistic: update immediately so the UI updates regardless of server latency/auth
+      setFoodGroups(prev =>
+        prev.map(g =>
+          g.id === id
+            ? { ...g, emoji: record.emoji as string, name: record.name as string, order: (record.order as number) ?? g.order, archived: (record.archived as boolean) ?? g.archived }
+            : g,
+        ),
+      )
+      return set(
+        ref(db, `/foodGroups/${user.uid}/${id}`),
+        record,
+      )
+    },
+    deleteFoodGroup: (id: string) => {
+      if (!user) return false
+      // Optimistic: remove immediately so the UI updates regardless of server latency/auth
+      setFoodGroups(prev => prev.filter(g => g.id !== id))
+      return remove(ref(db, `/foodGroups/${user.uid}/${id}`))
+    },
+
+    addRule: (rule: NewDietRule) => {
+      if (!user) return false
+      const newRef = push(ref(db, `/dietRules/${user.uid}`))
+      const id = newRef.key!
+      const record = stripUndefined({ ...rule }) as Record<string, unknown>
+      // Optimistic: inject immediately so the UI updates regardless of server latency/auth
+      setDietRules(prev => [
+        ...prev,
+        { id, foodGroupId: record.foodGroupId as string, startDate: record.startDate as string, ...(record.endDate !== undefined ? { endDate: record.endDate as string } : {}), ...(record.note !== undefined ? { note: record.note as string } : {}), },
+      ])
+      return set(newRef, record)
+    },
+
+    updateRule: (id: string, rule: NewDietRule) => {
+      if (!user) return false
+      const record = stripUndefined({ ...rule }) as Record<string, unknown>
+      // Optimistic: update immediately so the UI updates regardless of server latency/auth
+      setDietRules(prev => prev.map(r => r.id === id ? { ...r, ...record } : r))
+      return set(ref(db, `/dietRules/${user.uid}/${id}`), record)
+    },
+    deleteRule: (id: string) => {
+      if (!user) return false
+      return remove(ref(db, `/dietRules/${user.uid}/${id}`))
+    },
+
+    addException: (exception: NewDietException) => {
+      if (!user) return false
+      const newRef = push(ref(db, `/dietExceptions/${user.uid}`))
+      const id = newRef.key!
+      const record = stripUndefined({ ...exception }) as Record<string, unknown>
+      // Optimistic: inject immediately so the UI updates regardless of server latency/auth
+      setDietExceptions(prev => [
+        ...prev,
+        { id, foodGroupId: record.foodGroupId as string, date: record.date as string, ...(record.note !== undefined ? { note: record.note as string } : {}), },
+      ])
+      return set(newRef, record)
+    },
+    updateException: (id: string, exception: NewDietException) => {
+      if (!user) return false
+      const record = stripUndefined({ ...exception }) as Record<string, unknown>
+      // Optimistic: update immediately so the UI updates regardless of server latency/auth
+      setDietExceptions(prev => prev.map(e => e.id === id ? { ...e, ...record } : e))
+      return set(ref(db, `/dietExceptions/${user.uid}/${id}`), record)
+    },
+    deleteException: (id: string) => {
+      if (!user) return false
+      return remove(ref(db, `/dietExceptions/${user.uid}/${id}`))
     },
   }
 }

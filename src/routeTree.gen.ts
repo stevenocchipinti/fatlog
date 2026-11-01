@@ -10,80 +10,80 @@
 
 // Import Routes
 
-import { Route as rootRoute } from './routes/__root'
-import { Route as AuthImport } from './routes/_auth'
-import { Route as IndexImport } from './routes/index'
-import { Route as AuthMetricsImport } from './routes/_auth.metrics'
-import { Route as AuthFastingImport } from './routes/_auth.fasting'
-import { Route as AuthDietImport } from './routes/_auth.diet'
+import { Route as rootRoute } from "./routes/__root"
+import { Route as AuthImport } from "./routes/_auth"
+import { Route as IndexImport } from "./routes/index"
+import { Route as AuthMetricsImport } from "./routes/_auth.metrics"
+import { Route as AuthFastingImport } from "./routes/_auth.fasting"
+import { Route as AuthDietImport } from "./routes/_auth.diet"
 
 // Create/Update Routes
 
 const AuthRoute = AuthImport.update({
-  id: '/_auth',
+  id: "/_auth",
   getParentRoute: () => rootRoute,
 } as any)
 
 const IndexRoute = IndexImport.update({
-  id: '/',
-  path: '/',
+  id: "/",
+  path: "/",
   getParentRoute: () => rootRoute,
 } as any)
 
 const AuthMetricsRoute = AuthMetricsImport.update({
-  id: '/metrics',
-  path: '/metrics',
+  id: "/metrics",
+  path: "/metrics",
   getParentRoute: () => AuthRoute,
 } as any)
 
 const AuthFastingRoute = AuthFastingImport.update({
-  id: '/fasting',
-  path: '/fasting',
+  id: "/fasting",
+  path: "/fasting",
   getParentRoute: () => AuthRoute,
 } as any)
 
 const AuthDietRoute = AuthDietImport.update({
-  id: '/diet',
-  path: '/diet',
+  id: "/diet",
+  path: "/diet",
   getParentRoute: () => AuthRoute,
 } as any)
 
 // Populate the FileRoutesByPath interface
 
-declare module '@tanstack/react-router' {
+declare module "@tanstack/react-router" {
   interface FileRoutesByPath {
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
+    "/": {
+      id: "/"
+      path: "/"
+      fullPath: "/"
       preLoaderRoute: typeof IndexImport
       parentRoute: typeof rootRoute
     }
-    '/_auth': {
-      id: '/_auth'
-      path: ''
-      fullPath: ''
+    "/_auth": {
+      id: "/_auth"
+      path: ""
+      fullPath: ""
       preLoaderRoute: typeof AuthImport
       parentRoute: typeof rootRoute
     }
-    '/_auth/diet': {
-      id: '/_auth/diet'
-      path: '/diet'
-      fullPath: '/diet'
+    "/_auth/diet": {
+      id: "/_auth/diet"
+      path: "/diet"
+      fullPath: "/diet"
       preLoaderRoute: typeof AuthDietImport
       parentRoute: typeof AuthImport
     }
-    '/_auth/fasting': {
-      id: '/_auth/fasting'
-      path: '/fasting'
-      fullPath: '/fasting'
+    "/_auth/fasting": {
+      id: "/_auth/fasting"
+      path: "/fasting"
+      fullPath: "/fasting"
       preLoaderRoute: typeof AuthFastingImport
       parentRoute: typeof AuthImport
     }
-    '/_auth/metrics': {
-      id: '/_auth/metrics'
-      path: '/metrics'
-      fullPath: '/metrics'
+    "/_auth/metrics": {
+      id: "/_auth/metrics"
+      path: "/metrics"
+      fullPath: "/metrics"
       preLoaderRoute: typeof AuthMetricsImport
       parentRoute: typeof AuthImport
     }
@@ -107,42 +107,42 @@ const AuthRouteChildren: AuthRouteChildren = {
 const AuthRouteWithChildren = AuthRoute._addFileChildren(AuthRouteChildren)
 
 export interface FileRoutesByFullPath {
-  '/': typeof IndexRoute
-  '': typeof AuthRouteWithChildren
-  '/diet': typeof AuthDietRoute
-  '/fasting': typeof AuthFastingRoute
-  '/metrics': typeof AuthMetricsRoute
+  "/": typeof IndexRoute
+  "": typeof AuthRouteWithChildren
+  "/diet": typeof AuthDietRoute
+  "/fasting": typeof AuthFastingRoute
+  "/metrics": typeof AuthMetricsRoute
 }
 
 export interface FileRoutesByTo {
-  '/': typeof IndexRoute
-  '': typeof AuthRouteWithChildren
-  '/diet': typeof AuthDietRoute
-  '/fasting': typeof AuthFastingRoute
-  '/metrics': typeof AuthMetricsRoute
+  "/": typeof IndexRoute
+  "": typeof AuthRouteWithChildren
+  "/diet": typeof AuthDietRoute
+  "/fasting": typeof AuthFastingRoute
+  "/metrics": typeof AuthMetricsRoute
 }
 
 export interface FileRoutesById {
   __root__: typeof rootRoute
-  '/': typeof IndexRoute
-  '/_auth': typeof AuthRouteWithChildren
-  '/_auth/diet': typeof AuthDietRoute
-  '/_auth/fasting': typeof AuthFastingRoute
-  '/_auth/metrics': typeof AuthMetricsRoute
+  "/": typeof IndexRoute
+  "/_auth": typeof AuthRouteWithChildren
+  "/_auth/diet": typeof AuthDietRoute
+  "/_auth/fasting": typeof AuthFastingRoute
+  "/_auth/metrics": typeof AuthMetricsRoute
 }
 
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '' | '/diet' | '/fasting' | '/metrics'
+  fullPaths: "/" | "" | "/diet" | "/fasting" | "/metrics"
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '' | '/diet' | '/fasting' | '/metrics'
+  to: "/" | "" | "/diet" | "/fasting" | "/metrics"
   id:
-    | '__root__'
-    | '/'
-    | '/_auth'
-    | '/_auth/diet'
-    | '/_auth/fasting'
-    | '/_auth/metrics'
+    | "__root__"
+    | "/"
+    | "/_auth"
+    | "/_auth/diet"
+    | "/_auth/fasting"
+    | "/_auth/metrics"
   fileRoutesById: FileRoutesById
 }
 

@@ -2,6 +2,10 @@
 
 @plugin "tailwindcss-animate";
 
+.firebase-emulator-warning {
+  display: none !important;
+}
+
 :root {
   --brand-1: var(--color-green-500);
   --brand-2: var(--color-blue-500);
@@ -136,4 +140,149 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   body {
     @apply bg-background text-foreground;
   }
+}
+
+/* View Transitions — tab navigation */
+
+@keyframes slide-in-from-left {
+  from {
+    opacity: 0;
+    transform: translateX(-56px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes slide-out-to-right {
+  from {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(40px);
+  }
+}
+
+@keyframes slide-in-from-right {
+  from {
+    opacity: 0;
+    transform: translateX(56px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes slide-out-to-left {
+  from {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(-40px);
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes fade-out {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+/* Content area — default fade */
+::view-transition-group(app-screen) {
+  animation-duration: 280ms;
+}
+
+::view-transition-old(app-screen) {
+  animation: fade-out 220ms ease both;
+  mix-blend-mode: normal;
+}
+
+::view-transition-new(app-screen) {
+  animation: fade-in 280ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  mix-blend-mode: normal;
+}
+
+/* Direction: metrics (slide left) */
+html[data-nav-direction="metrics"]::view-transition-old(app-screen) {
+  animation: slide-out-to-right 240ms ease both;
+}
+
+html[data-nav-direction="metrics"]::view-transition-new(app-screen) {
+  animation: slide-in-from-left 320ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* Direction: diet (slide right) */
+html[data-nav-direction="diet"]::view-transition-old(app-screen) {
+  animation: slide-out-to-left 240ms ease both;
+}
+
+html[data-nav-direction="diet"]::view-transition-new(app-screen) {
+  animation: slide-in-from-right 320ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* Bottom nav active pill — fade + slide (not morph) */
+::view-transition-group(bottom-nav-active-pill) {
+  animation: none;
+}
+
+::view-transition-old(bottom-nav-active-pill) {
+  animation: fade-out 180ms ease both;
+  mix-blend-mode: normal;
+}
+
+::view-transition-new(bottom-nav-active-pill) {
+  animation: fade-in 220ms cubic-bezier(0.22, 1, 0.36, 1) 60ms both;
+  mix-blend-mode: normal;
+}
+
+/* Bottom nav + FAB — keep pinned & static (no box morph), cross-fade the
+   active/inactive colours in place instead of additively flashing them */
+::view-transition-group(bottom-nav),
+::view-transition-group(fab) {
+  animation: none;
+}
+
+::view-transition-old(bottom-nav),
+::view-transition-old(fab) {
+  animation: fade-out 200ms ease both;
+  mix-blend-mode: normal;
+}
+
+::view-transition-new(bottom-nav),
+::view-transition-new(fab) {
+  animation: fade-in 300ms cubic-bezier(0.22, 1, 0.36, 1) 60ms both;
+  mix-blend-mode: normal;
+}
+
+/* Tab header morph (diet emoji header ↔ metrics table header) */
+::view-transition-group(tab-header) {
+  animation-duration: 320ms;
+  animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+::view-transition-old(tab-header) {
+  mix-blend-mode: normal;
+}
+
+::view-transition-new(tab-header) {
+  mix-blend-mode: normal;
 }

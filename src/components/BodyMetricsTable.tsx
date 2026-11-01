@@ -74,10 +74,13 @@ const BodyMetricsTable = ({
   }, [selectedPoint])
 
   return (
-    <Card className="container mx-auto flex flex-1 flex-col gap-0 overflow-hidden rounded-b-none">
+    <Card
+      className="container mx-auto flex flex-1 flex-col gap-0 overflow-hidden rounded-3xl rounded-b-none border border-b-0 shadow-none"
+      style={{ viewTransitionName: "tab-header" }}
+    >
       <Table
         ref={tableRef}
-        className="mt-[-2px] border-separate border-spacing-0 pb-16"
+        className="mt-[-2px] border-separate border-spacing-0 pb-2"
       >
         <TableHeader className="z-1">
           <TableRow>
