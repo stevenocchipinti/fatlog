@@ -221,21 +221,21 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   mix-blend-mode: normal;
 }
 
-/* Direction: metrics (slide left) */
-html[data-nav-direction="metrics"]::view-transition-old(app-screen) {
+/* Direction: backward to an earlier tracker (slide in from the left) */
+html[data-nav-direction="backward"]::view-transition-old(app-screen) {
   animation: slide-out-to-right 240ms ease both;
 }
 
-html[data-nav-direction="metrics"]::view-transition-new(app-screen) {
+html[data-nav-direction="backward"]::view-transition-new(app-screen) {
   animation: slide-in-from-left 320ms cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
-/* Direction: diet (slide right) */
-html[data-nav-direction="diet"]::view-transition-old(app-screen) {
+/* Direction: forward to a later tracker (slide in from the right) */
+html[data-nav-direction="forward"]::view-transition-old(app-screen) {
   animation: slide-out-to-left 240ms ease both;
 }
 
-html[data-nav-direction="diet"]::view-transition-new(app-screen) {
+html[data-nav-direction="forward"]::view-transition-new(app-screen) {
   animation: slide-in-from-right 320ms cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 

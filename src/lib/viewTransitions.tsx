@@ -2,7 +2,7 @@ import { flushSync } from "react-dom"
 import { useLocation, useNavigate } from "@tanstack/react-router"
 import React from "react"
 
-export type NavigationDirection = "metrics" | "diet"
+import type { NavigationDirection } from "@/lib/trackers"
 
 export interface TransitionNavigationOptions {
   direction?: NavigationDirection

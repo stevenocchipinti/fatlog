@@ -250,7 +250,7 @@ export default function DietTimeline({
       </div>
 
       <div
-        className="bg-card sticky bottom-0 z-10 grid items-center gap-x-1 rounded-3xl rounded-b-none border border-b-0 pt-2 pb-4 text-sm"
+        className="bg-card sticky bottom-0 z-10 grid items-center gap-x-1 rounded-3xl border pt-2 pb-4 text-sm"
         style={{ ...gridStyle, viewTransitionName: "tab-header" }}
       >
         <span className="text-muted-foreground min-w-[4.5rem] pr-2 pl-4 text-end font-semibold">
