@@ -8,89 +8,116 @@
 // You should NOT make any changes in this file as it will be overwritten.
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
-// Import Routes
+import { Route as rootRouteImport } from './routes/__root'
+import { Route as IndexRouteImport } from './routes/index'
+import { Route as AuthRouteImport } from './routes/_auth'
+import { Route as AuthDietRouteImport } from './routes/_auth.diet'
+import { Route as AuthFastingRouteImport } from './routes/_auth.fasting'
+import { Route as AuthMetricsRouteImport } from './routes/_auth.metrics'
 
-import { Route as rootRoute } from "./routes/__root"
-import { Route as AuthImport } from "./routes/_auth"
-import { Route as IndexImport } from "./routes/index"
-import { Route as AuthMetricsImport } from "./routes/_auth.metrics"
-import { Route as AuthFastingImport } from "./routes/_auth.fasting"
-import { Route as AuthDietImport } from "./routes/_auth.diet"
-
-// Create/Update Routes
-
-const AuthRoute = AuthImport.update({
-  id: "/_auth",
-  getParentRoute: () => rootRoute,
+const IndexRoute = IndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => rootRouteImport,
 } as any)
-
-const IndexRoute = IndexImport.update({
-  id: "/",
-  path: "/",
-  getParentRoute: () => rootRoute,
+const AuthRoute = AuthRouteImport.update({
+  id: '/_auth',
+  getParentRoute: () => rootRouteImport,
 } as any)
-
-const AuthMetricsRoute = AuthMetricsImport.update({
-  id: "/metrics",
-  path: "/metrics",
+const AuthDietRoute = AuthDietRouteImport.update({
+  id: '/diet',
+  path: '/diet',
+  getParentRoute: () => AuthRoute,
+} as any)
+const AuthFastingRoute = AuthFastingRouteImport.update({
+  id: '/fasting',
+  path: '/fasting',
+  getParentRoute: () => AuthRoute,
+} as any)
+const AuthMetricsRoute = AuthMetricsRouteImport.update({
+  id: '/metrics',
+  path: '/metrics',
   getParentRoute: () => AuthRoute,
 } as any)
 
-const AuthFastingRoute = AuthFastingImport.update({
-  id: "/fasting",
-  path: "/fasting",
-  getParentRoute: () => AuthRoute,
-} as any)
+export interface FileRoutesByFullPath {
+  '/': typeof IndexRoute
+  '/diet': typeof AuthDietRoute
+  '/fasting': typeof AuthFastingRoute
+  '/metrics': typeof AuthMetricsRoute
+}
+export interface FileRoutesByTo {
+  '/': typeof IndexRoute
+  '/diet': typeof AuthDietRoute
+  '/fasting': typeof AuthFastingRoute
+  '/metrics': typeof AuthMetricsRoute
+}
+export interface FileRoutesById {
+  __root__: typeof rootRouteImport
+  '/': typeof IndexRoute
+  '/_auth': typeof AuthRouteWithChildren
+  '/_auth/diet': typeof AuthDietRoute
+  '/_auth/fasting': typeof AuthFastingRoute
+  '/_auth/metrics': typeof AuthMetricsRoute
+}
+export interface FileRouteTypes {
+  fileRoutesByFullPath: FileRoutesByFullPath
+  fullPaths: '/' | '/diet' | '/fasting' | '/metrics'
+  fileRoutesByTo: FileRoutesByTo
+  to: '/' | '/diet' | '/fasting' | '/metrics'
+  id:
+    | '__root__'
+    | '/'
+    | '/_auth'
+    | '/_auth/diet'
+    | '/_auth/fasting'
+    | '/_auth/metrics'
+  fileRoutesById: FileRoutesById
+}
+export interface RootRouteChildren {
+  IndexRoute: typeof IndexRoute
+  AuthRoute: typeof AuthRouteWithChildren
+}
 
-const AuthDietRoute = AuthDietImport.update({
-  id: "/diet",
-  path: "/diet",
-  getParentRoute: () => AuthRoute,
-} as any)
-
-// Populate the FileRoutesByPath interface
-
-declare module "@tanstack/react-router" {
+declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    "/": {
-      id: "/"
-      path: "/"
-      fullPath: "/"
-      preLoaderRoute: typeof IndexImport
-      parentRoute: typeof rootRoute
+    '/': {
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
     }
-    "/_auth": {
-      id: "/_auth"
-      path: ""
-      fullPath: ""
-      preLoaderRoute: typeof AuthImport
-      parentRoute: typeof rootRoute
+    '/_auth': {
+      id: '/_auth'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AuthRouteImport
+      parentRoute: typeof rootRouteImport
     }
-    "/_auth/diet": {
-      id: "/_auth/diet"
-      path: "/diet"
-      fullPath: "/diet"
-      preLoaderRoute: typeof AuthDietImport
-      parentRoute: typeof AuthImport
+    '/_auth/diet': {
+      id: '/_auth/diet'
+      path: '/diet'
+      fullPath: '/diet'
+      preLoaderRoute: typeof AuthDietRouteImport
+      parentRoute: typeof AuthRoute
     }
-    "/_auth/fasting": {
-      id: "/_auth/fasting"
-      path: "/fasting"
-      fullPath: "/fasting"
-      preLoaderRoute: typeof AuthFastingImport
-      parentRoute: typeof AuthImport
+    '/_auth/fasting': {
+      id: '/_auth/fasting'
+      path: '/fasting'
+      fullPath: '/fasting'
+      preLoaderRoute: typeof AuthFastingRouteImport
+      parentRoute: typeof AuthRoute
     }
-    "/_auth/metrics": {
-      id: "/_auth/metrics"
-      path: "/metrics"
-      fullPath: "/metrics"
-      preLoaderRoute: typeof AuthMetricsImport
-      parentRoute: typeof AuthImport
+    '/_auth/metrics': {
+      id: '/_auth/metrics'
+      path: '/metrics'
+      fullPath: '/metrics'
+      preLoaderRoute: typeof AuthMetricsRouteImport
+      parentRoute: typeof AuthRoute
     }
   }
 }
-
-// Create and export the route tree
 
 interface AuthRouteChildren {
   AuthDietRoute: typeof AuthDietRoute
@@ -106,93 +133,10 @@ const AuthRouteChildren: AuthRouteChildren = {
 
 const AuthRouteWithChildren = AuthRoute._addFileChildren(AuthRouteChildren)
 
-export interface FileRoutesByFullPath {
-  "/": typeof IndexRoute
-  "": typeof AuthRouteWithChildren
-  "/diet": typeof AuthDietRoute
-  "/fasting": typeof AuthFastingRoute
-  "/metrics": typeof AuthMetricsRoute
-}
-
-export interface FileRoutesByTo {
-  "/": typeof IndexRoute
-  "": typeof AuthRouteWithChildren
-  "/diet": typeof AuthDietRoute
-  "/fasting": typeof AuthFastingRoute
-  "/metrics": typeof AuthMetricsRoute
-}
-
-export interface FileRoutesById {
-  __root__: typeof rootRoute
-  "/": typeof IndexRoute
-  "/_auth": typeof AuthRouteWithChildren
-  "/_auth/diet": typeof AuthDietRoute
-  "/_auth/fasting": typeof AuthFastingRoute
-  "/_auth/metrics": typeof AuthMetricsRoute
-}
-
-export interface FileRouteTypes {
-  fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: "/" | "" | "/diet" | "/fasting" | "/metrics"
-  fileRoutesByTo: FileRoutesByTo
-  to: "/" | "" | "/diet" | "/fasting" | "/metrics"
-  id:
-    | "__root__"
-    | "/"
-    | "/_auth"
-    | "/_auth/diet"
-    | "/_auth/fasting"
-    | "/_auth/metrics"
-  fileRoutesById: FileRoutesById
-}
-
-export interface RootRouteChildren {
-  IndexRoute: typeof IndexRoute
-  AuthRoute: typeof AuthRouteWithChildren
-}
-
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthRoute: AuthRouteWithChildren,
 }
-
-export const routeTree = rootRoute
+export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-/* ROUTE_MANIFEST_START
-{
-  "routes": {
-    "__root__": {
-      "filePath": "__root.tsx",
-      "children": [
-        "/",
-        "/_auth"
-      ]
-    },
-    "/": {
-      "filePath": "index.tsx"
-    },
-    "/_auth": {
-      "filePath": "_auth.tsx",
-      "children": [
-        "/_auth/diet",
-        "/_auth/fasting",
-        "/_auth/metrics"
-      ]
-    },
-    "/_auth/diet": {
-      "filePath": "_auth.diet.tsx",
-      "parent": "/_auth"
-    },
-    "/_auth/fasting": {
-      "filePath": "_auth.fasting.tsx",
-      "parent": "/_auth"
-    },
-    "/_auth/metrics": {
-      "filePath": "_auth.metrics.tsx",
-      "parent": "/_auth"
-    }
-  }
-}
-ROUTE_MANIFEST_END */
