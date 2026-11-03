@@ -15,7 +15,7 @@ import type { FoodGroup, NewFoodGroup } from "@/types"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { STARTER_FOOD_GROUPS } from "@/lib/starterFoodGroups"
+import { remainingStarters } from "@/lib/starterFoodGroups"
 
 type ManageFoodGroupsProps = {
   foodGroups: FoodGroup[]
@@ -57,10 +57,7 @@ export default function ManageFoodGroups({
 
   const nextOrder = active.reduce((max, g) => Math.max(max, g.order), -1) + 1
 
-  const usedNames = new Set(foodGroups.map(g => g.name.trim().toLowerCase()))
-  const remainingStarters = STARTER_FOOD_GROUPS.filter(
-    s => !usedNames.has(s.name.toLowerCase()),
-  )
+  const starters = remainingStarters(foodGroups)
 
   const handleCreate = (newGroup: NewFoodGroup) => {
     // Populate inputs so the starter is visible and editable before persisting
@@ -178,9 +175,9 @@ export default function ManageFoodGroups({
         <Label className="text-muted-foreground text-xs">
           Add a food group
         </Label>
-        {remainingStarters.length > 0 && (
+        {starters.length > 0 && (
           <div className="flex flex-wrap gap-1.5">
-            {remainingStarters.map(starter => (
+            {starters.map(starter => (
               <button
                 key={starter.name}
                 type="button"

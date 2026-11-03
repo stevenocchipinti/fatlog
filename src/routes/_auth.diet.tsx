@@ -14,6 +14,7 @@ export const Route = createFileRoute("/_auth/diet")({
 
 function DietPage() {
   const {
+    state,
     foodGroups,
     rules,
     exceptions,
@@ -46,6 +47,7 @@ function DietPage() {
   return (
     <>
       <DietTimeline
+        loading={state !== "LOADED"}
         foodGroups={foodGroups}
         rules={rules}
         exceptions={exceptions}
@@ -59,6 +61,8 @@ function DietPage() {
           openWith({ kind: "editException", exception })
         }
         onSelectRule={rule => openWith({ kind: "editRule", rule })}
+        onAddFoodGroup={addFoodGroup}
+        onManageFoodGroups={() => openWith({ kind: "manage" })}
       />
 
       <DietDrawer

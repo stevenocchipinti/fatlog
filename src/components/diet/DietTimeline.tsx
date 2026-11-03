@@ -1,4 +1,10 @@
-import type { DietException, DietRule, FoodGroup, LocalDate } from "@/types"
+import type {
+  DietException,
+  DietRule,
+  FoodGroup,
+  LocalDate,
+  NewFoodGroup,
+} from "@/types"
 
 import {
   buildTimelineRows,
@@ -8,9 +14,13 @@ import {
   todayLocalDate,
 } from "@/components/diet/timeline"
 import { fromLocalDate } from "@/lib/localDate"
+import { Button } from "@/components/ui/button"
+import { remainingStarters } from "@/lib/starterFoodGroups"
 import { cn } from "@/lib/utils"
 
 type DietTimelineProps = {
+  /** True until the food groups subscription has responded at least once. */
+  loading: boolean
   foodGroups: FoodGroup[]
   rules: DietRule[]
   exceptions: DietException[]
@@ -22,6 +32,10 @@ type DietTimelineProps = {
   onSelectException: (exception: DietException) => void
   /** Open an existing rule for editing. */
   onSelectRule: (rule: DietRule) => void
+  /** Create a food group directly (used by the empty state's starters). */
+  onAddFoodGroup: (foodGroup: NewFoodGroup) => void
+  /** Open food group management. */
+  onManageFoodGroups: () => void
 }
 
 const dateFormatter = new Intl.DateTimeFormat(undefined, {
@@ -40,6 +54,7 @@ const yearFormatter = new Intl.DateTimeFormat(undefined, { year: "numeric" })
  * of a rule lane (a notable observation within the rule) or stand alone.
  */
 export default function DietTimeline({
+  loading,
   foodGroups,
   rules,
   exceptions,
@@ -47,6 +62,8 @@ export default function DietTimeline({
   onSelectCell,
   onSelectException,
   onSelectRule,
+  onAddFoodGroup,
+  onManageFoodGroups,
 }: DietTimelineProps) {
   const columns = foodGroups
     .filter(g => !g.archived)
@@ -62,6 +79,16 @@ export default function DietTimeline({
   const rows = buildTimelineRows(visibleRules, visibleExceptions)
   const today = todayLocalDate()
 
+  if (columns.length === 0 && !loading) {
+    return (
+      <DietEmptyState
+        foodGroups={foodGroups}
+        onAddFoodGroup={onAddFoodGroup}
+        onManageFoodGroups={onManageFoodGroups}
+      />
+    )
+  }
+
   if (columns.length === 0) {
     // Show a skeleton grid placeholder so the view transition animates against
     // meaningful grid content rather than jumping to data after the animation
@@ -71,7 +98,11 @@ export default function DietTimeline({
       gridTemplateColumns: `4.5rem repeat(${columnCount}, minmax(3rem, 1fr))`,
     }
     return (
-      <div className="mx-auto w-full max-w-3xl overflow-x-auto">
+      <div
+        role="status"
+        aria-label="Loading diet"
+        className="mx-auto w-full max-w-3xl overflow-x-auto"
+      >
         <div className="min-w-fit">
           {Array.from({ length: 6 }).map((_row, rowIndex) => (
             <div
@@ -294,4 +325,72 @@ function crossesGap(
   const older = rows[gapIndex + 1]
   if (newer.kind !== "event" || older.kind !== "event") return false
   return ruleActiveOn(rule, newer.date) && ruleActiveOn(rule, older.date)
+}
+
+/**
+ * Shown once diet data has loaded and there are no active food groups: a new
+ * user, or one who has archived every group. Starters are offered as one-tap
+ * creates; anything else (custom groups, unarchiving) goes through food group
+ * management.
+ */
+function DietEmptyState({
+  foodGroups,
+  onAddFoodGroup,
+  onManageFoodGroups,
+}: Pick<
+  DietTimelineProps,
+  "foodGroups" | "onAddFoodGroup" | "onManageFoodGroups"
+>) {
+  // Only reached with no active groups, so any group here is archived.
+  const allArchived = foodGroups.length > 0
+  const starters = remainingStarters(foodGroups)
+
+  return (
+    <div className="mx-auto flex w-full max-w-sm flex-col items-center gap-4 px-6 py-12 text-center">
+      <h2 className="text-lg font-semibold">
+        {allArchived
+          ? "All your food groups are archived"
+          : "No food groups yet"}
+      </h2>
+      <p className="text-muted-foreground text-sm">
+        {starters.length === 0
+          ? "Unarchive one, or add a new one, in food group management."
+          : allArchived
+            ? "Unarchive one in food group management, or tap a starter below to add it."
+            : "Food groups are the columns of your diet timeline. Tap one to add it."}
+      </p>
+      {starters.length > 0 && (
+        <div className="flex flex-wrap justify-center gap-1.5">
+          {starters.map(starter => (
+            <button
+              key={starter.name}
+              type="button"
+              aria-label={`Add ${starter.emoji} ${starter.name}`}
+              onClick={() =>
+                onAddFoodGroup({
+                  emoji: starter.emoji,
+                  name: starter.name,
+                  // No active groups, so this is first in the column order.
+                  order: 0,
+                  archived: false,
+                })
+              }
+              className="bg-muted hover:bg-muted/70 flex items-center gap-1 rounded-full px-2.5 py-1 text-sm transition-colors"
+            >
+              <span aria-hidden>{starter.emoji}</span>
+              {starter.name}
+            </button>
+          ))}
+        </div>
+      )}
+      <Button
+        variant="link"
+        size="sm"
+        className="text-muted-foreground"
+        onClick={onManageFoodGroups}
+      >
+        {allArchived ? "Manage food groups" : "Add a custom food group"}
+      </Button>
+    </div>
+  )
 }
