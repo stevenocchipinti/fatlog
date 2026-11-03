@@ -1,10 +1,6 @@
 import type { DietException, DietRule, LocalDate } from "@/types"
 
-import {
-  compareLocalDates,
-  daysBetween,
-  todayLocalDate,
-} from "@/lib/localDate"
+import { compareLocalDates, daysBetween, todayLocalDate } from "@/lib/localDate"
 
 export { todayLocalDate }
 
@@ -101,9 +97,11 @@ export const ruleStintLabel = (
   exceptions: DietException[],
   today: LocalDate = todayLocalDate(),
 ): string | null => {
+  // .at(0) (not [0]) so the type admits the empty-array case.
   const activeRule = rules
     .filter(rule => ruleActiveOn(rule, today, today))
-    .sort((a, b) => compareLocalDates(b.startDate, a.startDate))[0]
+    .sort((a, b) => compareLocalDates(b.startDate, a.startDate))
+    .at(0)
 
   if (activeRule) {
     return formatStint(daysBetween(activeRule.startDate, today), "+")
@@ -112,12 +110,14 @@ export const ruleStintLabel = (
   const lastException = exceptions
     .map(exception => exception.date)
     .filter(date => date <= today)
-    .sort((a, b) => compareLocalDates(b, a))[0]
+    .sort((a, b) => compareLocalDates(b, a))
+    .at(0)
 
   const lastRuleEnd = rules
     .map(rule => rule.endDate)
     .filter((date): date is LocalDate => date !== undefined && date <= today)
-    .sort((a, b) => compareLocalDates(b, a))[0]
+    .sort((a, b) => compareLocalDates(b, a))
+    .at(0)
 
   const anchor = lastException ?? lastRuleEnd
   if (!anchor) return null

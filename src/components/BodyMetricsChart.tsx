@@ -327,7 +327,7 @@ export const BodyMetricsChart: React.FC<BodyMetricsChartProps> = ({
             maxTicksLimit: timeScale === "1M" ? 12 : 15,
             display: true,
             callback: value => {
-              const date = new Date(value as number)
+              const date = new Date(value)
 
               return date.toLocaleDateString("en-AU", {
                 day: "2-digit",

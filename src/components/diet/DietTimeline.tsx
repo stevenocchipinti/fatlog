@@ -73,7 +73,7 @@ export default function DietTimeline({
     return (
       <div className="mx-auto w-full max-w-3xl overflow-x-auto">
         <div className="min-w-fit">
-          {Array.from({ length: 6 }).map((_, rowIndex) => (
+          {Array.from({ length: 6 }).map((_row, rowIndex) => (
             <div
               key={rowIndex}
               className={cn(
@@ -83,17 +83,17 @@ export default function DietTimeline({
               style={gridStyle}
             >
               <div className="flex flex-col items-end justify-center py-2 pr-2 text-right">
-                <span className="text-xs font-medium text-foreground">Day</span>
-                <span className="text-muted-foreground text-[0.65rem]">2024</span>
+                <span className="text-foreground text-xs font-medium">Day</span>
+                <span className="text-muted-foreground text-[0.65rem]">
+                  2024
+                </span>
               </div>
-              {Array.from({ length: columnCount }).map((_, colIndex) => (
+              {Array.from({ length: columnCount }).map((_col, colIndex) => (
                 <div
                   key={colIndex}
                   className="relative flex min-h-9 items-center justify-center"
                 >
-                  <div
-                    className="absolute left-1/2 -translate-x-1/2 w-2/3 h-2/3 bg-border/20 rounded-full animate-pulse"
-                  />
+                  <div className="bg-border/20 absolute left-1/2 h-2/3 w-2/3 -translate-x-1/2 animate-pulse rounded-full" />
                 </div>
               ))}
             </div>
