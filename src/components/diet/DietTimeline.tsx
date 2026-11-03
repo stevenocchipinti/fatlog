@@ -101,7 +101,7 @@ export default function DietTimeline({
       <div
         role="status"
         aria-label="Loading diet"
-        className="mx-auto w-full max-w-3xl overflow-x-auto"
+        className="mx-auto w-full max-w-3xl overflow-x-auto px-2"
       >
         <div className="min-w-fit">
           {Array.from({ length: 6 }).map((_row, rowIndex) => (
@@ -151,7 +151,7 @@ export default function DietTimeline({
     )
 
   return (
-    <div className="mx-auto w-full max-w-3xl overflow-x-auto">
+    <div className="mx-auto w-full max-w-3xl overflow-x-auto px-2">
       <div className="min-w-fit">
         {rows.map((row, index) => {
           if (row.kind === "gap") {
@@ -250,7 +250,7 @@ export default function DietTimeline({
       </div>
 
       <div
-        className="bg-card sticky bottom-0 z-10 grid items-center gap-x-1 rounded-3xl border pt-2 pb-4 text-sm"
+        className="bg-card sticky bottom-0 z-10 grid items-center gap-x-1 rounded-3xl border py-3 text-sm"
         style={{ ...gridStyle, viewTransitionName: "tab-header" }}
       >
         <span className="text-muted-foreground min-w-[4.5rem] pr-2 pl-4 text-end font-semibold">
