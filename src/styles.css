@@ -266,32 +266,22 @@ html[data-nav-direction="forward"]::view-transition-new(tracker-title) {
   animation: slide-in-from-right 320ms cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
-/* Tracker pill — show only the live new state, so the active highlight's own
-   (framer-motion) slide plays through the transition instead of a cross-fade */
+/* Tracker pill and + button — show only the live new state. Both look the
+   same on every tracker, so cross-fading them only made them dip in opacity
+   mid-transition (and would hide the pill highlight's own framer-motion
+   slide). */
 ::view-transition-group(bottom-nav),
 ::view-transition-old(bottom-nav),
-::view-transition-new(bottom-nav) {
-  animation: none;
-}
-
-::view-transition-old(bottom-nav) {
-  display: none;
-}
-
-/* FAB — keep pinned & static (no box morph), cross-fade in place instead of
-   additively flashing */
-::view-transition-group(fab) {
-  animation: none;
-}
-
-::view-transition-old(fab) {
-  animation: fade-out 200ms ease both;
-  mix-blend-mode: normal;
-}
-
+::view-transition-new(bottom-nav),
+::view-transition-group(fab),
+::view-transition-old(fab),
 ::view-transition-new(fab) {
-  animation: fade-in 300ms cubic-bezier(0.22, 1, 0.36, 1) 60ms both;
-  mix-blend-mode: normal;
+  animation: none;
+}
+
+::view-transition-old(bottom-nav),
+::view-transition-old(fab) {
+  display: none;
 }
 
 /* Card morph (diet header card ↔ metrics table card). The group itself is
