@@ -12,6 +12,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: npm ci && npm run build:beta
+      # Database rules are deployed from beta ONLY. Beta and prod share one
+      # Realtime Database, and beta is always ahead of prod, so deploying rules
+      # from main could roll back rules that beta code depends on. See AGENTS.md.
+      # Rules deploy before hosting so new code never runs against old rules.
+      - uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_FATLOG_APP }}
+      - run: npx --yes firebase-tools@15.26.0 deploy --only database --project fatlog-app --non-interactive
       - uses: FirebaseExtended/action-hosting-deploy@v0
         with:
           repoToken: ${{ secrets.GITHUB_TOKEN }}

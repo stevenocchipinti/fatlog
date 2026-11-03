@@ -1,3 +1,7 @@
+// Deployed ONLY by the beta CI workflow (.github/workflows/firebase-hosting-beta.yml).
+// Beta and prod share this one Realtime Database, so these rules must keep
+// working for the (older) code on prod as well as the code on beta.
+// Never deploy rules from main or by hand. See AGENTS.md.
 {
   "rules": {
     "checkins": {
