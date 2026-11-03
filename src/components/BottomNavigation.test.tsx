@@ -3,6 +3,7 @@ import { afterEach, describe, expect, it, vi } from "vitest"
 
 import BottomNavigation from "./BottomNavigation"
 
+import type { TrackerId } from "@/lib/trackers"
 import {
   PrimaryActionProvider,
   useRegisterPrimaryAction,
@@ -22,7 +23,7 @@ const RegisterAction = ({ onTrigger }: { onTrigger: () => void }) => {
   return null
 }
 
-const renderNav = (trackerIds: string[], onTrigger: () => void = () => {}) =>
+const renderNav = (trackerIds: TrackerId[], onTrigger: () => void = () => {}) =>
   render(
     <PrimaryActionProvider>
       <RegisterAction onTrigger={onTrigger} />

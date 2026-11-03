@@ -3,9 +3,9 @@ import { createContext, useContext, useEffect, useState } from "react"
 import type { ReactNode } from "react"
 
 /**
- * The bottom navigation's center primary action is mode-specific: on Metrics it
- * opens the metrics recording drawer, on Diet it opens the Diet drawer. Rather
- * than the shared nav (which lives in the authenticated layout) knowing about
+ * The bottom bar's + (primary action) is tracker-specific: on Metrics it opens
+ * the metrics recording drawer, on Diet it opens the Diet drawer. Rather than
+ * the shared bar (which lives in the authenticated layout) knowing about
  * every route's drawer, each active route registers a handler and accessible
  * label here. The nav simply invokes whatever the current route registered.
  */

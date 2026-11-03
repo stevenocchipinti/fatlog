@@ -2,7 +2,8 @@ import { flushSync } from "react-dom"
 import { useLocation, useNavigate } from "@tanstack/react-router"
 import React from "react"
 
-import type { NavigationDirection } from "@/lib/trackers"
+/** Which way the screen slides: forward to a later tracker, backward to an earlier one. */
+export type NavigationDirection = "forward" | "backward"
 
 export interface TransitionNavigationOptions {
   direction?: NavigationDirection
@@ -54,8 +55,7 @@ export const useNavigateWithTransition = () => {
   )
 }
 
-interface TransitionLinkProps
-  extends React.AnchorHTMLAttributes<HTMLAnchorElement> {
+interface TransitionLinkProps extends React.AnchorHTMLAttributes<HTMLAnchorElement> {
   children: React.ReactNode
   className?: string
   direction?: NavigationDirection
@@ -79,7 +79,7 @@ export const TransitionLink = ({
       {...rest}
       className={className}
       href={to}
-      onClick={(event) => {
+      onClick={event => {
         onClick?.(event)
 
         if (event.defaultPrevented || !shouldHandleLinkClick(event)) return

@@ -1,6 +1,7 @@
 import { Activity, NotebookPen, Salad, Thermometer } from "lucide-react"
 
 import type { LucideIcon } from "lucide-react"
+import type { NavigationDirection } from "@/lib/viewTransitions"
 
 /** A kind of observation that can be enabled per profile. See GLOSSARY.md. */
 export type TrackerId = "metrics" | "diet" | "bowelMovements" | "symptoms"
@@ -12,7 +13,7 @@ export type Tracker = {
   Icon: LucideIcon
 }
 
-/** Every tracker, in the fixed order they appear in the bottom bar. */
+/** Every tracker, in canonical order (as shown in the bottom bar). */
 export const TRACKERS: readonly Tracker[] = [
   { id: "metrics", route: "/metrics", title: "Metrics", Icon: Activity },
   { id: "diet", route: "/diet", title: "Diet", Icon: Salad },
@@ -40,8 +41,6 @@ export const ENABLED_TRACKERS: readonly Tracker[] = TRACKERS.filter(
 
 export const trackerForPath = (pathname: string) =>
   TRACKERS.find(tracker => tracker.route === pathname)
-
-export type NavigationDirection = "forward" | "backward"
 
 /**
  * Which way the screen slides when moving between trackers: forward to a
