@@ -20,7 +20,7 @@ export type TimeScaleOption = "1M" | "3M" | "6M" | "1Y" | "ALL"
 // Diet data models a user's regular diet as `diet rules` (date ranges where a
 // food group is intentionally part of the diet) and `diet exceptions` (dated
 // notable food-group observations). Food groups are the shared vocabulary both
-// concepts hang off. See CONTEXT.md for the agreed domain language.
+// concepts hang off. See GLOSSARY.md for the agreed domain language.
 
 /**
  * A local date-only value, formatted as `YYYY-MM-DD`.
