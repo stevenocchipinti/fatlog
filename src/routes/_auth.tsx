@@ -1,8 +1,8 @@
 import {
-  Link,
   Outlet,
   createFileRoute,
   redirect,
+  useLocation,
   useRouter,
 } from "@tanstack/react-router"
 import { LogIn, LogOut } from "lucide-react"
@@ -17,6 +17,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import BottomNavigation from "@/components/BottomNavigation"
 import { PrimaryActionProvider } from "@/lib/primaryAction"
 import { useAuth } from "@/lib/firebase"
+import { trackerForPath } from "@/lib/trackers"
 
 export const Route = createFileRoute("/_auth")({
   beforeLoad: ({ context }) => {
@@ -34,6 +35,8 @@ const AuthComponent = () => {
 
   const router = useRouter()
   const navigate = Route.useNavigate()
+  const { pathname } = useLocation()
+  const tracker = trackerForPath(pathname)
 
   const handleLogout = () => {
     if (window.confirm("Are you sure you want to logout?")) {
@@ -47,16 +50,13 @@ const AuthComponent = () => {
 
   return (
     <PrimaryActionProvider>
-      <div className="flex h-dvh flex-col gap-4">
-        <header className="grid grid-cols-[4rem_1fr_4rem] place-items-center">
-          <span />
-          <h1 className="m-4 text-center text-3xl font-extrabold text-gray-900 md:text-5xl lg:text-6xl dark:text-white">
-            <Link
-              to="/"
-              className="from-brand-1 to-brand-2 bg-linear-to-tl bg-clip-text text-transparent"
-            >
-              Fatlog
-            </Link>
+      <div className="flex h-dvh flex-col gap-2">
+        <header className="flex items-center justify-between gap-4 pt-5 pl-6">
+          <h1
+            className="text-3xl font-extrabold text-gray-900 dark:text-white"
+            style={{ viewTransitionName: "tracker-title" }}
+          >
+            {tracker?.title}
           </h1>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -98,12 +98,11 @@ const AuthComponent = () => {
           </DropdownMenu>
         </header>
         {/*
-          The bottom nav is absolutely positioned, so this scroll container is
-          the positioning context and reserves space at the bottom (nav bar +
-          a little breathing room) so content is never hidden behind it.
+          The bottom bar sits in its own row below this scroll container, so
+          page content is never hidden behind it.
         */}
         <main
-          className="relative flex min-h-0 flex-1 flex-col justify-end gap-4 overflow-y-auto pb-16"
+          className="relative flex min-h-0 flex-1 flex-col justify-end gap-4 overflow-y-auto"
           style={{ viewTransitionName: "app-screen" }}
         >
           <Outlet />

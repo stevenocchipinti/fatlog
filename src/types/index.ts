@@ -83,6 +83,3 @@ export type DietException = {
 }
 
 export type NewDietException = Omit<DietException, "id">
-
-/** The two authenticated app modes exposed in the bottom navigation. */
-export type AppMode = "metrics" | "diet"
