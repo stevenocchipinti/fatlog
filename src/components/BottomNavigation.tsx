@@ -33,7 +33,7 @@ export default function BottomNavigation({
       {trackers.length > 1 && (
         <nav
           aria-label="Trackers"
-          className="border-border/50 bg-card flex h-14 items-center rounded-full border p-1 shadow-lg"
+          className="border-border/50 bg-card flex h-14 items-center rounded-full border p-1 shadow-lg dark:bg-zinc-900 dark:shadow-inner"
           style={{ viewTransitionName: "bottom-nav" }}
         >
           {trackers.map(tracker => (
@@ -81,7 +81,7 @@ function TrackerTab({
       {isActive && (
         <motion.span
           layoutId="tracker-pill-highlight"
-          className="bg-muted absolute inset-0 rounded-full"
+          className="bg-muted dark:bg-card absolute inset-0 rounded-full dark:border dark:shadow-sm"
           transition={{ type: "spring", stiffness: 500, damping: 30 }}
         />
       )}
