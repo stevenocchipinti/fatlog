@@ -1,4 +1,5 @@
 import { useLocation } from "@tanstack/react-router"
+import { motion } from "framer-motion"
 import { Plus } from "lucide-react"
 
 import type { Tracker, TrackerId } from "@/lib/trackers"
@@ -78,9 +79,10 @@ function TrackerTab({
       className="relative flex h-full w-14 items-center justify-center rounded-full"
     >
       {isActive && (
-        <span
+        <motion.span
+          layoutId="tracker-pill-highlight"
           className="bg-muted absolute inset-0 rounded-full"
-          style={{ viewTransitionName: "bottom-nav-active-pill" }}
+          transition={{ type: "spring", stiffness: 500, damping: 30 }}
         />
       )}
       <Icon

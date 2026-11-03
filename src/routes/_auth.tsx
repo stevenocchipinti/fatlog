@@ -52,7 +52,10 @@ const AuthComponent = () => {
     <PrimaryActionProvider>
       <div className="flex h-dvh flex-col gap-2">
         <header className="flex items-center justify-between gap-4 pt-5 pl-6">
-          <h1 className="text-3xl font-extrabold text-gray-900 dark:text-white">
+          <h1
+            className="text-3xl font-extrabold text-gray-900 dark:text-white"
+            style={{ viewTransitionName: "tracker-title" }}
+          >
             {tracker?.title}
           </h1>
           <DropdownMenu>
