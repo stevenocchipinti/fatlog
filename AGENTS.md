@@ -12,6 +12,14 @@ Default five-role vocabulary: `needs-triage`, `needs-info`, `ready-for-agent`, `
 
 Single-context: one `GLOSSARY.md` and `docs/adr/` at the repo root. See `docs/agents/domain.md`.
 
+## Local development & testing
+
+- `npm run emulators` starts the Firebase emulators (auth `:9099`, database `:9000`, emulator UI `:4000`, hosting `:3001`). `npm run dev` serves the app at `http://localhost:3000`, which connects to those emulators automatically.
+- **Signing in:** click "Login with Google", then in the auth emulator widget pick an existing account, or "Add new account" → "Auto-generate user information". Emulator data is wiped when the emulators restart, so a stale session shows a logged-out avatar (⨯). Sign in again.
+- **Inspecting data:** `curl -H "Authorization: Bearer owner" "http://localhost:9000/.json?ns=fatlog-app"`. The namespace is `fatlog-app`, from the legacy `fatlog-app.firebaseio.com` `databaseURL`.
+- **Stale dependencies:** Vite only re-bundles dependencies on startup, so after `npm install` or `npm update`, restart `npm run dev` before testing in the browser.
+- **Checks:** `npx tsc`, `npm run lint`, `npm test`. CI doesn't run these yet; it only builds and deploys.
+
 ## Hosting & deployment
 
 - **Project**: `fatlog-app`. Auth users, the Realtime Database, and all hosting sites are project-level and shared.
