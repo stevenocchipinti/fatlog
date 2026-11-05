@@ -15,9 +15,8 @@ describe("BRISTOL_TYPES", () => {
     expect(BRISTOL_TYPES[6].description).toBe("Entirely liquid")
   })
 
-  it("gives every type an emoji and a description", () => {
-    for (const { emoji, description } of BRISTOL_TYPES) {
-      expect(emoji).not.toBe("")
+  it("gives every type a description", () => {
+    for (const { description } of BRISTOL_TYPES) {
       expect(description).not.toBe("")
     }
   })

@@ -15,6 +15,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { BRISTOL_TYPES } from "@/lib/bowelMovements"
+import BristolIcon from "@/components/stool/BristolIcon"
 import {
   fromDateTimeLocalValue,
   toDateTimeLocalValue,
@@ -113,9 +114,10 @@ export default function BowelMovementDrawer({
                     <span className="w-6 text-center text-lg font-semibold tabular-nums">
                       {info.type}
                     </span>
-                    <span className="text-2xl" aria-hidden>
-                      {info.emoji}
-                    </span>
+                    <BristolIcon
+                      type={info.type}
+                      className="!size-7 shrink-0"
+                    />
                     <span className="flex-1 text-sm">{info.description}</span>
                   </span>
                 </label>

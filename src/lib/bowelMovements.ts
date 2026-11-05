@@ -8,23 +8,22 @@ import { toLocalDate } from "@/lib/localDate"
 
 export type BristolTypeInfo = {
   type: BristolType
-  emoji: string
   description: string
 }
 
 /** The Bristol stool chart, from 1 (separate hard lumps) to 7 (entirely liquid). */
 export const BRISTOL_TYPES: readonly BristolTypeInfo[] = [
-  { type: 1, emoji: "🌰", description: "Separate hard lumps" },
-  { type: 2, emoji: "🥜", description: "Lumpy and sausage-like" },
-  { type: 3, emoji: "🌭", description: "Sausage with cracks on the surface" },
-  { type: 4, emoji: "🍌", description: "Smooth, soft sausage or snake" },
-  { type: 5, emoji: "☁️", description: "Soft blobs with clear-cut edges" },
+  { type: 1, description: "Separate hard lumps" },
+  { type: 2, description: "Lumpy and sausage-like" },
+  { type: 3, description: "Sausage with cracks on the surface" },
+  { type: 4, description: "Smooth, soft sausage or snake" },
+  { type: 5, description: "Soft blobs with clear-cut edges" },
   {
     type: 6,
-    emoji: "🍦",
+
     description: "Fluffy, mushy pieces with ragged edges",
   },
-  { type: 7, emoji: "💧", description: "Entirely liquid" },
+  { type: 7, description: "Entirely liquid" },
 ]
 
 /** A bowel movement as stored at `/bowelMovements/<profileId>/<id>`. */

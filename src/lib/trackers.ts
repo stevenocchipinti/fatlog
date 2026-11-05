@@ -1,7 +1,8 @@
-import { Activity, NotebookPen, Salad, Thermometer } from "lucide-react"
+import { Activity, Frown, Salad } from "lucide-react"
 
 import type { LucideIcon } from "lucide-react"
 import type { NavigationDirection } from "@/lib/viewTransitions"
+import { Poo } from "@/components/icons"
 
 /** A kind of observation that can be enabled per profile. See GLOSSARY.md. */
 export type TrackerId = "metrics" | "diet" | "bowelMovements" | "symptoms"
@@ -21,13 +22,13 @@ export const TRACKERS: readonly Tracker[] = [
     id: "bowelMovements",
     route: "/stool",
     title: "Stool",
-    Icon: NotebookPen,
+    Icon: Poo,
   },
   {
     id: "symptoms",
     route: "/symptoms",
     title: "Symptoms",
-    Icon: Thermometer,
+    Icon: Frown,
   },
 ]
 

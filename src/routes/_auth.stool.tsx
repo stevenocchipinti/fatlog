@@ -6,6 +6,7 @@ import type { BowelMovement, LocalDate } from "@/types"
 
 import BowelMovementDrawer from "@/components/stool/BowelMovementDrawer"
 import { BRISTOL_TYPES, groupByLocalDay } from "@/lib/bowelMovements"
+import BristolIcon from "@/components/stool/BristolIcon"
 import { useBowelMovements } from "@/lib/firebase"
 import { addDays, fromLocalDate, todayLocalDate } from "@/lib/localDate"
 import { useRegisterPrimaryAction } from "@/lib/primaryAction"
@@ -81,10 +82,13 @@ function StoolPage() {
                           {format(new Date(movement.timestamp), "HH:mm")}
                         </span>
                         <span
-                          className="bg-muted flex size-9 shrink-0 items-center justify-center rounded-full text-lg"
+                          className="bg-muted flex size-9 shrink-0 items-center justify-center rounded-full"
                           title={info.description}
                         >
-                          <span aria-hidden>{info.emoji}</span>
+                          <BristolIcon
+                            type={movement.bristolType}
+                            className="!size-5"
+                          />
                         </span>
                         <span className="min-w-0 flex-1">
                           <span className="block text-sm font-medium">
