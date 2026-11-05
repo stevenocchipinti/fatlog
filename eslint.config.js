@@ -8,7 +8,15 @@ export default [
   // type-aware parser can't lint them.
   { ignores: ["*.config.js", "dist/**"] },
   ...tanstackConfig,
-  reactHooks.configs["recommended-latest"],
+  reactHooks.configs.flat["recommended-latest"],
+  {
+    rules: {
+      // New in react-hooks 7. The drawers reset their form state in an
+      // effect when they open; refactoring them to remount instead is a
+      // separate change, so keep this visible as a warning until then.
+      "react-hooks/set-state-in-effect": "warn",
+    },
+  },
   {
     // Must be scoped to TS files: tanstackConfig only registers the
     // @typescript-eslint plugin for those, so an unscoped rule here errors.
