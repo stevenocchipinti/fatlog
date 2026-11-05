@@ -41,14 +41,16 @@ export default function TimePeriodSwitcher({
       e.preventDefault()
       const nextIndex = (index + 1) % options.length
       handleSelect(options[nextIndex])
-      const buttons = containerRef.current?.querySelectorAll('[role="radio"]')
-      ;(buttons?.[nextIndex] as HTMLElement).focus()
+      containerRef.current
+        ?.querySelectorAll<HTMLElement>('[role="radio"]')
+        [nextIndex].focus()
     } else if (e.key === "ArrowLeft" || e.key === "ArrowUp") {
       e.preventDefault()
       const prevIndex = (index - 1 + options.length) % options.length
       handleSelect(options[prevIndex])
-      const buttons = containerRef.current?.querySelectorAll('[role="radio"]')
-      ;(buttons?.[prevIndex] as HTMLElement).focus()
+      containerRef.current
+        ?.querySelectorAll<HTMLElement>('[role="radio"]')
+        [prevIndex].focus()
     }
   }
 

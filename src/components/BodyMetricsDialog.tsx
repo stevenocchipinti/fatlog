@@ -34,7 +34,7 @@ const BodyMetricsDialog = ({
   onOpenChange,
   onSubmit: onAddCheckin,
 }: BodyMetricsDialogProps) => {
-  const [createdAt, setCreatedAt] = useState<Date>(new Date())
+  const [createdAt, setCreatedAt] = useState<Date>(() => new Date())
   const [weight, setWeight] = useState<number>()
   const [fat, setFat] = useState<number>()
   const [waist, setWaist] = useState<number>()
