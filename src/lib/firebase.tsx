@@ -31,6 +31,7 @@ import {
 } from "react"
 
 import useLocalStorage from "./useLocalStorage"
+import { parseBowelMovement, toBowelMovementRecord } from "./bowelMovements"
 import {
   parseEnabledTrackers,
   profileSetupUpdate,
@@ -38,12 +39,15 @@ import {
 } from "./profiles"
 
 import { TRACKER_IDS } from "./trackers"
+import type { StoredBowelMovement } from "./bowelMovements"
 import type {
   BodyMetricDataPoint,
+  BowelMovement,
   DietException,
   DietRule,
   FoodGroup,
   NewBodyMetricDataPoint,
+  NewBowelMovement,
   NewDietException,
   NewDietRule,
   NewFoodGroup,
@@ -152,6 +156,7 @@ type AuthState = "INITIALIZING" | "LOADING" | "LOGGED_OUT" | "LOGGED_IN"
 type ProfilesState = "INITIALIZING" | "LOADED"
 type CheckinsState = "INITIALIZING" | "LOADED"
 type DietState = "INITIALIZING" | "LOADED"
+type BowelMovementsState = "INITIALIZING" | "LOADED"
 
 export type AuthContext = {
   login: () => void
@@ -183,6 +188,11 @@ export type CheckinsContext = {
   state: CheckinsState
 }
 
+export type BowelMovementsContext = {
+  data: BowelMovement[]
+  state: BowelMovementsState
+}
+
 export type DietContext = {
   foodGroups: FoodGroup[]
   rules: DietRule[]
@@ -200,6 +210,7 @@ type ProfileDataContext = {
   /** The profile these observations belong to; null until it is known. */
   profileId: string | null
   checkins: CheckinsContext
+  bowelMovements: BowelMovementsContext
   diet: DietContext & {
     setFoodGroups: (fn: (prev: FoodGroup[]) => FoodGroup[]) => void
     setDietRules: (fn: (prev: DietRule[]) => DietRule[]) => void
@@ -424,6 +435,13 @@ const ProfileDataProvider = ({
       ),
   )
 
+  const [bowelMovementsState, setBowelMovementsState] =
+    useState<BowelMovementsState>("INITIALIZING")
+  const [bowelMovements, setBowelMovements] = useLocalStorage<BowelMovement[]>(
+    cacheKey("bowelMovementData"),
+    [],
+  )
+
   const [dietState, setDietState] = useState<DietState>("INITIALIZING")
   const [foodGroups, setFoodGroups] = useLocalStorage<FoodGroup[]>(
     cacheKey("foodGroupData"),
@@ -451,6 +469,21 @@ const ProfileDataProvider = ({
       )
     })
   }, [setCheckins, profileId])
+
+  useEffect(() => {
+    if (!profileId) return
+    return onValue(ref(db, `/bowelMovements/${profileId}`), snapshot => {
+      setBowelMovementsState("LOADED")
+      const val = snapshot.val() as Record<string, StoredBowelMovement> | null
+      setBowelMovements(
+        val
+          ? Object.entries(val).map(([id, value]) =>
+              parseBowelMovement(id, value),
+            )
+          : [],
+      )
+    })
+  }, [setBowelMovements, profileId])
 
   // Subscribe to all three diet subtrees. Diet mode only reaches "LOADED" once
   // the food groups subtree has responded, since food groups are the columns
@@ -511,6 +544,7 @@ const ProfileDataProvider = ({
       value={{
         profileId,
         checkins: { data: checkins, state: checkinsState },
+        bowelMovements: { data: bowelMovements, state: bowelMovementsState },
         diet: {
           foodGroups,
           rules: dietRules,
@@ -577,6 +611,46 @@ export const useCheckins = () => {
 
     deleteCheckin: (checkinKey: string) => {
       return remove(ref(db, `/checkins/${profileId}/${checkinKey}`))
+    },
+  }
+}
+
+/**
+ * Read/write access to the active profile's bowel movements. Like checkins,
+ * the realtime subscription updates the list straight away, so writes aren't
+ * applied optimistically.
+ */
+export const useBowelMovements = () => {
+  const context = useContext(ProfileDataContext)
+  if (!context)
+    throw new Error("useBowelMovements must be used within a FirebaseProvider")
+
+  const {
+    profileId,
+    bowelMovements: { data, state },
+  } = context
+
+  return {
+    bowelMovements: data,
+    state,
+
+    addBowelMovement: (bowelMovement: NewBowelMovement) => {
+      if (!profileId) return false
+      const newRef = push(ref(db, `/bowelMovements/${profileId}`))
+      return set(newRef, toBowelMovementRecord(bowelMovement))
+    },
+
+    updateBowelMovement: (id: string, bowelMovement: NewBowelMovement) => {
+      if (!profileId) return false
+      return set(
+        ref(db, `/bowelMovements/${profileId}/${id}`),
+        toBowelMovementRecord(bowelMovement),
+      )
+    },
+
+    deleteBowelMovement: (id: string) => {
+      if (!profileId) return false
+      return remove(ref(db, `/bowelMovements/${profileId}/${id}`))
     },
   }
 }

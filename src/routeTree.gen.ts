@@ -14,6 +14,7 @@ import { Route as AuthRouteImport } from './routes/_auth'
 import { Route as AuthDietRouteImport } from './routes/_auth.diet'
 import { Route as AuthMetricsRouteImport } from './routes/_auth.metrics'
 import { Route as AuthProfilesRouteImport } from './routes/_auth.profiles'
+import { Route as AuthStoolRouteImport } from './routes/_auth.stool'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -39,18 +40,25 @@ const AuthProfilesRoute = AuthProfilesRouteImport.update({
   path: '/profiles',
   getParentRoute: () => AuthRoute,
 } as any)
+const AuthStoolRoute = AuthStoolRouteImport.update({
+  id: '/stool',
+  path: '/stool',
+  getParentRoute: () => AuthRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/diet': typeof AuthDietRoute
   '/metrics': typeof AuthMetricsRoute
   '/profiles': typeof AuthProfilesRoute
+  '/stool': typeof AuthStoolRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/diet': typeof AuthDietRoute
   '/metrics': typeof AuthMetricsRoute
   '/profiles': typeof AuthProfilesRoute
+  '/stool': typeof AuthStoolRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -59,12 +67,13 @@ export interface FileRoutesById {
   '/_auth/diet': typeof AuthDietRoute
   '/_auth/metrics': typeof AuthMetricsRoute
   '/_auth/profiles': typeof AuthProfilesRoute
+  '/_auth/stool': typeof AuthStoolRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/diet' | '/metrics' | '/profiles'
+  fullPaths: '/' | '/diet' | '/metrics' | '/profiles' | '/stool'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/diet' | '/metrics' | '/profiles'
+  to: '/' | '/diet' | '/metrics' | '/profiles' | '/stool'
   id:
     | '__root__'
     | '/'
@@ -72,6 +81,7 @@ export interface FileRouteTypes {
     | '/_auth/diet'
     | '/_auth/metrics'
     | '/_auth/profiles'
+    | '/_auth/stool'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -116,6 +126,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthProfilesRouteImport
       parentRoute: typeof AuthRoute
     }
+    '/_auth/stool': {
+      id: '/_auth/stool'
+      path: '/stool'
+      fullPath: '/stool'
+      preLoaderRoute: typeof AuthStoolRouteImport
+      parentRoute: typeof AuthRoute
+    }
   }
 }
 
@@ -123,12 +140,14 @@ interface AuthRouteChildren {
   AuthDietRoute: typeof AuthDietRoute
   AuthMetricsRoute: typeof AuthMetricsRoute
   AuthProfilesRoute: typeof AuthProfilesRoute
+  AuthStoolRoute: typeof AuthStoolRoute
 }
 
 const AuthRouteChildren: AuthRouteChildren = {
   AuthDietRoute: AuthDietRoute,
   AuthMetricsRoute: AuthMetricsRoute,
   AuthProfilesRoute: AuthProfilesRoute,
+  AuthStoolRoute: AuthStoolRoute,
 }
 
 const AuthRouteWithChildren = AuthRoute._addFileChildren(AuthRouteChildren)

@@ -38,8 +38,13 @@ export const TRACKER_IDS: readonly TrackerId[] = TRACKERS.map(t => t.id)
  * The trackers that have a screen built so far. A profile's enabled trackers
  * (see lib/profiles.ts) are shown only if they're also available.
  */
-export const AVAILABLE_TRACKERS: readonly Tracker[] = TRACKERS.filter(
-  tracker => tracker.id === "metrics" || tracker.id === "diet",
+const BUILT_TRACKER_IDS: readonly TrackerId[] = [
+  "metrics",
+  "diet",
+  "bowelMovements",
+]
+export const AVAILABLE_TRACKERS: readonly Tracker[] = TRACKERS.filter(tracker =>
+  BUILT_TRACKER_IDS.includes(tracker.id),
 )
 
 export const trackerForPath = (pathname: string) =>

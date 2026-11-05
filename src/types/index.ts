@@ -83,3 +83,21 @@ export type DietException = {
 }
 
 export type NewDietException = Omit<DietException, "id">
+
+// Bowel movements
+//
+// A bowel movement is a point in time (epoch milliseconds, shown in the
+// device's local timezone), unlike Diet's date-only values. See GLOSSARY.md.
+
+/** The Bristol stool chart rating: 1 (separate hard lumps) to 7 (entirely liquid). */
+export type BristolType = 1 | 2 | 3 | 4 | 5 | 6 | 7
+
+export type BowelMovement = {
+  id: string
+  /** When it happened, in epoch milliseconds. */
+  timestamp: number
+  bristolType: BristolType
+  note?: string
+}
+
+export type NewBowelMovement = Omit<BowelMovement, "id">
