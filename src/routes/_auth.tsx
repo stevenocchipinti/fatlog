@@ -18,6 +18,7 @@ import {
 import { Button } from "@/components/ui/button"
 import BottomNavigation from "@/components/BottomNavigation"
 import ProfileAvatar from "@/components/ProfileAvatar"
+import { cn } from "@/lib/utils"
 import { PrimaryActionProvider } from "@/lib/primaryAction"
 import { useAuth, useProfiles } from "@/lib/firebase"
 import { trackerRedirect } from "@/lib/profiles"
@@ -82,13 +83,25 @@ const AuthComponent = () => {
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost">
-                <ProfileAvatar
-                  profile={activeProfile}
-                  photoURL={
-                    activeProfile?.id === user?.uid ? user?.photoURL : null
-                  }
-                  className="shadow-[0_0_0_3px_theme(colors.gray.200)]"
-                />
+                {/*
+                  The ring is drawn behind the avatar so it doesn't affect
+                  layout. Construction stripes mark the beta build.
+                */}
+                <span
+                  className={cn(
+                    "relative flex rounded-full before:absolute before:-inset-[3px] before:rounded-full",
+                    import.meta.env.MODE === "beta"
+                      ? "before:bg-[repeating-linear-gradient(45deg,var(--color-yellow-400)_0_3px,var(--color-neutral-900)_3px_6px)]"
+                      : "before:bg-gray-200",
+                  )}
+                >
+                  <ProfileAvatar
+                    profile={activeProfile}
+                    photoURL={
+                      activeProfile?.id === user?.uid ? user?.photoURL : null
+                    }
+                  />
+                </span>
                 <span className="sr-only">Open menu</span>
               </Button>
             </DropdownMenuTrigger>

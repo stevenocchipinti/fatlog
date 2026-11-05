@@ -1,0 +1,29 @@
+{
+  "name": "Fatlog β",
+  "short_name": "Fatlog β",
+  "description": "Beta build of Fatlog. A web app to track your fat, weight and waist measurements.",
+  "version": "0.1.0",
+  "manifest_version": 2,
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "type": "image/png",
+      "sizes": "192x192"
+    },
+    {
+      "src": "/icon-mask.png",
+      "type": "image/png",
+      "sizes": "512x512",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/icon-512.png",
+      "type": "image/png",
+      "sizes": "512x512"
+    }
+  ],
+  "start_url": "/metrics",
+  "theme_color": "#0c0a09",
+  "background_color": "#0c0a09",
+  "display": "standalone"
+}
