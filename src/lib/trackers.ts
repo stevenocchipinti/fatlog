@@ -42,6 +42,7 @@ const BUILT_TRACKER_IDS: readonly TrackerId[] = [
   "metrics",
   "diet",
   "bowelMovements",
+  "symptoms",
 ]
 export const AVAILABLE_TRACKERS: readonly Tracker[] = TRACKERS.filter(tracker =>
   BUILT_TRACKER_IDS.includes(tracker.id),

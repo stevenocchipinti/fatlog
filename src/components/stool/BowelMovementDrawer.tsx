@@ -14,11 +14,11 @@ import {
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { BRISTOL_TYPES } from "@/lib/bowelMovements"
 import {
-  BRISTOL_TYPES,
   fromDateTimeLocalValue,
   toDateTimeLocalValue,
-} from "@/lib/bowelMovements"
+} from "@/lib/dateTimeLocal"
 import { cn } from "@/lib/utils"
 
 type BowelMovementDrawerProps = {

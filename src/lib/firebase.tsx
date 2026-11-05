@@ -32,6 +32,7 @@ import {
 
 import useLocalStorage from "./useLocalStorage"
 import { parseBowelMovement, toBowelMovementRecord } from "./bowelMovements"
+import { parseSymptomEpisode, toSymptomEpisodeRecord } from "./symptoms"
 import {
   parseEnabledTrackers,
   profileSetupUpdate,
@@ -40,6 +41,7 @@ import {
 
 import { TRACKER_IDS } from "./trackers"
 import type { StoredBowelMovement } from "./bowelMovements"
+import type { StoredSymptomEpisode } from "./symptoms"
 import type {
   BodyMetricDataPoint,
   BowelMovement,
@@ -51,6 +53,8 @@ import type {
   NewDietException,
   NewDietRule,
   NewFoodGroup,
+  NewSymptomEpisode,
+  SymptomEpisode,
 } from "@/types"
 import type { Profile, StoredTrackers } from "./profiles"
 import type { TrackerId } from "./trackers"
@@ -192,6 +196,11 @@ export type BowelMovementsContext = {
   state: LoadState
 }
 
+export type SymptomEpisodesContext = {
+  data: SymptomEpisode[]
+  state: LoadState
+}
+
 export type DietContext = {
   foodGroups: FoodGroup[]
   rules: DietRule[]
@@ -210,6 +219,7 @@ type ProfileDataContext = {
   profileId: string | null
   checkins: CheckinsContext
   bowelMovements: BowelMovementsContext
+  symptomEpisodes: SymptomEpisodesContext
   diet: DietContext & {
     setFoodGroups: (fn: (prev: FoodGroup[]) => FoodGroup[]) => void
     setDietRules: (fn: (prev: DietRule[]) => DietRule[]) => void
@@ -485,6 +495,16 @@ const ProfileDataProvider = ({
     parse: parseBowelMovement,
   })
 
+  const symptomEpisodes = useProfileCollection<
+    StoredSymptomEpisode,
+    SymptomEpisode
+  >({
+    collection: "symptomEpisodes",
+    profileId,
+    cacheName: "symptomEpisodeData",
+    parse: parseSymptomEpisode,
+  })
+
   const [dietState, setDietState] = useState<DietState>("INITIALIZING")
   const [foodGroups, setFoodGroups] = useLocalStorage<FoodGroup[]>(
     cacheKey("foodGroupData"),
@@ -561,6 +581,10 @@ const ProfileDataProvider = ({
         bowelMovements: {
           data: bowelMovements.data,
           state: bowelMovements.state,
+        },
+        symptomEpisodes: {
+          data: symptomEpisodes.data,
+          state: symptomEpisodes.state,
         },
         diet: {
           foodGroups,
@@ -668,6 +692,46 @@ export const useBowelMovements = () => {
     deleteBowelMovement: (id: string) => {
       if (!profileId) return false
       return remove(ref(db, `/bowelMovements/${profileId}/${id}`))
+    },
+  }
+}
+
+/**
+ * Read/write access to the active profile's symptom episodes. Like bowel
+ * movements, it relies on the realtime subscription rather than optimistic
+ * updates.
+ */
+export const useSymptomEpisodes = () => {
+  const context = useContext(ProfileDataContext)
+  if (!context)
+    throw new Error("useSymptomEpisodes must be used within a FirebaseProvider")
+
+  const {
+    profileId,
+    symptomEpisodes: { data, state },
+  } = context
+
+  return {
+    symptomEpisodes: data,
+    state,
+
+    addSymptomEpisode: (episode: NewSymptomEpisode) => {
+      if (!profileId) return false
+      const newRef = push(ref(db, `/symptomEpisodes/${profileId}`))
+      return set(newRef, toSymptomEpisodeRecord(episode))
+    },
+
+    updateSymptomEpisode: (id: string, episode: NewSymptomEpisode) => {
+      if (!profileId) return false
+      return set(
+        ref(db, `/symptomEpisodes/${profileId}/${id}`),
+        toSymptomEpisodeRecord(episode),
+      )
+    },
+
+    deleteSymptomEpisode: (id: string) => {
+      if (!profileId) return false
+      return remove(ref(db, `/symptomEpisodes/${profileId}/${id}`))
     },
   }
 }
