@@ -5,7 +5,7 @@ import { Plus } from "lucide-react"
 import type { Tracker, TrackerId } from "@/lib/trackers"
 import { usePrimaryActionSlot } from "@/lib/primaryAction"
 import {
-  ENABLED_TRACKERS,
+  AVAILABLE_TRACKERS,
   navigationDirection,
   trackerForPath,
 } from "@/lib/trackers"
@@ -20,7 +20,7 @@ import { TransitionLink } from "@/lib/viewTransitions"
  * put.
  */
 export default function BottomNavigation({
-  trackers = ENABLED_TRACKERS,
+  trackers = AVAILABLE_TRACKERS,
 }: {
   trackers?: readonly Tracker[]
 }) {

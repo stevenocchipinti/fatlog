@@ -13,6 +13,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthRouteImport } from './routes/_auth'
 import { Route as AuthDietRouteImport } from './routes/_auth.diet'
 import { Route as AuthMetricsRouteImport } from './routes/_auth.metrics'
+import { Route as AuthProfilesRouteImport } from './routes/_auth.profiles'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -33,16 +34,23 @@ const AuthMetricsRoute = AuthMetricsRouteImport.update({
   path: '/metrics',
   getParentRoute: () => AuthRoute,
 } as any)
+const AuthProfilesRoute = AuthProfilesRouteImport.update({
+  id: '/profiles',
+  path: '/profiles',
+  getParentRoute: () => AuthRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/diet': typeof AuthDietRoute
   '/metrics': typeof AuthMetricsRoute
+  '/profiles': typeof AuthProfilesRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/diet': typeof AuthDietRoute
   '/metrics': typeof AuthMetricsRoute
+  '/profiles': typeof AuthProfilesRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -50,13 +58,20 @@ export interface FileRoutesById {
   '/_auth': typeof AuthRouteWithChildren
   '/_auth/diet': typeof AuthDietRoute
   '/_auth/metrics': typeof AuthMetricsRoute
+  '/_auth/profiles': typeof AuthProfilesRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/diet' | '/metrics'
+  fullPaths: '/' | '/diet' | '/metrics' | '/profiles'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/diet' | '/metrics'
-  id: '__root__' | '/' | '/_auth' | '/_auth/diet' | '/_auth/metrics'
+  to: '/' | '/diet' | '/metrics' | '/profiles'
+  id:
+    | '__root__'
+    | '/'
+    | '/_auth'
+    | '/_auth/diet'
+    | '/_auth/metrics'
+    | '/_auth/profiles'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -94,17 +109,26 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthMetricsRouteImport
       parentRoute: typeof AuthRoute
     }
+    '/_auth/profiles': {
+      id: '/_auth/profiles'
+      path: '/profiles'
+      fullPath: '/profiles'
+      preLoaderRoute: typeof AuthProfilesRouteImport
+      parentRoute: typeof AuthRoute
+    }
   }
 }
 
 interface AuthRouteChildren {
   AuthDietRoute: typeof AuthDietRoute
   AuthMetricsRoute: typeof AuthMetricsRoute
+  AuthProfilesRoute: typeof AuthProfilesRoute
 }
 
 const AuthRouteChildren: AuthRouteChildren = {
   AuthDietRoute: AuthDietRoute,
   AuthMetricsRoute: AuthMetricsRoute,
+  AuthProfilesRoute: AuthProfilesRoute,
 }
 
 const AuthRouteWithChildren = AuthRoute._addFileChildren(AuthRouteChildren)

@@ -8,17 +8,36 @@ import {
 } from "firebase/auth"
 import {
   connectDatabaseEmulator,
+  equalTo,
+  get,
   getDatabase,
   onValue,
+  orderByChild,
   push,
+  query,
   ref,
   remove,
   set,
+  update,
 } from "firebase/database"
-import { createContext, useContext, useEffect, useState } from "react"
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react"
 
 import useLocalStorage from "./useLocalStorage"
+import {
+  parseEnabledTrackers,
+  profileSetupUpdate,
+  resolveActiveProfileId,
+} from "./profiles"
 
+import { TRACKER_IDS } from "./trackers"
 import type {
   BodyMetricDataPoint,
   DietException,
@@ -29,6 +48,8 @@ import type {
   NewDietRule,
   NewFoodGroup,
 } from "@/types"
+import type { Profile, StoredTrackers } from "./profiles"
+import type { TrackerId } from "./trackers"
 import type { User } from "firebase/auth"
 import type { ReactNode } from "react"
 import FullScreenLoading from "@/components/FullScreenLoading"
@@ -65,7 +86,7 @@ const parseCheckin = (id: string, record: FirebaseCheckin) => {
   } as BodyMetricDataPoint
 }
 
-// Diet records are stored per user alongside checkins. Unlike checkins, which
+// Diet records are stored per profile alongside checkins. Unlike checkins, which
 // use ISO timestamps, diet records store local date-only strings so they are
 // persisted exactly as the user recorded them (see lib/localDate.ts).
 
@@ -112,7 +133,23 @@ const parseDietException = (
   ...(record.note ? { note: record.note } : {}),
 })
 
+type FirebaseProfile = {
+  owner: string
+  name: string
+  emoji?: string
+  trackers?: StoredTrackers
+  archived?: boolean
+}
+const parseProfile = (id: string, record: FirebaseProfile): Profile => ({
+  id,
+  name: record.name,
+  ...(record.emoji ? { emoji: record.emoji } : {}),
+  enabledTrackers: parseEnabledTrackers(record.trackers),
+  archived: record.archived ?? false,
+})
+
 type AuthState = "INITIALIZING" | "LOADING" | "LOGGED_OUT" | "LOGGED_IN"
+type ProfilesState = "INITIALIZING" | "LOADED"
 type CheckinsState = "INITIALIZING" | "LOADED"
 type DietState = "INITIALIZING" | "LOADED"
 
@@ -121,6 +158,24 @@ export type AuthContext = {
   logout: () => Promise<void>
   user: User | null
   state: AuthState
+}
+
+export type ProfileChanges = {
+  name: string
+  emoji?: string
+  enabledTrackers: TrackerId[]
+}
+
+export type ProfilesContext = {
+  state: ProfilesState
+  /** The account's profiles, archived ones included. */
+  profiles: Profile[]
+  /** The profile being viewed and recorded against; null until known. */
+  activeProfile: Profile | null
+  setActiveProfileId: (id: string) => void
+  addProfile: (profile: { name: string; emoji?: string }) => string | null
+  updateProfile: (id: string, changes: ProfileChanges) => void
+  setProfileArchived: (id: string, archived: boolean) => void
 }
 
 export type CheckinsContext = {
@@ -135,8 +190,15 @@ export type DietContext = {
   state: DietState
 }
 
-export type FirebaseContext = {
+type AccountContext = {
   auth: AuthContext
+  profiles: ProfilesContext
+}
+const AccountContext = createContext<AccountContext | null>(null)
+
+type ProfileDataContext = {
+  /** The profile these observations belong to; null until it is known. */
+  profileId: string | null
   checkins: CheckinsContext
   diet: DietContext & {
     setFoodGroups: (fn: (prev: FoodGroup[]) => FoodGroup[]) => void
@@ -144,7 +206,7 @@ export type FirebaseContext = {
     setDietExceptions: (fn: (prev: DietException[]) => DietException[]) => void
   }
 }
-const FirebaseContext = createContext<FirebaseContext | null>(null)
+const ProfileDataContext = createContext<ProfileDataContext | null>(null)
 
 export const FirebaseProvider = ({ children }: { children: ReactNode }) => {
   const provider = new GoogleAuthProvider()
@@ -155,33 +217,10 @@ export const FirebaseProvider = ({ children }: { children: ReactNode }) => {
     "INITIALIZING",
   )
 
-  const [checkinsState, setCheckinsState] =
-    useState<CheckinsState>("INITIALIZING")
-  const [checkins, setCheckins] = useLocalStorage<BodyMetricDataPoint[]>(
-    "checkinData",
-    [],
-    x =>
-      (x as Record<string, string>[]).map(
-        v =>
-          ({
-            ...v,
-            createdAt: new Date(v.createdAt),
-          }) as BodyMetricDataPoint,
-      ),
-  )
-
-  const [dietState, setDietState] = useState<DietState>("INITIALIZING")
-  const [foodGroups, setFoodGroups] = useLocalStorage<FoodGroup[]>(
-    "foodGroupData",
-    [],
-  )
-  const [dietRules, setDietRules] = useLocalStorage<DietRule[]>(
-    "dietRuleData",
-    [],
-  )
-  const [dietExceptions, setDietExceptions] = useLocalStorage<DietException[]>(
-    "dietExceptionData",
-    [],
+  const [storedProfiles, setStoredProfiles] = useState<Profile[] | null>(null)
+  const [rememberedId, setRememberedId] = useLocalStorage<string | null>(
+    "activeProfileId",
+    null,
   )
 
   const login = () => {
@@ -201,14 +240,207 @@ export const FirebaseProvider = ({ children }: { children: ReactNode }) => {
       } else {
         setAuthState("LOGGED_OUT")
         setUser(null)
+        setStoredProfiles(null)
       }
     })
     return unsubscribeAuth
   }, [setAuthState])
 
+  // An account can only list profiles it owns, so the query must say so (the
+  // database rules require exactly this query).
+  const uid = user?.uid
   useEffect(() => {
-    if (!user) return
-    return onValue(ref(db, `/checkins/${user.uid}`), snapshot => {
+    if (!uid) return
+    return onValue(
+      query(ref(db, "/profiles"), orderByChild("owner"), equalTo(uid)),
+      snapshot => {
+        const val = snapshot.val() as Record<string, FirebaseProfile> | null
+        setStoredProfiles(
+          val
+            ? Object.entries(val).map(([id, value]) => parseProfile(id, value))
+            : [],
+        )
+      },
+    )
+  }, [uid])
+
+  // The account holder's own profile (ID = uid, see ADR 0001) is created
+  // lazily the first time they load the app. Existing data already lives under
+  // their uid, so starters are only added if they have no food groups at all.
+  const displayName = user?.displayName
+  const settingUpOwnProfile = useRef<string | null>(null)
+  useEffect(() => {
+    if (!uid || !storedProfiles) return
+    if (storedProfiles.some(profile => profile.id === uid)) return
+    if (settingUpOwnProfile.current === uid) return
+    settingUpOwnProfile.current = uid
+    get(ref(db, `/foodGroups/${uid}`))
+      .then(snapshot =>
+        update(
+          ref(db),
+          profileSetupUpdate({
+            profileId: uid,
+            owner: uid,
+            name: displayName || "Me",
+            includeStarters: !snapshot.exists(),
+          }),
+        ),
+      )
+      .catch(error => {
+        settingUpOwnProfile.current = null
+        console.warn("Could not set up the account's own profile", error)
+      })
+  }, [uid, storedProfiles, displayName])
+
+  // Until the own profile's record exists it still has to be usable, so it is
+  // synthesized from the Google account.
+  const profiles = useMemo(() => {
+    if (!uid || !storedProfiles) return []
+    return storedProfiles.some(profile => profile.id === uid)
+      ? storedProfiles
+      : [
+          {
+            id: uid,
+            name: displayName || "Me",
+            enabledTrackers: parseEnabledTrackers(undefined),
+            archived: false,
+          },
+          ...storedProfiles,
+        ]
+  }, [uid, displayName, storedProfiles])
+
+  const activeProfileId =
+    uid && storedProfiles
+      ? resolveActiveProfileId(uid, rememberedId, profiles)
+      : null
+  const activeProfile =
+    profiles.find(profile => profile.id === activeProfileId) ?? null
+
+  const addProfile = useCallback(
+    ({ name, emoji }: { name: string; emoji?: string }) => {
+      if (!uid) return null
+      const id = push(ref(db, "/profiles")).key
+      if (!id) return null
+      update(
+        ref(db),
+        profileSetupUpdate({
+          profileId: id,
+          owner: uid,
+          name,
+          emoji,
+          includeStarters: true,
+        }),
+      ).catch(error => console.warn("Could not add the profile", error))
+      return id
+    },
+    [uid],
+  )
+
+  const updateProfile = useCallback(
+    (id: string, { name, emoji, enabledTrackers }: ProfileChanges) => {
+      if (!uid) return
+      // Per-field paths leave `archived` untouched. Re-stating the owner (as
+      // the account itself, the only value the rules accept) keeps a record
+      // valid even if the own profile hasn't been created yet.
+      update(ref(db), {
+        [`profiles/${id}/name`]: name,
+        [`profiles/${id}/emoji`]: emoji || null,
+        [`profiles/${id}/trackers`]: Object.fromEntries(
+          TRACKER_IDS.map(trackerId => [
+            trackerId,
+            enabledTrackers.includes(trackerId),
+          ]),
+        ),
+        [`profiles/${id}/owner`]: uid,
+      }).catch(error => console.warn("Could not update the profile", error))
+    },
+    [uid],
+  )
+
+  const setProfileArchived = useCallback(
+    (id: string, archived: boolean) => {
+      // The account's own profile can't be removed.
+      if (id === uid) return
+      set(ref(db, `/profiles/${id}/archived`), archived).catch(error =>
+        console.warn("Could not archive the profile", error),
+      )
+    },
+    [uid],
+  )
+
+  const accountContext: AccountContext = {
+    auth: { login, logout, user, state: authState },
+    profiles: {
+      state: storedProfiles ? "LOADED" : "INITIALIZING",
+      profiles,
+      activeProfile,
+      setActiveProfileId: setRememberedId,
+      addProfile,
+      updateProfile,
+      setProfileArchived,
+    },
+  }
+
+  return (
+    <AccountContext.Provider value={accountContext}>
+      {authState === "LOADING" ? (
+        <FullScreenLoading>Logging you in...</FullScreenLoading>
+      ) : (
+        // Keyed by profile so switching starts from that profile's own cached
+        // data, never the previous profile's.
+        <ProfileDataProvider
+          key={activeProfileId ?? "none"}
+          profileId={activeProfileId}
+        >
+          {children}
+        </ProfileDataProvider>
+      )}
+    </AccountContext.Provider>
+  )
+}
+
+/** Subscribes to one profile's observations. Remount (via key) to switch. */
+const ProfileDataProvider = ({
+  profileId,
+  children,
+}: {
+  profileId: string | null
+  children: ReactNode
+}) => {
+  const cacheKey = (name: string) => `${name}:${profileId ?? "none"}`
+
+  const [checkinsState, setCheckinsState] =
+    useState<CheckinsState>("INITIALIZING")
+  const [checkins, setCheckins] = useLocalStorage<BodyMetricDataPoint[]>(
+    cacheKey("checkinData"),
+    [],
+    x =>
+      (x as Record<string, string>[]).map(
+        v =>
+          ({
+            ...v,
+            createdAt: new Date(v.createdAt),
+          }) as BodyMetricDataPoint,
+      ),
+  )
+
+  const [dietState, setDietState] = useState<DietState>("INITIALIZING")
+  const [foodGroups, setFoodGroups] = useLocalStorage<FoodGroup[]>(
+    cacheKey("foodGroupData"),
+    [],
+  )
+  const [dietRules, setDietRules] = useLocalStorage<DietRule[]>(
+    cacheKey("dietRuleData"),
+    [],
+  )
+  const [dietExceptions, setDietExceptions] = useLocalStorage<DietException[]>(
+    cacheKey("dietExceptionData"),
+    [],
+  )
+
+  useEffect(() => {
+    if (!profileId) return
+    return onValue(ref(db, `/checkins/${profileId}`), snapshot => {
       setCheckinsState("LOADED")
       const val = snapshot.val() as Record<string, FirebaseCheckin> | null
 
@@ -218,16 +450,16 @@ export const FirebaseProvider = ({ children }: { children: ReactNode }) => {
           : [],
       )
     })
-  }, [setCheckins, user])
+  }, [setCheckins, profileId])
 
   // Subscribe to all three diet subtrees. Diet mode only reaches "LOADED" once
   // the food groups subtree has responded, since food groups are the columns
   // every rule and exception hangs off; rules and exceptions can safely stream
   // in afterwards.
   useEffect(() => {
-    if (!user) return
+    if (!profileId) return
     const unsubscribeFoodGroups = onValue(
-      ref(db, `/foodGroups/${user.uid}`),
+      ref(db, `/foodGroups/${profileId}`),
       snapshot => {
         setDietState("LOADED")
         const val = snapshot.val() as Record<string, FirebaseFoodGroup> | null
@@ -241,7 +473,7 @@ export const FirebaseProvider = ({ children }: { children: ReactNode }) => {
       },
     )
     const unsubscribeRules = onValue(
-      ref(db, `/dietRules/${user.uid}`),
+      ref(db, `/dietRules/${profileId}`),
       snapshot => {
         const val = snapshot.val() as Record<string, FirebaseDietRule> | null
         setDietRules(
@@ -252,7 +484,7 @@ export const FirebaseProvider = ({ children }: { children: ReactNode }) => {
       },
     )
     const unsubscribeExceptions = onValue(
-      ref(db, `/dietExceptions/${user.uid}`),
+      ref(db, `/dietExceptions/${profileId}`),
       snapshot => {
         const val = snapshot.val() as Record<
           string,
@@ -272,12 +504,12 @@ export const FirebaseProvider = ({ children }: { children: ReactNode }) => {
       unsubscribeRules()
       unsubscribeExceptions()
     }
-  }, [setFoodGroups, setDietRules, setDietExceptions, user])
+  }, [setFoodGroups, setDietRules, setDietExceptions, profileId])
 
   return (
-    <FirebaseContext.Provider
+    <ProfileDataContext.Provider
       value={{
-        auth: { login, logout, user, state: authState },
+        profileId,
         checkins: { data: checkins, state: checkinsState },
         diet: {
           foodGroups,
@@ -290,28 +522,31 @@ export const FirebaseProvider = ({ children }: { children: ReactNode }) => {
         },
       }}
     >
-      {authState === "LOADING" ? (
-        <FullScreenLoading>Logging you in...</FullScreenLoading>
-      ) : (
-        children
-      )}
-    </FirebaseContext.Provider>
+      {children}
+    </ProfileDataContext.Provider>
   )
 }
 
 export const useAuth = () => {
-  const context = useContext(FirebaseContext)
+  const context = useContext(AccountContext)
   if (!context) throw new Error("useAuth must be used within an AuthProvider")
   return context.auth
 }
 
+export const useProfiles = () => {
+  const context = useContext(AccountContext)
+  if (!context)
+    throw new Error("useProfiles must be used within a FirebaseProvider")
+  return context.profiles
+}
+
 export const useCheckins = () => {
-  const context = useContext(FirebaseContext)
+  const context = useContext(ProfileDataContext)
   if (!context)
     throw new Error("useCheckins must be used within a FirebaseProvider")
 
   const {
-    auth: { user },
+    profileId,
     checkins: { data, state },
   } = context
 
@@ -320,8 +555,8 @@ export const useCheckins = () => {
     state,
 
     addCheckin: (checkin: NewBodyMetricDataPoint) => {
-      if (!user) return false
-      const newCheckinRef = push(ref(db, `/checkins/${user.uid}`))
+      if (!profileId) return false
+      const newCheckinRef = push(ref(db, `/checkins/${profileId}`))
       return set(newCheckinRef, {
         createdAt: checkin.createdAt.toISOString(),
         weight: checkin.weight,
@@ -331,8 +566,8 @@ export const useCheckins = () => {
     },
 
     updateCheckin: (checkinKey: string, checkin: NewBodyMetricDataPoint) => {
-      if (!user) return false
-      return set(ref(db, `/checkins/${user.uid}/${checkinKey}`), {
+      if (!profileId) return false
+      return set(ref(db, `/checkins/${profileId}/${checkinKey}`), {
         createdAt: checkin.createdAt.toISOString(),
         weight: checkin.weight,
         fat: checkin.fat,
@@ -341,7 +576,7 @@ export const useCheckins = () => {
     },
 
     deleteCheckin: (checkinKey: string) => {
-      return remove(ref(db, `/checkins/${user?.uid}/${checkinKey}`))
+      return remove(ref(db, `/checkins/${profileId}/${checkinKey}`))
     },
   }
 }
@@ -354,16 +589,16 @@ const stripUndefined = <T extends Record<string, unknown>>(obj: T) =>
   )
 
 /**
- * Read/write access to a user's diet data: food groups, diet rules and diet
+ * Read/write access to the active profile's diet data: food groups, diet rules and diet
  * exceptions. Mirrors the shape and conventions of useCheckins.
  */
 export const useDiet = () => {
-  const context = useContext(FirebaseContext)
+  const context = useContext(ProfileDataContext)
   if (!context)
     throw new Error("useDiet must be used within a FirebaseProvider")
 
   const {
-    auth: { user },
+    profileId,
     diet: {
       foodGroups,
       rules,
@@ -382,8 +617,8 @@ export const useDiet = () => {
     state,
 
     addFoodGroup: (foodGroup: NewFoodGroup) => {
-      if (!user) return false
-      const newRef = push(ref(db, `/foodGroups/${user.uid}`))
+      if (!profileId) return false
+      const newRef = push(ref(db, `/foodGroups/${profileId}`))
       const id = newRef.key
       const record = stripUndefined({ ...foodGroup })
       // Optimistic: inject immediately so the UI updates regardless of server latency/auth
@@ -391,24 +626,24 @@ export const useDiet = () => {
       return set(newRef, record)
     },
     updateFoodGroup: (id: string, foodGroup: NewFoodGroup) => {
-      if (!user) return false
+      if (!profileId) return false
       const record = stripUndefined({ ...foodGroup })
       // Optimistic: update immediately so the UI updates regardless of server latency/auth
       setFoodGroups(prev =>
         prev.map(g => (g.id === id ? { ...g, ...foodGroup } : g)),
       )
-      return set(ref(db, `/foodGroups/${user.uid}/${id}`), record)
+      return set(ref(db, `/foodGroups/${profileId}/${id}`), record)
     },
     deleteFoodGroup: (id: string) => {
-      if (!user) return false
+      if (!profileId) return false
       // Optimistic: remove immediately so the UI updates regardless of server latency/auth
       setFoodGroups(prev => prev.filter(g => g.id !== id))
-      return remove(ref(db, `/foodGroups/${user.uid}/${id}`))
+      return remove(ref(db, `/foodGroups/${profileId}/${id}`))
     },
 
     addRule: (rule: NewDietRule) => {
-      if (!user) return false
-      const newRef = push(ref(db, `/dietRules/${user.uid}`))
+      if (!profileId) return false
+      const newRef = push(ref(db, `/dietRules/${profileId}`))
       const id = newRef.key
       const record = stripUndefined({ ...rule })
       // Optimistic: inject immediately so the UI updates regardless of server latency/auth
@@ -417,22 +652,22 @@ export const useDiet = () => {
     },
 
     updateRule: (id: string, rule: NewDietRule) => {
-      if (!user) return false
+      if (!profileId) return false
       const record = stripUndefined({ ...rule })
       // Optimistic: update immediately so the UI updates regardless of server latency/auth
       setDietRules(prev =>
         prev.map(r => (r.id === id ? { ...r, ...record } : r)),
       )
-      return set(ref(db, `/dietRules/${user.uid}/${id}`), record)
+      return set(ref(db, `/dietRules/${profileId}/${id}`), record)
     },
     deleteRule: (id: string) => {
-      if (!user) return false
-      return remove(ref(db, `/dietRules/${user.uid}/${id}`))
+      if (!profileId) return false
+      return remove(ref(db, `/dietRules/${profileId}/${id}`))
     },
 
     addException: (exception: NewDietException) => {
-      if (!user) return false
-      const newRef = push(ref(db, `/dietExceptions/${user.uid}`))
+      if (!profileId) return false
+      const newRef = push(ref(db, `/dietExceptions/${profileId}`))
       const id = newRef.key
       const record = stripUndefined({ ...exception })
       // Optimistic: inject immediately so the UI updates regardless of server latency/auth
@@ -443,17 +678,17 @@ export const useDiet = () => {
       return set(newRef, record)
     },
     updateException: (id: string, exception: NewDietException) => {
-      if (!user) return false
+      if (!profileId) return false
       const record = stripUndefined({ ...exception })
       // Optimistic: update immediately so the UI updates regardless of server latency/auth
       setDietExceptions(prev =>
         prev.map(e => (e.id === id ? { ...e, ...record } : e)),
       )
-      return set(ref(db, `/dietExceptions/${user.uid}/${id}`), record)
+      return set(ref(db, `/dietExceptions/${profileId}/${id}`), record)
     },
     deleteException: (id: string) => {
-      if (!user) return false
-      return remove(ref(db, `/dietExceptions/${user.uid}/${id}`))
+      if (!profileId) return false
+      return remove(ref(db, `/dietExceptions/${profileId}/${id}`))
     },
   }
 }

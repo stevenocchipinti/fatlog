@@ -31,11 +31,14 @@ export const TRACKERS: readonly Tracker[] = [
   },
 ]
 
+/** Every tracker ID, in canonical order. */
+export const TRACKER_IDS: readonly TrackerId[] = TRACKERS.map(t => t.id)
+
 /**
- * The trackers shown in the app shell. Hard-coded for now; profiles (#18) will
- * supply this per profile.
+ * The trackers that have a screen built so far. A profile's enabled trackers
+ * (see lib/profiles.ts) are shown only if they're also available.
  */
-export const ENABLED_TRACKERS: readonly Tracker[] = TRACKERS.filter(
+export const AVAILABLE_TRACKERS: readonly Tracker[] = TRACKERS.filter(
   tracker => tracker.id === "metrics" || tracker.id === "diet",
 )
 

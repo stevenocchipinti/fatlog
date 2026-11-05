@@ -2,30 +2,53 @@
 // Beta and prod share this one Realtime Database, so these rules must keep
 // working for the (older) code on prod as well as the code on beta.
 // Never deploy rules from main or by hand. See AGENTS.md.
+//
+// Observations live under /<collection>/<profileId>. A profile is accessible
+// to its account holder when its ID is their auth uid (the account's own
+// profile, see docs/adr/0001) or when /profiles/<profileId>/owner is their uid.
+// The first clause is exactly what the pre-profiles code (prod) relies on.
 {
   "rules": {
+    "profiles": {
+      // An account can only list the profiles it owns: the client must query
+      // orderByChild("owner").equalTo(<own uid>).
+      ".read": "auth != null && query.orderByChild == 'owner' && query.equalTo == auth.uid",
+      ".indexOn": ["owner"],
+      "$profileId": {
+        ".read": "auth != null && data.child('owner').val() === auth.uid",
+        // Create: your own profile (ID = your uid) or a new push() ID, so you
+        // can never claim another account's uid-keyed profile and thereby its
+        // data. Update: only the existing owner.
+        ".write": "auth != null && (data.child('owner').val() === auth.uid || (!data.exists() && ($profileId === auth.uid || $profileId.matches(/^-[-_A-Za-z0-9]{19}$/))))",
+        // The owner can't be changed to anyone else.
+        "owner": {
+          ".validate": "newData.val() === auth.uid"
+        },
+        ".validate": "newData.hasChildren(['owner', 'name'])"
+      }
+    },
     "checkins": {
-      "$uid": {
-        ".read": "$uid === auth.uid",
-        ".write": "$uid === auth.uid"
+      "$profileId": {
+        ".read": "auth != null && ($profileId === auth.uid || root.child('profiles').child($profileId).child('owner').val() === auth.uid)",
+        ".write": "auth != null && ($profileId === auth.uid || newData.parent().parent().child('profiles').child($profileId).child('owner').val() === auth.uid)"
       }
     },
     "foodGroups": {
-      "$uid": {
-        ".read": "$uid === auth.uid",
-        ".write": "$uid === auth.uid"
+      "$profileId": {
+        ".read": "auth != null && ($profileId === auth.uid || root.child('profiles').child($profileId).child('owner').val() === auth.uid)",
+        ".write": "auth != null && ($profileId === auth.uid || newData.parent().parent().child('profiles').child($profileId).child('owner').val() === auth.uid)"
       }
     },
     "dietRules": {
-      "$uid": {
-        ".read": "$uid === auth.uid",
-        ".write": "$uid === auth.uid"
+      "$profileId": {
+        ".read": "auth != null && ($profileId === auth.uid || root.child('profiles').child($profileId).child('owner').val() === auth.uid)",
+        ".write": "auth != null && ($profileId === auth.uid || newData.parent().parent().child('profiles').child($profileId).child('owner').val() === auth.uid)"
       }
     },
     "dietExceptions": {
-      "$uid": {
-        ".read": "$uid === auth.uid",
-        ".write": "$uid === auth.uid"
+      "$profileId": {
+        ".read": "auth != null && ($profileId === auth.uid || root.child('profiles').child($profileId).child('owner').val() === auth.uid)",
+        ".write": "auth != null && ($profileId === auth.uid || newData.parent().parent().child('profiles').child($profileId).child('owner').val() === auth.uid)"
       }
     }
   }

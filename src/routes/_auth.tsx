@@ -5,19 +5,23 @@ import {
   useLocation,
   useRouter,
 } from "@tanstack/react-router"
-import { LogIn, LogOut } from "lucide-react"
+import { Check, LogIn, LogOut, Users } from "lucide-react"
+import { useEffect } from "react"
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Button } from "@/components/ui/button"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import BottomNavigation from "@/components/BottomNavigation"
+import ProfileAvatar from "@/components/ProfileAvatar"
 import { PrimaryActionProvider } from "@/lib/primaryAction"
-import { useAuth } from "@/lib/firebase"
-import { trackerForPath } from "@/lib/trackers"
+import { useAuth, useProfiles } from "@/lib/firebase"
+import { trackerRedirect } from "@/lib/profiles"
+import { AVAILABLE_TRACKERS, trackerForPath } from "@/lib/trackers"
 
 export const Route = createFileRoute("/_auth")({
   beforeLoad: ({ context }) => {
@@ -32,11 +36,30 @@ export const Route = createFileRoute("/_auth")({
 
 const AuthComponent = () => {
   const { user, login, logout } = useAuth()
+  const { profiles, activeProfile, setActiveProfileId } = useProfiles()
 
   const router = useRouter()
   const navigate = Route.useNavigate()
   const { pathname } = useLocation()
   const tracker = trackerForPath(pathname)
+
+  // Trackers that are both built and enabled for the active profile.
+  const visibleTrackers = activeProfile
+    ? AVAILABLE_TRACKERS.filter(({ id }) =>
+        activeProfile.enabledTrackers.includes(id),
+      )
+    : AVAILABLE_TRACKERS
+
+  // A profile that has this tracker turned off can't be on its screen.
+  const redirectTo = activeProfile
+    ? trackerRedirect(
+        pathname,
+        visibleTrackers.map(({ id }) => id),
+      )
+    : undefined
+  useEffect(() => {
+    if (redirectTo) navigate({ to: redirectTo, replace: true })
+  }, [redirectTo, navigate])
 
   const handleLogout = () => {
     if (window.confirm("Are you sure you want to logout?")) {
@@ -56,27 +79,58 @@ const AuthComponent = () => {
             className="text-3xl font-extrabold text-gray-900 dark:text-white"
             style={{ viewTransitionName: "tracker-title" }}
           >
-            {tracker?.title}
+            {tracker?.title ?? (pathname === "/profiles" ? "Profiles" : "")}
           </h1>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost">
-                <Avatar className="shadow-[0_0_0_3px_theme(colors.gray.200)]">
-                  {user?.photoURL && <AvatarImage src={user.photoURL} />}
-                  {user?.displayName && (
-                    <AvatarFallback>
-                      {user.displayName[0] || "✅"}
-                    </AvatarFallback>
-                  )}
-                  {!user && <AvatarFallback>⨯</AvatarFallback>}
-                </Avatar>
+                <ProfileAvatar
+                  profile={activeProfile}
+                  photoURL={
+                    activeProfile?.id === user?.uid ? user?.photoURL : null
+                  }
+                  className="shadow-[0_0_0_3px_theme(colors.gray.200)]"
+                />
                 <span className="sr-only">Open menu</span>
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <div className="p-2">
-                {user ? user.displayName : "Logged out"}
-              </div>
+              {user ? (
+                <>
+                  <DropdownMenuLabel>Profiles</DropdownMenuLabel>
+                  {profiles
+                    .filter(profile => !profile.archived)
+                    .map(profile => (
+                      <DropdownMenuItem
+                        key={profile.id}
+                        onClick={() => setActiveProfileId(profile.id)}
+                        className="flex cursor-pointer items-center gap-2"
+                      >
+                        <ProfileAvatar
+                          profile={profile}
+                          photoURL={
+                            profile.id === user.uid ? user.photoURL : null
+                          }
+                          className="size-6 text-xs"
+                        />
+                        <span className="flex-1 truncate">{profile.name}</span>
+                        {profile.id === activeProfile?.id && (
+                          <Check className="h-4 w-4" />
+                        )}
+                      </DropdownMenuItem>
+                    ))}
+                  <DropdownMenuItem
+                    onClick={() => navigate({ to: "/profiles" })}
+                    className="flex cursor-pointer items-center"
+                  >
+                    <Users className="mr-2 h-4 w-4" />
+                    <span>Manage profiles</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                </>
+              ) : (
+                <div className="p-2">Logged out</div>
+              )}
               {user ? (
                 <DropdownMenuItem
                   onClick={() => handleLogout()}
@@ -107,7 +161,7 @@ const AuthComponent = () => {
         >
           <Outlet />
         </main>
-        <BottomNavigation />
+        <BottomNavigation trackers={visibleTrackers} />
       </div>
     </PrimaryActionProvider>
   )
