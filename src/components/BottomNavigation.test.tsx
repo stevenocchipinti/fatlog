@@ -66,6 +66,15 @@ describe("BottomNavigation", () => {
     expect(screen.getByRole("button", { name: "Record metrics" })).toBeTruthy()
   })
 
+  it("keeps the single tab when off a tracker page, so there's a way back", () => {
+    pathname = "/profiles"
+    renderNav(["metrics"])
+
+    expect(
+      screen.getAllByRole("link").map(tab => tab.getAttribute("aria-label")),
+    ).toEqual(["Metrics"])
+  })
+
   it("triggers the current page's primary action from the + button", () => {
     const onTrigger = vi.fn()
     renderNav(["metrics", "diet"], onTrigger)

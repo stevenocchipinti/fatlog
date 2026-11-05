@@ -16,8 +16,9 @@ import { TransitionLink } from "@/lib/viewTransitions"
  * The app shell's bottom bar: a floating pill of icon-only tracker tabs on the
  * left and the current page's primary (+) action on the right. It sits in its
  * own row rather than over the page, so it never hides content. With a single
- * tracker there's nothing to switch between, so the pill is hidden; the + stays
- * put.
+ * tracker there's nothing to switch between, so on that tracker's page the
+ * pill is hidden; the + stays put. Off a tracker page (Manage profiles) the
+ * pill always shows, as it's the way back.
  */
 export default function BottomNavigation({
   trackers = AVAILABLE_TRACKERS,
@@ -27,10 +28,11 @@ export default function BottomNavigation({
   const { primaryAction } = usePrimaryActionSlot()
   const { pathname } = useLocation()
   const currentTrackerId = trackerForPath(pathname)?.id
+  const showTabs = trackers.length > 1 || currentTrackerId === undefined
 
   return (
     <div className="flex shrink-0 items-center gap-3 px-4 pt-2 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
-      {trackers.length > 1 && (
+      {showTabs && (
         <nav
           aria-label="Trackers"
           className="border-border/50 bg-card flex h-14 items-center rounded-full border p-1 shadow-lg dark:bg-zinc-900 dark:shadow-inner"
