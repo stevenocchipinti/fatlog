@@ -83,6 +83,20 @@ if (import.meta.env.DEV) {
   })
 }
 
+/**
+ * Runs a write and tells the user if it fails. A write shows up straight away
+ * (through the realtime subscription, or an optimistic update), and Firebase
+ * rolls it back if the server rejects it, e.g. when the security rules deny it.
+ * Without this the change would silently vanish. Writes made offline are
+ * queued rather than rejected, so they don't trigger it.
+ */
+const write = (action: string, pending: Promise<unknown>) => {
+  pending.catch((error: unknown) => {
+    console.warn(`Could not ${action}`, error)
+    window.alert(`Couldn't ${action}. Please try again.`)
+  })
+}
+
 type FirebaseCheckin = Record<string, string | number>
 const parseCheckin = (id: string, record: FirebaseCheckin) => {
   return {
@@ -341,16 +355,19 @@ export const FirebaseProvider = ({ children }: { children: ReactNode }) => {
       if (!uid) return null
       const id = push(ref(db, "/profiles")).key
       if (!id) return null
-      update(
-        ref(db),
-        profileSetupUpdate({
-          profileId: id,
-          owner: uid,
-          name,
-          emoji,
-          includeStarters: true,
-        }),
-      ).catch(error => console.warn("Could not add the profile", error))
+      write(
+        "add the profile",
+        update(
+          ref(db),
+          profileSetupUpdate({
+            profileId: id,
+            owner: uid,
+            name,
+            emoji,
+            includeStarters: true,
+          }),
+        ),
+      )
       return id
     },
     [uid],
@@ -362,17 +379,20 @@ export const FirebaseProvider = ({ children }: { children: ReactNode }) => {
       // Per-field paths leave `archived` untouched. Re-stating the owner (as
       // the account itself, the only value the rules accept) keeps a record
       // valid even if the own profile hasn't been created yet.
-      update(ref(db), {
-        [`profiles/${id}/name`]: name,
-        [`profiles/${id}/emoji`]: emoji || null,
-        [`profiles/${id}/trackers`]: Object.fromEntries(
-          TRACKER_IDS.map(trackerId => [
-            trackerId,
-            enabledTrackers.includes(trackerId),
-          ]),
-        ),
-        [`profiles/${id}/owner`]: uid,
-      }).catch(error => console.warn("Could not update the profile", error))
+      write(
+        "update the profile",
+        update(ref(db), {
+          [`profiles/${id}/name`]: name,
+          [`profiles/${id}/emoji`]: emoji || null,
+          [`profiles/${id}/trackers`]: Object.fromEntries(
+            TRACKER_IDS.map(trackerId => [
+              trackerId,
+              enabledTrackers.includes(trackerId),
+            ]),
+          ),
+          [`profiles/${id}/owner`]: uid,
+        }),
+      )
     },
     [uid],
   )
@@ -381,8 +401,9 @@ export const FirebaseProvider = ({ children }: { children: ReactNode }) => {
     (id: string, archived: boolean) => {
       // The account's own profile can't be removed.
       if (id === uid) return
-      set(ref(db, `/profiles/${id}/archived`), archived).catch(error =>
-        console.warn("Could not archive the profile", error),
+      write(
+        archived ? "archive the profile" : "restore the profile",
+        set(ref(db, `/profiles/${id}/archived`), archived),
       )
     },
     [uid],
@@ -630,28 +651,38 @@ export const useCheckins = () => {
     state,
 
     addCheckin: (checkin: NewBodyMetricDataPoint) => {
-      if (!profileId) return false
+      if (!profileId) return
       const newCheckinRef = push(ref(db, `/checkins/${profileId}`))
-      return set(newCheckinRef, {
-        createdAt: checkin.createdAt.toISOString(),
-        weight: checkin.weight,
-        fat: checkin.fat,
-        waist: checkin.waist,
-      })
+      write(
+        "save the measurements",
+        set(newCheckinRef, {
+          createdAt: checkin.createdAt.toISOString(),
+          weight: checkin.weight,
+          fat: checkin.fat,
+          waist: checkin.waist,
+        }),
+      )
     },
 
     updateCheckin: (checkinKey: string, checkin: NewBodyMetricDataPoint) => {
-      if (!profileId) return false
-      return set(ref(db, `/checkins/${profileId}/${checkinKey}`), {
-        createdAt: checkin.createdAt.toISOString(),
-        weight: checkin.weight,
-        fat: checkin.fat,
-        waist: checkin.waist,
-      })
+      if (!profileId) return
+      write(
+        "save the measurements",
+        set(ref(db, `/checkins/${profileId}/${checkinKey}`), {
+          createdAt: checkin.createdAt.toISOString(),
+          weight: checkin.weight,
+          fat: checkin.fat,
+          waist: checkin.waist,
+        }),
+      )
     },
 
     deleteCheckin: (checkinKey: string) => {
-      return remove(ref(db, `/checkins/${profileId}/${checkinKey}`))
+      if (!profileId) return
+      write(
+        "delete the measurements",
+        remove(ref(db, `/checkins/${profileId}/${checkinKey}`)),
+      )
     },
   }
 }
@@ -676,22 +707,31 @@ export const useBowelMovements = () => {
     state,
 
     addBowelMovement: (bowelMovement: NewBowelMovement) => {
-      if (!profileId) return false
+      if (!profileId) return
       const newRef = push(ref(db, `/bowelMovements/${profileId}`))
-      return set(newRef, toBowelMovementRecord(bowelMovement))
+      write(
+        "save the bowel movement",
+        set(newRef, toBowelMovementRecord(bowelMovement)),
+      )
     },
 
     updateBowelMovement: (id: string, bowelMovement: NewBowelMovement) => {
-      if (!profileId) return false
-      return set(
-        ref(db, `/bowelMovements/${profileId}/${id}`),
-        toBowelMovementRecord(bowelMovement),
+      if (!profileId) return
+      write(
+        "save the bowel movement",
+        set(
+          ref(db, `/bowelMovements/${profileId}/${id}`),
+          toBowelMovementRecord(bowelMovement),
+        ),
       )
     },
 
     deleteBowelMovement: (id: string) => {
-      if (!profileId) return false
-      return remove(ref(db, `/bowelMovements/${profileId}/${id}`))
+      if (!profileId) return
+      write(
+        "delete the bowel movement",
+        remove(ref(db, `/bowelMovements/${profileId}/${id}`)),
+      )
     },
   }
 }
@@ -716,22 +756,28 @@ export const useSymptomEpisodes = () => {
     state,
 
     addSymptomEpisode: (episode: NewSymptomEpisode) => {
-      if (!profileId) return false
+      if (!profileId) return
       const newRef = push(ref(db, `/symptomEpisodes/${profileId}`))
-      return set(newRef, toSymptomEpisodeRecord(episode))
+      write("save the symptom", set(newRef, toSymptomEpisodeRecord(episode)))
     },
 
     updateSymptomEpisode: (id: string, episode: NewSymptomEpisode) => {
-      if (!profileId) return false
-      return set(
-        ref(db, `/symptomEpisodes/${profileId}/${id}`),
-        toSymptomEpisodeRecord(episode),
+      if (!profileId) return
+      write(
+        "save the symptom",
+        set(
+          ref(db, `/symptomEpisodes/${profileId}/${id}`),
+          toSymptomEpisodeRecord(episode),
+        ),
       )
     },
 
     deleteSymptomEpisode: (id: string) => {
-      if (!profileId) return false
-      return remove(ref(db, `/symptomEpisodes/${profileId}/${id}`))
+      if (!profileId) return
+      write(
+        "delete the symptom",
+        remove(ref(db, `/symptomEpisodes/${profileId}/${id}`)),
+      )
     },
   }
 }
@@ -772,56 +818,68 @@ export const useDiet = () => {
     state,
 
     addFoodGroup: (foodGroup: NewFoodGroup) => {
-      if (!profileId) return false
+      if (!profileId) return
       const newRef = push(ref(db, `/foodGroups/${profileId}`))
       const id = newRef.key
       const record = stripUndefined({ ...foodGroup })
       // Optimistic: inject immediately so the UI updates regardless of server latency/auth
       setFoodGroups(prev => [...prev, { id, ...foodGroup }])
-      return set(newRef, record)
+      write("save the food group", set(newRef, record))
     },
     updateFoodGroup: (id: string, foodGroup: NewFoodGroup) => {
-      if (!profileId) return false
+      if (!profileId) return
       const record = stripUndefined({ ...foodGroup })
       // Optimistic: update immediately so the UI updates regardless of server latency/auth
       setFoodGroups(prev =>
         prev.map(g => (g.id === id ? { ...g, ...foodGroup } : g)),
       )
-      return set(ref(db, `/foodGroups/${profileId}/${id}`), record)
+      write(
+        "save the food group",
+        set(ref(db, `/foodGroups/${profileId}/${id}`), record),
+      )
     },
     deleteFoodGroup: (id: string) => {
-      if (!profileId) return false
+      if (!profileId) return
       // Optimistic: remove immediately so the UI updates regardless of server latency/auth
       setFoodGroups(prev => prev.filter(g => g.id !== id))
-      return remove(ref(db, `/foodGroups/${profileId}/${id}`))
+      write(
+        "delete the food group",
+        remove(ref(db, `/foodGroups/${profileId}/${id}`)),
+      )
     },
 
     addRule: (rule: NewDietRule) => {
-      if (!profileId) return false
+      if (!profileId) return
       const newRef = push(ref(db, `/dietRules/${profileId}`))
       const id = newRef.key
       const record = stripUndefined({ ...rule })
       // Optimistic: inject immediately so the UI updates regardless of server latency/auth
       setDietRules(prev => [...prev, { id, ...(record as NewDietRule) }])
-      return set(newRef, record)
+      write("save the diet rule", set(newRef, record))
     },
 
     updateRule: (id: string, rule: NewDietRule) => {
-      if (!profileId) return false
+      if (!profileId) return
       const record = stripUndefined({ ...rule })
       // Optimistic: update immediately so the UI updates regardless of server latency/auth
       setDietRules(prev =>
         prev.map(r => (r.id === id ? { ...r, ...record } : r)),
       )
-      return set(ref(db, `/dietRules/${profileId}/${id}`), record)
+      write(
+        "save the diet rule",
+        set(ref(db, `/dietRules/${profileId}/${id}`), record),
+      )
     },
     deleteRule: (id: string) => {
-      if (!profileId) return false
-      return remove(ref(db, `/dietRules/${profileId}/${id}`))
+      if (!profileId) return
+      write(
+        "delete the diet rule",
+        remove(ref(db, `/dietRules/${profileId}/${id}`)),
+      )
     },
 
     addException: (exception: NewDietException) => {
-      if (!profileId) return false
+      if (!profileId) return
       const newRef = push(ref(db, `/dietExceptions/${profileId}`))
       const id = newRef.key
       const record = stripUndefined({ ...exception })
@@ -830,20 +888,26 @@ export const useDiet = () => {
         ...prev,
         { id, ...(record as NewDietException) },
       ])
-      return set(newRef, record)
+      write("save the exception", set(newRef, record))
     },
     updateException: (id: string, exception: NewDietException) => {
-      if (!profileId) return false
+      if (!profileId) return
       const record = stripUndefined({ ...exception })
       // Optimistic: update immediately so the UI updates regardless of server latency/auth
       setDietExceptions(prev =>
         prev.map(e => (e.id === id ? { ...e, ...record } : e)),
       )
-      return set(ref(db, `/dietExceptions/${profileId}/${id}`), record)
+      write(
+        "save the exception",
+        set(ref(db, `/dietExceptions/${profileId}/${id}`), record),
+      )
     },
     deleteException: (id: string) => {
-      if (!profileId) return false
-      return remove(ref(db, `/dietExceptions/${profileId}/${id}`))
+      if (!profileId) return
+      write(
+        "delete the exception",
+        remove(ref(db, `/dietExceptions/${profileId}/${id}`)),
+      )
     },
   }
 }

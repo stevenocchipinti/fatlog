@@ -84,7 +84,7 @@ function App() {
           const confirmDelete = window.confirm(
             "Are you sure you want to delete this check-in?",
           )
-          if (confirmDelete) void deleteCheckin(point.id)
+          if (confirmDelete) deleteCheckin(point.id)
         }}
         onRowEdit={point => {
           setCheckinToEdit(point)
@@ -102,7 +102,7 @@ function App() {
         loading={loading}
         lastCheckin={checkins[0] || undefined}
         onSubmit={({ createdAt, weight, fat, waist }) => {
-          void addCheckin({
+          addCheckin({
             createdAt,
             weight,
             fat,
@@ -120,7 +120,7 @@ function App() {
         editingCheckin={checkinToEdit}
         onSubmit={({ createdAt, weight, fat, waist }) => {
           if (!checkinToEdit) return
-          void updateCheckin(checkinToEdit.id, {
+          updateCheckin(checkinToEdit.id, {
             createdAt,
             weight,
             fat,

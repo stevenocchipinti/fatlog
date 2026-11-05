@@ -115,12 +115,12 @@ function StoolPage() {
         onOpenChange={setOpen}
         editing={editing}
         onSubmit={bowelMovement => {
-          if (editing) void updateBowelMovement(editing.id, bowelMovement)
-          else void addBowelMovement(bowelMovement)
+          if (editing) updateBowelMovement(editing.id, bowelMovement)
+          else addBowelMovement(bowelMovement)
           setOpen(false)
         }}
         onDelete={bowelMovement => {
-          void deleteBowelMovement(bowelMovement.id)
+          deleteBowelMovement(bowelMovement.id)
           setOpen(false)
         }}
       />

@@ -147,12 +147,12 @@ function SymptomsPage() {
         editing={editing}
         history={symptomEpisodes}
         onSubmit={episode => {
-          if (editing) void updateSymptomEpisode(editing.id, episode)
-          else void addSymptomEpisode(episode)
+          if (editing) updateSymptomEpisode(editing.id, episode)
+          else addSymptomEpisode(episode)
           setOpen(false)
         }}
         onDelete={episode => {
-          void deleteSymptomEpisode(episode.id)
+          deleteSymptomEpisode(episode.id)
           setOpen(false)
         }}
       />
