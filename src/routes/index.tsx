@@ -13,7 +13,7 @@ function App() {
   const navigate = useNavigate()
 
   useEffect(() => {
-    if (state === "LOGGED_IN") navigate({ to: "/metrics" })
+    if (state === "LOGGED_IN") void navigate({ to: "/metrics" })
   }, [navigate, state, user])
 
   if (state === "LOGGED_IN") {

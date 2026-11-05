@@ -77,7 +77,7 @@ const auth = getAuth(app)
 const db = getDatabase(app)
 
 if (import.meta.env.DEV) {
-  import("firebase/auth").then(({ connectAuthEmulator }) => {
+  void import("firebase/auth").then(({ connectAuthEmulator }) => {
     connectAuthEmulator(auth, "http://localhost:9099")
     connectDatabaseEmulator(db, "localhost", 9000)
   })

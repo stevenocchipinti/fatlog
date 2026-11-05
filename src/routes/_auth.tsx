@@ -58,16 +58,14 @@ const AuthComponent = () => {
       )
     : undefined
   useEffect(() => {
-    if (redirectTo) navigate({ to: redirectTo, replace: true })
+    if (redirectTo) void navigate({ to: redirectTo, replace: true })
   }, [redirectTo, navigate])
 
   const handleLogout = () => {
     if (window.confirm("Are you sure you want to logout?")) {
-      logout().then(() => {
-        router.invalidate().finally(() => {
-          navigate({ to: "/" })
-        })
-      })
+      void logout().then(() =>
+        router.invalidate().finally(() => navigate({ to: "/" })),
+      )
     }
   }
 
