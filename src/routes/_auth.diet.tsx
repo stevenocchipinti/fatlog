@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router"
 import { useCallback, useState } from "react"
 
-import type { DietDrawerIntent } from "@/components/diet/DietDrawer"
+import type { DietDrawerIntent } from "@/components/diet/drawerState"
 
 import DietDrawer from "@/components/diet/DietDrawer"
 import DietTimeline from "@/components/diet/DietTimeline"
