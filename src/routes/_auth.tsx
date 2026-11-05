@@ -91,7 +91,7 @@ const AuthComponent = () => {
                   className={cn(
                     "relative flex rounded-full before:absolute before:-inset-[3px] before:rounded-full",
                     import.meta.env.MODE === "beta"
-                      ? "before:bg-[repeating-linear-gradient(-45deg,var(--color-yellow-400)_0_3px,var(--color-neutral-900)_3px_6px)]"
+                      ? "before:bg-[repeating-conic-gradient(var(--color-yellow-400)_0_9deg,var(--color-neutral-900)_9deg_18deg)]"
                       : "before:bg-gray-200",
                   )}
                 >
