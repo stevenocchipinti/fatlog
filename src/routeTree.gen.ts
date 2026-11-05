@@ -14,6 +14,8 @@ import { Route as AuthRouteImport } from './routes/_auth'
 import { Route as AuthDietRouteImport } from './routes/_auth.diet'
 import { Route as AuthMetricsRouteImport } from './routes/_auth.metrics'
 import { Route as AuthProfilesRouteImport } from './routes/_auth.profiles'
+import { Route as AuthStoolRouteImport } from './routes/_auth.stool'
+import { Route as AuthSymptomsRouteImport } from './routes/_auth.symptoms'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -39,18 +41,32 @@ const AuthProfilesRoute = AuthProfilesRouteImport.update({
   path: '/profiles',
   getParentRoute: () => AuthRoute,
 } as any)
+const AuthStoolRoute = AuthStoolRouteImport.update({
+  id: '/stool',
+  path: '/stool',
+  getParentRoute: () => AuthRoute,
+} as any)
+const AuthSymptomsRoute = AuthSymptomsRouteImport.update({
+  id: '/symptoms',
+  path: '/symptoms',
+  getParentRoute: () => AuthRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/diet': typeof AuthDietRoute
   '/metrics': typeof AuthMetricsRoute
   '/profiles': typeof AuthProfilesRoute
+  '/stool': typeof AuthStoolRoute
+  '/symptoms': typeof AuthSymptomsRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/diet': typeof AuthDietRoute
   '/metrics': typeof AuthMetricsRoute
   '/profiles': typeof AuthProfilesRoute
+  '/stool': typeof AuthStoolRoute
+  '/symptoms': typeof AuthSymptomsRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -59,12 +75,14 @@ export interface FileRoutesById {
   '/_auth/diet': typeof AuthDietRoute
   '/_auth/metrics': typeof AuthMetricsRoute
   '/_auth/profiles': typeof AuthProfilesRoute
+  '/_auth/stool': typeof AuthStoolRoute
+  '/_auth/symptoms': typeof AuthSymptomsRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/diet' | '/metrics' | '/profiles'
+  fullPaths: '/' | '/diet' | '/metrics' | '/profiles' | '/stool' | '/symptoms'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/diet' | '/metrics' | '/profiles'
+  to: '/' | '/diet' | '/metrics' | '/profiles' | '/stool' | '/symptoms'
   id:
     | '__root__'
     | '/'
@@ -72,6 +90,8 @@ export interface FileRouteTypes {
     | '/_auth/diet'
     | '/_auth/metrics'
     | '/_auth/profiles'
+    | '/_auth/stool'
+    | '/_auth/symptoms'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -116,6 +136,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthProfilesRouteImport
       parentRoute: typeof AuthRoute
     }
+    '/_auth/stool': {
+      id: '/_auth/stool'
+      path: '/stool'
+      fullPath: '/stool'
+      preLoaderRoute: typeof AuthStoolRouteImport
+      parentRoute: typeof AuthRoute
+    }
+    '/_auth/symptoms': {
+      id: '/_auth/symptoms'
+      path: '/symptoms'
+      fullPath: '/symptoms'
+      preLoaderRoute: typeof AuthSymptomsRouteImport
+      parentRoute: typeof AuthRoute
+    }
   }
 }
 
@@ -123,12 +157,16 @@ interface AuthRouteChildren {
   AuthDietRoute: typeof AuthDietRoute
   AuthMetricsRoute: typeof AuthMetricsRoute
   AuthProfilesRoute: typeof AuthProfilesRoute
+  AuthStoolRoute: typeof AuthStoolRoute
+  AuthSymptomsRoute: typeof AuthSymptomsRoute
 }
 
 const AuthRouteChildren: AuthRouteChildren = {
   AuthDietRoute: AuthDietRoute,
   AuthMetricsRoute: AuthMetricsRoute,
   AuthProfilesRoute: AuthProfilesRoute,
+  AuthStoolRoute: AuthStoolRoute,
+  AuthSymptomsRoute: AuthSymptomsRoute,
 }
 
 const AuthRouteWithChildren = AuthRoute._addFileChildren(AuthRouteChildren)

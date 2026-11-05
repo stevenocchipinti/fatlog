@@ -33,6 +33,18 @@
         ".write": "auth != null && ($profileId === auth.uid || newData.parent().parent().child('profiles').child($profileId).child('owner').val() === auth.uid)"
       }
     },
+    "bowelMovements": {
+      "$profileId": {
+        ".read": "auth != null && ($profileId === auth.uid || root.child('profiles').child($profileId).child('owner').val() === auth.uid)",
+        ".write": "auth != null && ($profileId === auth.uid || newData.parent().parent().child('profiles').child($profileId).child('owner').val() === auth.uid)"
+      }
+    },
+    "symptomEpisodes": {
+      "$profileId": {
+        ".read": "auth != null && ($profileId === auth.uid || root.child('profiles').child($profileId).child('owner').val() === auth.uid)",
+        ".write": "auth != null && ($profileId === auth.uid || newData.parent().parent().child('profiles').child($profileId).child('owner').val() === auth.uid)"
+      }
+    },
     "foodGroups": {
       "$profileId": {
         ".read": "auth != null && ($profileId === auth.uid || root.child('profiles').child($profileId).child('owner').val() === auth.uid)",

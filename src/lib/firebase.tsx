@@ -31,6 +31,8 @@ import {
 } from "react"
 
 import useLocalStorage from "./useLocalStorage"
+import { parseBowelMovement, toBowelMovementRecord } from "./bowelMovements"
+import { parseSymptomEpisode, toSymptomEpisodeRecord } from "./symptoms"
 import {
   parseEnabledTrackers,
   profileSetupUpdate,
@@ -38,15 +40,21 @@ import {
 } from "./profiles"
 
 import { TRACKER_IDS } from "./trackers"
+import type { StoredBowelMovement } from "./bowelMovements"
+import type { StoredSymptomEpisode } from "./symptoms"
 import type {
   BodyMetricDataPoint,
+  BowelMovement,
   DietException,
   DietRule,
   FoodGroup,
   NewBodyMetricDataPoint,
+  NewBowelMovement,
   NewDietException,
   NewDietRule,
   NewFoodGroup,
+  NewSymptomEpisode,
+  SymptomEpisode,
 } from "@/types"
 import type { Profile, StoredTrackers } from "./profiles"
 import type { TrackerId } from "./trackers"
@@ -150,8 +158,8 @@ const parseProfile = (id: string, record: FirebaseProfile): Profile => ({
 
 type AuthState = "INITIALIZING" | "LOADING" | "LOGGED_OUT" | "LOGGED_IN"
 type ProfilesState = "INITIALIZING" | "LOADED"
-type CheckinsState = "INITIALIZING" | "LOADED"
-type DietState = "INITIALIZING" | "LOADED"
+type LoadState = "INITIALIZING" | "LOADED"
+type DietState = LoadState
 
 export type AuthContext = {
   login: () => void
@@ -180,7 +188,17 @@ export type ProfilesContext = {
 
 export type CheckinsContext = {
   data: BodyMetricDataPoint[]
-  state: CheckinsState
+  state: LoadState
+}
+
+export type BowelMovementsContext = {
+  data: BowelMovement[]
+  state: LoadState
+}
+
+export type SymptomEpisodesContext = {
+  data: SymptomEpisode[]
+  state: LoadState
 }
 
 export type DietContext = {
@@ -200,6 +218,8 @@ type ProfileDataContext = {
   /** The profile these observations belong to; null until it is known. */
   profileId: string | null
   checkins: CheckinsContext
+  bowelMovements: BowelMovementsContext
+  symptomEpisodes: SymptomEpisodesContext
   diet: DietContext & {
     setFoodGroups: (fn: (prev: FoodGroup[]) => FoodGroup[]) => void
     setDietRules: (fn: (prev: DietRule[]) => DietRule[]) => void
@@ -399,6 +419,47 @@ export const FirebaseProvider = ({ children }: { children: ReactNode }) => {
   )
 }
 
+/**
+ * Subscribes to one profile's collection at `/<collection>/<profileId>`,
+ * parsing each record and caching the result in localStorage (under
+ * `<cacheName>:<profileId>`) so the screen has data before the first response.
+ * `parse` must be a stable (module-level) function. `reviveCached` rebuilds
+ * values that don't survive a JSON round trip, such as Dates.
+ */
+const useProfileCollection = <TStored, T>({
+  collection,
+  profileId,
+  cacheName,
+  parse,
+  reviveCached,
+}: {
+  collection: string
+  profileId: string | null
+  cacheName: string
+  parse: (id: string, record: TStored) => T
+  reviveCached?: (item: unknown) => T[]
+}) => {
+  const [state, setState] = useState<LoadState>("INITIALIZING")
+  const [data, setData] = useLocalStorage<T[]>(
+    `${cacheName}:${profileId ?? "none"}`,
+    [],
+    reviveCached,
+  )
+
+  useEffect(() => {
+    if (!profileId) return
+    return onValue(ref(db, `/${collection}/${profileId}`), snapshot => {
+      setState("LOADED")
+      const val = snapshot.val() as Record<string, TStored> | null
+      setData(
+        val ? Object.entries(val).map(([id, value]) => parse(id, value)) : [],
+      )
+    })
+  }, [collection, profileId, parse, setData])
+
+  return { data, setData, state }
+}
+
 /** Subscribes to one profile's observations. Remount (via key) to switch. */
 const ProfileDataProvider = ({
   profileId,
@@ -409,12 +470,12 @@ const ProfileDataProvider = ({
 }) => {
   const cacheKey = (name: string) => `${name}:${profileId ?? "none"}`
 
-  const [checkinsState, setCheckinsState] =
-    useState<CheckinsState>("INITIALIZING")
-  const [checkins, setCheckins] = useLocalStorage<BodyMetricDataPoint[]>(
-    cacheKey("checkinData"),
-    [],
-    x =>
+  const checkins = useProfileCollection<FirebaseCheckin, BodyMetricDataPoint>({
+    collection: "checkins",
+    profileId,
+    cacheName: "checkinData",
+    parse: parseCheckin,
+    reviveCached: x =>
       (x as Record<string, string>[]).map(
         v =>
           ({
@@ -422,7 +483,27 @@ const ProfileDataProvider = ({
             createdAt: new Date(v.createdAt),
           }) as BodyMetricDataPoint,
       ),
-  )
+  })
+
+  const bowelMovements = useProfileCollection<
+    StoredBowelMovement,
+    BowelMovement
+  >({
+    collection: "bowelMovements",
+    profileId,
+    cacheName: "bowelMovementData",
+    parse: parseBowelMovement,
+  })
+
+  const symptomEpisodes = useProfileCollection<
+    StoredSymptomEpisode,
+    SymptomEpisode
+  >({
+    collection: "symptomEpisodes",
+    profileId,
+    cacheName: "symptomEpisodeData",
+    parse: parseSymptomEpisode,
+  })
 
   const [dietState, setDietState] = useState<DietState>("INITIALIZING")
   const [foodGroups, setFoodGroups] = useLocalStorage<FoodGroup[]>(
@@ -437,20 +518,6 @@ const ProfileDataProvider = ({
     cacheKey("dietExceptionData"),
     [],
   )
-
-  useEffect(() => {
-    if (!profileId) return
-    return onValue(ref(db, `/checkins/${profileId}`), snapshot => {
-      setCheckinsState("LOADED")
-      const val = snapshot.val() as Record<string, FirebaseCheckin> | null
-
-      setCheckins(
-        val
-          ? Object.entries(val).map(([id, value]) => parseCheckin(id, value))
-          : [],
-      )
-    })
-  }, [setCheckins, profileId])
 
   // Subscribe to all three diet subtrees. Diet mode only reaches "LOADED" once
   // the food groups subtree has responded, since food groups are the columns
@@ -510,7 +577,15 @@ const ProfileDataProvider = ({
     <ProfileDataContext.Provider
       value={{
         profileId,
-        checkins: { data: checkins, state: checkinsState },
+        checkins: { data: checkins.data, state: checkins.state },
+        bowelMovements: {
+          data: bowelMovements.data,
+          state: bowelMovements.state,
+        },
+        symptomEpisodes: {
+          data: symptomEpisodes.data,
+          state: symptomEpisodes.state,
+        },
         diet: {
           foodGroups,
           rules: dietRules,
@@ -577,6 +652,86 @@ export const useCheckins = () => {
 
     deleteCheckin: (checkinKey: string) => {
       return remove(ref(db, `/checkins/${profileId}/${checkinKey}`))
+    },
+  }
+}
+
+/**
+ * Read/write access to the active profile's bowel movements. Like checkins,
+ * the realtime subscription updates the list straight away, so writes aren't
+ * applied optimistically.
+ */
+export const useBowelMovements = () => {
+  const context = useContext(ProfileDataContext)
+  if (!context)
+    throw new Error("useBowelMovements must be used within a FirebaseProvider")
+
+  const {
+    profileId,
+    bowelMovements: { data, state },
+  } = context
+
+  return {
+    bowelMovements: data,
+    state,
+
+    addBowelMovement: (bowelMovement: NewBowelMovement) => {
+      if (!profileId) return false
+      const newRef = push(ref(db, `/bowelMovements/${profileId}`))
+      return set(newRef, toBowelMovementRecord(bowelMovement))
+    },
+
+    updateBowelMovement: (id: string, bowelMovement: NewBowelMovement) => {
+      if (!profileId) return false
+      return set(
+        ref(db, `/bowelMovements/${profileId}/${id}`),
+        toBowelMovementRecord(bowelMovement),
+      )
+    },
+
+    deleteBowelMovement: (id: string) => {
+      if (!profileId) return false
+      return remove(ref(db, `/bowelMovements/${profileId}/${id}`))
+    },
+  }
+}
+
+/**
+ * Read/write access to the active profile's symptom episodes. Like bowel
+ * movements, it relies on the realtime subscription rather than optimistic
+ * updates.
+ */
+export const useSymptomEpisodes = () => {
+  const context = useContext(ProfileDataContext)
+  if (!context)
+    throw new Error("useSymptomEpisodes must be used within a FirebaseProvider")
+
+  const {
+    profileId,
+    symptomEpisodes: { data, state },
+  } = context
+
+  return {
+    symptomEpisodes: data,
+    state,
+
+    addSymptomEpisode: (episode: NewSymptomEpisode) => {
+      if (!profileId) return false
+      const newRef = push(ref(db, `/symptomEpisodes/${profileId}`))
+      return set(newRef, toSymptomEpisodeRecord(episode))
+    },
+
+    updateSymptomEpisode: (id: string, episode: NewSymptomEpisode) => {
+      if (!profileId) return false
+      return set(
+        ref(db, `/symptomEpisodes/${profileId}/${id}`),
+        toSymptomEpisodeRecord(episode),
+      )
+    },
+
+    deleteSymptomEpisode: (id: string) => {
+      if (!profileId) return false
+      return remove(ref(db, `/symptomEpisodes/${profileId}/${id}`))
     },
   }
 }
