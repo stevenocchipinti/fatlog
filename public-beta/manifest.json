@@ -1,6 +1,6 @@
 {
-  "name": "Fatlog β",
-  "short_name": "Fatlog β",
+  "name": "Fatlog Beta",
+  "short_name": "Fatlog Beta",
   "description": "Beta build of Fatlog. A web app to track your fat, weight and waist measurements.",
   "version": "0.1.0",
   "manifest_version": 2,

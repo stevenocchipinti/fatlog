@@ -10,7 +10,7 @@ export default defineConfig(({ mode }) => {
   // The beta build is installed alongside prod as a separate PWA, so it gets
   // its own name, icons and manifest to tell the two apart on the home screen.
   const beta = mode === "beta"
-  const appName = beta ? "Fatlog β" : "Fatlog"
+  const appName = beta ? "Fatlog Beta" : "Fatlog"
 
   return {
     publicDir: beta ? "public-beta" : "public",
