@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react"
+import { useState } from "react"
 
-import type { BowelMovement, BristolType, NewBowelMovement } from "@/types"
+import type { BowelMovement, NewBowelMovement } from "@/types"
 
 import {
   Drawer,
@@ -39,129 +39,126 @@ type BowelMovementDrawerProps = {
 export default function BowelMovementDrawer({
   open,
   onOpenChange,
+  ...formProps
+}: BowelMovementDrawerProps) {
+  return (
+    <Drawer open={open} onOpenChange={onOpenChange}>
+      <DrawerContent className="max-h-[92dvh]">
+        {/* The content only mounts while the drawer is open, so each opening
+            starts the form afresh. */}
+        <BowelMovementForm {...formProps} />
+      </DrawerContent>
+    </Drawer>
+  )
+}
+
+/** Starts from the edited movement, or from "now" with nothing chosen. */
+function BowelMovementForm({
   editing,
   onSubmit,
   onDelete,
-}: BowelMovementDrawerProps) {
-  const [time, setTime] = useState("")
-  const [bristolType, setBristolType] = useState<BristolType>()
-  const [note, setNote] = useState("")
-
-  // Start from the edited movement, or from "now" with nothing chosen.
-  useEffect(() => {
-    if (!open) return
-    setTime(toDateTimeLocalValue(editing ? editing.timestamp : Date.now()))
-    setBristolType(editing?.bristolType)
-    setNote(editing?.note ?? "")
-  }, [open, editing])
+}: Pick<BowelMovementDrawerProps, "editing" | "onSubmit" | "onDelete">) {
+  const [time, setTime] = useState(() =>
+    toDateTimeLocalValue(editing ? editing.timestamp : Date.now()),
+  )
+  const [bristolType, setBristolType] = useState(editing?.bristolType)
+  const [note, setNote] = useState(editing?.note ?? "")
 
   const timestamp = fromDateTimeLocalValue(time)
   const valid = timestamp !== undefined && bristolType !== undefined
 
   return (
-    <Drawer open={open} onOpenChange={onOpenChange}>
-      <DrawerContent className="max-h-[92dvh]">
-        <form
-          className="mx-auto flex min-h-0 w-full max-w-sm flex-col"
-          onSubmit={event => {
-            event.preventDefault()
-            if (!valid) return
-            onSubmit({ timestamp, bristolType, note })
-          }}
-        >
-          <DrawerHeader className="pb-2">
-            <DrawerTitle>
-              {editing ? "Edit" : "Record"} bowel movement
-            </DrawerTitle>
-            <DrawerDescription>
-              Pick the type on the Bristol stool chart.
-            </DrawerDescription>
-          </DrawerHeader>
+    <form
+      className="mx-auto flex min-h-0 w-full max-w-sm flex-col"
+      onSubmit={event => {
+        event.preventDefault()
+        if (!valid) return
+        onSubmit({ timestamp, bristolType, note })
+      }}
+    >
+      <DrawerHeader className="pb-2">
+        <DrawerTitle>{editing ? "Edit" : "Record"} bowel movement</DrawerTitle>
+        <DrawerDescription>
+          Pick the type on the Bristol stool chart.
+        </DrawerDescription>
+      </DrawerHeader>
 
-          <div
-            className="min-h-0 space-y-3 overflow-y-auto p-4"
-            data-vaul-no-drag
-          >
-            <div className="space-y-1.5">
-              <Label htmlFor="stool-time">When</Label>
-              <Input
-                id="stool-time"
-                type="datetime-local"
-                value={time}
-                onChange={event => setTime(event.target.value)}
+      <div className="min-h-0 space-y-3 overflow-y-auto p-4" data-vaul-no-drag>
+        <div className="space-y-1.5">
+          <Label htmlFor="stool-time">When</Label>
+          <Input
+            id="stool-time"
+            type="datetime-local"
+            value={time}
+            onChange={event => setTime(event.target.value)}
+          />
+        </div>
+
+        <fieldset className="space-y-1.5">
+          <legend className="mb-1.5 text-sm font-medium">Type</legend>
+          {BRISTOL_TYPES.map(info => (
+            <label key={info.type} className="block cursor-pointer">
+              <input
+                type="radio"
+                name="bristol-type"
+                value={info.type}
+                checked={bristolType === info.type}
+                onChange={() => setBristolType(info.type)}
+                className="peer sr-only"
               />
-            </div>
-
-            <fieldset className="space-y-1.5">
-              <legend className="mb-1.5 text-sm font-medium">Type</legend>
-              {BRISTOL_TYPES.map(info => (
-                <label key={info.type} className="block cursor-pointer">
-                  <input
-                    type="radio"
-                    name="bristol-type"
-                    value={info.type}
-                    checked={bristolType === info.type}
-                    onChange={() => setBristolType(info.type)}
-                    className="peer sr-only"
-                  />
-                  <span
-                    className={cn(
-                      "flex items-center gap-3 rounded-xl border p-2.5 transition-colors",
-                      "peer-checked:border-brand-1 peer-checked:bg-muted",
-                      "peer-focus-visible:ring-ring peer-focus-visible:ring-2",
-                    )}
-                  >
-                    <span className="w-6 text-center text-lg font-semibold tabular-nums">
-                      {info.type}
-                    </span>
-                    <BristolIcon
-                      type={info.type}
-                      className="!size-7 shrink-0"
-                    />
-                    <span className="flex-1 text-sm">{info.description}</span>
-                  </span>
-                </label>
-              ))}
-            </fieldset>
-
-            <div className="space-y-1.5">
-              <Label htmlFor="stool-note">Note (optional)</Label>
-              <Input
-                id="stool-note"
-                value={note}
-                onChange={event => setNote(event.target.value)}
-              />
-            </div>
-          </div>
-
-          <DrawerFooter className="pt-2">
-            <Button disabled={!valid}>Save</Button>
-            {editing && (
-              <Button
-                type="button"
-                variant="outline"
-                className="text-destructive"
-                onClick={() => {
-                  if (
-                    window.confirm(
-                      "Are you sure you want to delete this bowel movement?",
-                    )
-                  ) {
-                    onDelete(editing)
-                  }
-                }}
+              <span
+                className={cn(
+                  "flex items-center gap-3 rounded-xl border p-2.5 transition-colors",
+                  "peer-checked:border-brand-1 peer-checked:bg-muted",
+                  "peer-focus-visible:ring-ring peer-focus-visible:ring-2",
+                )}
               >
-                Delete
-              </Button>
-            )}
-            <DrawerClose asChild>
-              <Button type="button" variant="outline">
-                Cancel
-              </Button>
-            </DrawerClose>
-          </DrawerFooter>
-        </form>
-      </DrawerContent>
-    </Drawer>
+                <span className="w-6 text-center text-lg font-semibold tabular-nums">
+                  {info.type}
+                </span>
+                <BristolIcon type={info.type} className="!size-7 shrink-0" />
+                <span className="flex-1 text-sm">{info.description}</span>
+              </span>
+            </label>
+          ))}
+        </fieldset>
+
+        <div className="space-y-1.5">
+          <Label htmlFor="stool-note">Note (optional)</Label>
+          <Input
+            id="stool-note"
+            value={note}
+            onChange={event => setNote(event.target.value)}
+          />
+        </div>
+      </div>
+
+      <DrawerFooter className="pt-2">
+        <Button disabled={!valid}>Save</Button>
+        {editing && (
+          <Button
+            type="button"
+            variant="outline"
+            className="text-destructive"
+            onClick={() => {
+              if (
+                window.confirm(
+                  "Are you sure you want to delete this bowel movement?",
+                )
+              ) {
+                onDelete(editing)
+              }
+            }}
+          >
+            Delete
+          </Button>
+        )}
+        <DrawerClose asChild>
+          <Button type="button" variant="outline">
+            Cancel
+          </Button>
+        </DrawerClose>
+      </DrawerFooter>
+    </form>
   )
 }
