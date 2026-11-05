@@ -9,7 +9,7 @@ function useLocalStorage<T>(
     try {
       const item = window.localStorage.getItem(key)
       return item ? mapper(JSON.parse(item)) : initialValue
-    } catch (error) {
+    } catch {
       return initialValue
     }
   })

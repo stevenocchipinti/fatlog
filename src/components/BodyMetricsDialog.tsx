@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react"
+import { useRef, useState } from "react"
 import type { BodyMetricDataPoint, NewBodyMetricDataPoint } from "@/types"
 import {
   Drawer,
@@ -25,32 +25,49 @@ type BodyMetricsDialogProps = {
   onSubmit: (newCheckin: NewBodyMetricDataPoint) => void
 }
 const BodyMetricsDialog = ({
-  mode,
   open,
+  children,
+  onOpenChange,
+  ...formProps
+}: BodyMetricsDialogProps) => (
+  <Drawer onOpenChange={onOpenChange} open={open}>
+    {children && (
+      <DrawerTrigger asChild>
+        <Button
+          size="xl"
+          variant="glass"
+          className="absolute right-4 bottom-4 left-4 mx-auto max-w-sm rounded-4xl py-6"
+        >
+          {children}
+        </Button>
+      </DrawerTrigger>
+    )}
+    <DrawerContent>
+      {/* The content only mounts while the drawer is open, so each opening
+          starts the form afresh. */}
+      <BodyMetricsForm {...formProps} />
+    </DrawerContent>
+  </Drawer>
+)
+
+/** Starts from the edited check-in, or from today with nothing entered. */
+const BodyMetricsForm = ({
+  mode,
   loading,
   lastCheckin,
   editingCheckin,
-  children,
-  onOpenChange,
   onSubmit: onAddCheckin,
-}: BodyMetricsDialogProps) => {
-  const [createdAt, setCreatedAt] = useState<Date>(new Date())
-  const [weight, setWeight] = useState<number>()
-  const [fat, setFat] = useState<number>()
-  const [waist, setWaist] = useState<number>()
+}: Omit<BodyMetricsDialogProps, "open" | "children" | "onOpenChange">) => {
+  const [createdAt, setCreatedAt] = useState<Date>(
+    () => editingCheckin?.createdAt ?? new Date(),
+  )
+  const [weight, setWeight] = useState(editingCheckin?.weight)
+  const [fat, setFat] = useState(editingCheckin?.fat)
+  const [waist, setWaist] = useState(editingCheckin?.waist)
 
   const weightInputRef = useRef<HTMLInputElement>(null)
   const fatInputRef = useRef<HTMLInputElement>(null)
   const waistInputRef = useRef<HTMLInputElement>(null)
-
-  useEffect(() => {
-    if (editingCheckin) {
-      setCreatedAt(editingCheckin.createdAt)
-      setWeight(editingCheckin.weight)
-      setFat(editingCheckin.fat)
-      setWaist(editingCheckin.waist)
-    }
-  }, [editingCheckin])
 
   const formatPreviousValue = (current?: number, previous?: number) => {
     if (!previous) return ""
@@ -65,215 +82,191 @@ const BodyMetricsDialog = ({
   const validInputs = weight && fat && waist
 
   return (
-    <Drawer onOpenChange={onOpenChange} open={open}>
-      {children && (
-        <DrawerTrigger asChild>
-          <Button
-            size="xl"
-            variant="glass"
-            className="absolute right-4 bottom-4 left-4 mx-auto max-w-sm rounded-4xl py-6"
+    <div className="mx-auto w-full max-w-sm">
+      <form
+        onSubmit={e => {
+          e.preventDefault()
+          if (!validInputs) return
+          onAddCheckin({ createdAt, weight, fat, waist })
+        }}
+      >
+        <DrawerHeader className="pb-2">
+          <DrawerTitle>
+            {mode === "add" ? "Record" : "Edit"} measurements
+          </DrawerTitle>
+          <DrawerDescription>Track those gains 💪</DrawerDescription>
+        </DrawerHeader>
+        <div className="space-y-3 p-4">
+          <div>
+            <Label htmlFor="date" className="text-sm">
+              Date
+            </Label>
+            <Input
+              id="date"
+              type="date"
+              value={createdAt.toISOString().split("T")[0]}
+              onChange={e => {
+                if (e.target.value) setCreatedAt(new Date(e.target.value))
+              }}
+            />
+          </div>
+
+          <div
+            className={
+              lastCheckin
+                ? "grid grid-cols-[1fr_auto] items-center gap-x-2 gap-y-1"
+                : "pb-2"
+            }
           >
-            {children}
-          </Button>
-        </DrawerTrigger>
-      )}
-      <DrawerContent>
-        <div className="mx-auto w-full max-w-sm">
-          <form
-            onSubmit={e => {
-              e.preventDefault()
-              if (!validInputs) return
-              onAddCheckin({ createdAt, weight, fat, waist })
-              setWeight(undefined)
-              setFat(undefined)
-              setWaist(undefined)
-            }}
+            <Label htmlFor="weight" className="text-sm">
+              Weight (kg)
+            </Label>
+            {lastCheckin && (
+              <Label className="text-muted-foreground text-sm">Previous</Label>
+            )}
+
+            <Input
+              ref={weightInputRef}
+              id="weight"
+              type="number"
+              step="0.1"
+              value={weight || ""}
+              onChange={e =>
+                setWeight(Number.parseFloat(e.target.value) || undefined)
+              }
+              aria-label={
+                lastCheckin
+                  ? `Weight in kilograms, previous value was ${lastCheckin.weight}`
+                  : "Weight in kilograms"
+              }
+              className="h-9"
+              autoFocus
+            />
+            {lastCheckin && (
+              <Input
+                value={formatPreviousValue(weight, lastCheckin.weight)}
+                readOnly
+                tabIndex={-1}
+                aria-label="Previous weight"
+                // Use onMouseDown instead of onClick to prevent focus from leaving the
+                // current input field. This keeps the virtual keyboard visible on mobile
+                // devices when tapping to copy previous values.
+                onMouseDown={e => {
+                  e.preventDefault()
+                  setWeight(lastCheckin.weight)
+                  weightInputRef.current?.focus()
+                }}
+                className="bg-muted hover:bg-muted/80 h-9 w-20 cursor-pointer text-sm"
+              />
+            )}
+          </div>
+
+          <div
+            className={
+              lastCheckin
+                ? "grid grid-cols-[1fr_auto] items-center gap-x-2 gap-y-1"
+                : "pb-2"
+            }
           >
-            <DrawerHeader className="pb-2">
-              <DrawerTitle>
-                {mode === "add" ? "Record" : "Edit"} measurements
-              </DrawerTitle>
-              <DrawerDescription>Track those gains 💪</DrawerDescription>
-            </DrawerHeader>
-            <div className="space-y-3 p-4">
-              <div>
-                <Label htmlFor="date" className="text-sm">
-                  Date
-                </Label>
-                <Input
-                  id="date"
-                  type="date"
-                  value={createdAt.toISOString().split("T")[0]}
-                  onChange={e => {
-                    if (e.target.value) setCreatedAt(new Date(e.target.value))
-                  }}
-                />
-              </div>
+            <Label htmlFor="fat" className="text-sm">
+              Fat (%)
+            </Label>
+            {lastCheckin && (
+              <Label className="text-muted-foreground text-sm">Previous</Label>
+            )}
 
-              <div
-                className={
-                  lastCheckin
-                    ? "grid grid-cols-[1fr_auto] items-center gap-x-2 gap-y-1"
-                    : "pb-2"
-                }
-              >
-                <Label htmlFor="weight" className="text-sm">
-                  Weight (kg)
-                </Label>
-                {lastCheckin && (
-                  <Label className="text-muted-foreground text-sm">
-                    Previous
-                  </Label>
-                )}
+            <Input
+              ref={fatInputRef}
+              id="fat"
+              type="number"
+              step="0.1"
+              value={fat || ""}
+              onChange={e =>
+                setFat(Number.parseFloat(e.target.value) || undefined)
+              }
+              aria-label={
+                lastCheckin
+                  ? `Fat, previous value was ${lastCheckin.fat}`
+                  : "Fat"
+              }
+              className="h-9"
+            />
+            {lastCheckin && (
+              <Input
+                value={formatPreviousValue(fat, lastCheckin.fat)}
+                readOnly
+                tabIndex={-1}
+                aria-label="Previous fat"
+                // Use onMouseDown instead of onClick to prevent focus from leaving the
+                // current input field. This keeps the virtual keyboard visible on mobile
+                // devices when tapping to copy previous values.
+                onMouseDown={e => {
+                  e.preventDefault()
+                  setFat(lastCheckin.fat)
+                  fatInputRef.current?.focus()
+                }}
+                className="bg-muted hover:bg-muted/80 h-9 w-20 cursor-pointer text-sm"
+              />
+            )}
+          </div>
 
-                <Input
-                  ref={weightInputRef}
-                  id="weight"
-                  type="number"
-                  step="0.1"
-                  value={weight || ""}
-                  onChange={e =>
-                    setWeight(Number.parseFloat(e.target.value) || undefined)
-                  }
-                  aria-label={
-                    lastCheckin
-                      ? `Weight in kilograms, previous value was ${lastCheckin.weight}`
-                      : "Weight in kilograms"
-                  }
-                  className="h-9"
-                  autoFocus
-                />
-                {lastCheckin && (
-                  <Input
-                    value={formatPreviousValue(weight, lastCheckin.weight)}
-                    readOnly
-                    tabIndex={-1}
-                    aria-label="Previous weight"
-                    // Use onMouseDown instead of onClick to prevent focus from leaving the
-                    // current input field. This keeps the virtual keyboard visible on mobile
-                    // devices when tapping to copy previous values.
-                    onMouseDown={e => {
-                      e.preventDefault()
-                      setWeight(lastCheckin.weight)
-                      weightInputRef.current?.focus()
-                    }}
-                    className="bg-muted hover:bg-muted/80 h-9 w-20 cursor-pointer text-sm"
-                  />
-                )}
-              </div>
+          <div
+            className={
+              lastCheckin
+                ? "grid grid-cols-[1fr_auto] items-center gap-x-2 gap-y-1"
+                : "pb-2"
+            }
+          >
+            <Label htmlFor="waist" className="text-sm">
+              Waist (cm)
+            </Label>
+            {lastCheckin && (
+              <Label className="text-muted-foreground text-sm">Previous</Label>
+            )}
 
-              <div
-                className={
-                  lastCheckin
-                    ? "grid grid-cols-[1fr_auto] items-center gap-x-2 gap-y-1"
-                    : "pb-2"
-                }
-              >
-                <Label htmlFor="fat" className="text-sm">
-                  Fat (%)
-                </Label>
-                {lastCheckin && (
-                  <Label className="text-muted-foreground text-sm">
-                    Previous
-                  </Label>
-                )}
-
-                <Input
-                  ref={fatInputRef}
-                  id="fat"
-                  type="number"
-                  step="0.1"
-                  value={fat || ""}
-                  onChange={e =>
-                    setFat(Number.parseFloat(e.target.value) || undefined)
-                  }
-                  aria-label={
-                    lastCheckin
-                      ? `Fat, previous value was ${lastCheckin.fat}`
-                      : "Fat"
-                  }
-                  className="h-9"
-                />
-                {lastCheckin && (
-                  <Input
-                    value={formatPreviousValue(fat, lastCheckin.fat)}
-                    readOnly
-                    tabIndex={-1}
-                    aria-label="Previous fat"
-                    // Use onMouseDown instead of onClick to prevent focus from leaving the
-                    // current input field. This keeps the virtual keyboard visible on mobile
-                    // devices when tapping to copy previous values.
-                    onMouseDown={e => {
-                      e.preventDefault()
-                      setFat(lastCheckin.fat)
-                      fatInputRef.current?.focus()
-                    }}
-                    className="bg-muted hover:bg-muted/80 h-9 w-20 cursor-pointer text-sm"
-                  />
-                )}
-              </div>
-
-              <div
-                className={
-                  lastCheckin
-                    ? "grid grid-cols-[1fr_auto] items-center gap-x-2 gap-y-1"
-                    : "pb-2"
-                }
-              >
-                <Label htmlFor="waist" className="text-sm">
-                  Waist (cm)
-                </Label>
-                {lastCheckin && (
-                  <Label className="text-muted-foreground text-sm">
-                    Previous
-                  </Label>
-                )}
-
-                <Input
-                  ref={waistInputRef}
-                  id="waist"
-                  type="number"
-                  step="0.1"
-                  value={waist || ""}
-                  onChange={e =>
-                    setWaist(Number.parseFloat(e.target.value) || undefined)
-                  }
-                  aria-label={
-                    lastCheckin
-                      ? `Waist in centimeters, previous value was ${lastCheckin.waist}`
-                      : "Wait in centimeters"
-                  }
-                  className="h-9"
-                />
-                {lastCheckin && (
-                  <Input
-                    value={formatPreviousValue(waist, lastCheckin.waist)}
-                    readOnly
-                    tabIndex={-1}
-                    aria-label="Previous waist"
-                    // Use onMouseDown instead of onClick to prevent focus from leaving the
-                    // current input field. This keeps the virtual keyboard visible on mobile
-                    // devices when tapping to copy previous values.
-                    onMouseDown={e => {
-                      e.preventDefault()
-                      setWaist(lastCheckin.waist)
-                      waistInputRef.current?.focus()
-                    }}
-                    className="bg-muted hover:bg-muted/80 h-9 w-20 cursor-pointer text-sm"
-                  />
-                )}
-              </div>
-            </div>
-            <DrawerFooter className="pt-2">
-              <Button disabled={loading || !validInputs}>Save</Button>
-              <DrawerClose asChild>
-                <Button variant="outline">Cancel</Button>
-              </DrawerClose>
-            </DrawerFooter>
-          </form>
+            <Input
+              ref={waistInputRef}
+              id="waist"
+              type="number"
+              step="0.1"
+              value={waist || ""}
+              onChange={e =>
+                setWaist(Number.parseFloat(e.target.value) || undefined)
+              }
+              aria-label={
+                lastCheckin
+                  ? `Waist in centimeters, previous value was ${lastCheckin.waist}`
+                  : "Wait in centimeters"
+              }
+              className="h-9"
+            />
+            {lastCheckin && (
+              <Input
+                value={formatPreviousValue(waist, lastCheckin.waist)}
+                readOnly
+                tabIndex={-1}
+                aria-label="Previous waist"
+                // Use onMouseDown instead of onClick to prevent focus from leaving the
+                // current input field. This keeps the virtual keyboard visible on mobile
+                // devices when tapping to copy previous values.
+                onMouseDown={e => {
+                  e.preventDefault()
+                  setWaist(lastCheckin.waist)
+                  waistInputRef.current?.focus()
+                }}
+                className="bg-muted hover:bg-muted/80 h-9 w-20 cursor-pointer text-sm"
+              />
+            )}
+          </div>
         </div>
-      </DrawerContent>
-    </Drawer>
+        <DrawerFooter className="pt-2">
+          <Button disabled={loading || !validInputs}>Save</Button>
+          <DrawerClose asChild>
+            <Button variant="outline">Cancel</Button>
+          </DrawerClose>
+        </DrawerFooter>
+      </form>
+    </div>
   )
 }
 

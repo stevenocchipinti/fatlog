@@ -31,7 +31,7 @@ export const useNavigateWithTransition = () => {
       const navigateOptions = { to, replace } as const
 
       if (typeof document.startViewTransition !== "function") {
-        navigate(navigateOptions)
+        void navigate(navigateOptions)
         return
       }
 
@@ -43,11 +43,11 @@ export const useNavigateWithTransition = () => {
 
       const transition = document.startViewTransition(() => {
         flushSync(() => {
-          navigate(navigateOptions)
+          void navigate(navigateOptions)
         })
       })
 
-      transition.finished.finally(() => {
+      void transition.finished.finally(() => {
         delete root.dataset.navDirection
       })
     },

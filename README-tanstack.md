@@ -31,7 +31,7 @@ This project uses [Tailwind CSS](https://tailwindcss.com/) for styling.
 
 ## Linting & Formatting
 
-This project uses [eslint](https://eslint.org/) and [prettier](https://prettier.io/) for linting and formatting. Eslint is configured using [tanstack/eslint-config](https://tanstack.com/config/latest/docs/eslint). The following scripts are available:
+This project uses [oxlint](https://oxc.rs/docs/guide/usage/linter) (with type-aware rules via `oxlint-tsgolint`) and [prettier](https://prettier.io/) for linting and formatting. Rules are configured in `.oxlintrc.json`. The following scripts are available:
 
 ```bash
 npm run lint

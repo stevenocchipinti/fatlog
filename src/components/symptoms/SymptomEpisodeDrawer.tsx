@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+import { useState } from "react"
 
 import type { NewSymptomEpisode, SymptomEpisode } from "@/types"
 
@@ -41,26 +41,35 @@ type SymptomEpisodeDrawerProps = {
 export default function SymptomEpisodeDrawer({
   open,
   onOpenChange,
+  ...formProps
+}: SymptomEpisodeDrawerProps) {
+  return (
+    <Drawer open={open} onOpenChange={onOpenChange}>
+      <DrawerContent className="max-h-[92dvh]">
+        {/* The content only mounts while the drawer is open, so each opening
+            starts the form afresh. */}
+        <SymptomEpisodeForm {...formProps} />
+      </DrawerContent>
+    </Drawer>
+  )
+}
+
+/** Starts from the edited episode, or from "now" and ongoing. */
+function SymptomEpisodeForm({
   editing,
   history,
   onSubmit,
   onDelete,
-}: SymptomEpisodeDrawerProps) {
-  const [symptom, setSymptom] = useState("")
-  const [start, setStart] = useState("")
-  const [ongoing, setOngoing] = useState(true)
-  const [end, setEnd] = useState("")
-  const [note, setNote] = useState("")
-
-  // Start from the edited episode, or from "now" and ongoing.
-  useEffect(() => {
-    if (!open) return
-    setSymptom(editing?.symptom ?? "")
-    setStart(toDateTimeLocalValue(editing ? editing.start : Date.now()))
-    setOngoing(editing ? editing.end === undefined : true)
-    setEnd(editing?.end !== undefined ? toDateTimeLocalValue(editing.end) : "")
-    setNote(editing?.note ?? "")
-  }, [open, editing])
+}: Omit<SymptomEpisodeDrawerProps, "open" | "onOpenChange">) {
+  const [symptom, setSymptom] = useState(editing?.symptom ?? "")
+  const [start, setStart] = useState(() =>
+    toDateTimeLocalValue(editing ? editing.start : Date.now()),
+  )
+  const [ongoing, setOngoing] = useState(editing?.end === undefined)
+  const [end, setEnd] = useState(
+    editing?.end !== undefined ? toDateTimeLocalValue(editing.end) : "",
+  )
+  const [note, setNote] = useState(editing?.note ?? "")
 
   const startTime = fromDateTimeLocalValue(start)
   const endTime = ongoing ? undefined : fromDateTimeLocalValue(end)
@@ -77,133 +86,124 @@ export default function SymptomEpisodeDrawer({
   const suggestions = suggestSymptomNames(history, symptom)
 
   return (
-    <Drawer open={open} onOpenChange={onOpenChange}>
-      <DrawerContent className="max-h-[92dvh]">
-        <form
-          className="mx-auto flex min-h-0 w-full max-w-sm flex-col"
-          onSubmit={event => {
-            event.preventDefault()
-            if (!valid) return
-            onSubmit({ symptom, start: startTime, end: endTime, note })
-          }}
-        >
-          <DrawerHeader className="pb-2">
-            <DrawerTitle>{editing ? "Edit" : "Record"} symptom</DrawerTitle>
-            <DrawerDescription>
-              Leave it ongoing, or give it an end for a one-off.
-            </DrawerDescription>
-          </DrawerHeader>
+    <form
+      className="mx-auto flex min-h-0 w-full max-w-sm flex-col"
+      onSubmit={event => {
+        event.preventDefault()
+        if (!valid) return
+        onSubmit({ symptom, start: startTime, end: endTime, note })
+      }}
+    >
+      <DrawerHeader className="pb-2">
+        <DrawerTitle>{editing ? "Edit" : "Record"} symptom</DrawerTitle>
+        <DrawerDescription>
+          Leave it ongoing, or give it an end for a one-off.
+        </DrawerDescription>
+      </DrawerHeader>
 
-          <div
-            className="min-h-0 space-y-3 overflow-y-auto p-4"
-            data-vaul-no-drag
-          >
-            <div className="space-y-1.5">
-              <Label htmlFor="symptom-name">Symptom</Label>
-              <Input
-                id="symptom-name"
-                value={symptom}
-                onChange={event => setSymptom(event.target.value)}
-                autoComplete="off"
-              />
-              {suggestions.length > 0 && (
-                <div
-                  className="flex flex-wrap gap-1.5"
-                  role="group"
-                  aria-label="Previous symptoms"
+      <div className="min-h-0 space-y-3 overflow-y-auto p-4" data-vaul-no-drag>
+        <div className="space-y-1.5">
+          <Label htmlFor="symptom-name">Symptom</Label>
+          <Input
+            id="symptom-name"
+            value={symptom}
+            onChange={event => setSymptom(event.target.value)}
+            autoComplete="off"
+          />
+          {suggestions.length > 0 && (
+            <div
+              className="flex flex-wrap gap-1.5"
+              role="group"
+              aria-label="Previous symptoms"
+            >
+              {suggestions.map(name => (
+                <button
+                  key={name}
+                  type="button"
+                  onClick={() => setSymptom(name)}
+                  className="bg-muted hover:bg-muted/70 rounded-full px-2.5 py-1 text-sm transition-colors"
                 >
-                  {suggestions.map(name => (
-                    <button
-                      key={name}
-                      type="button"
-                      onClick={() => setSymptom(name)}
-                      className="bg-muted hover:bg-muted/70 rounded-full px-2.5 py-1 text-sm transition-colors"
-                    >
-                      {name}
-                    </button>
-                  ))}
-                </div>
-              )}
+                  {name}
+                </button>
+              ))}
             </div>
+          )}
+        </div>
 
-            <div className="space-y-1.5">
-              <Label htmlFor="symptom-start">Started</Label>
-              <Input
-                id="symptom-start"
-                type="datetime-local"
-                value={start}
-                onChange={event => setStart(event.target.value)}
-              />
-            </div>
+        <div className="space-y-1.5">
+          <Label htmlFor="symptom-start">Started</Label>
+          <Input
+            id="symptom-start"
+            type="datetime-local"
+            value={start}
+            onChange={event => setStart(event.target.value)}
+          />
+        </div>
 
-            <label className="flex items-center gap-2 text-sm">
-              <input
-                type="checkbox"
-                checked={ongoing}
-                onChange={event => {
-                  setOngoing(event.target.checked)
-                  // Unticking records a one-off until the user moves the end.
-                  if (!event.target.checked && !end) setEnd(start)
-                }}
-              />
-              Still ongoing
-            </label>
+        <label className="flex items-center gap-2 text-sm">
+          <input
+            type="checkbox"
+            checked={ongoing}
+            onChange={event => {
+              setOngoing(event.target.checked)
+              // Unticking records a one-off until the user moves the end.
+              if (!event.target.checked && !end) setEnd(start)
+            }}
+          />
+          Still ongoing
+        </label>
 
-            {!ongoing && (
-              <div className="space-y-1.5">
-                <Label htmlFor="symptom-end">Ended</Label>
-                <Input
-                  id="symptom-end"
-                  type="datetime-local"
-                  value={end}
-                  onChange={event => setEnd(event.target.value)}
-                />
-                {endBeforeStart && (
-                  <p role="alert" className="text-destructive text-sm">
-                    It can't end before it started.
-                  </p>
-                )}
-              </div>
+        {!ongoing && (
+          <div className="space-y-1.5">
+            <Label htmlFor="symptom-end">Ended</Label>
+            <Input
+              id="symptom-end"
+              type="datetime-local"
+              value={end}
+              onChange={event => setEnd(event.target.value)}
+            />
+            {endBeforeStart && (
+              <p role="alert" className="text-destructive text-sm">
+                It can't end before it started.
+              </p>
             )}
-
-            <div className="space-y-1.5">
-              <Label htmlFor="symptom-note">Note (optional)</Label>
-              <Input
-                id="symptom-note"
-                value={note}
-                onChange={event => setNote(event.target.value)}
-              />
-            </div>
           </div>
+        )}
 
-          <DrawerFooter className="pt-2">
-            <Button disabled={!valid}>Save</Button>
-            {editing && (
-              <Button
-                type="button"
-                variant="outline"
-                className="text-destructive"
-                onClick={() => {
-                  if (
-                    window.confirm(
-                      "Are you sure you want to delete this symptom?",
-                    )
-                  ) {
-                    onDelete(editing)
-                  }
-                }}
-              >
-                Delete
-              </Button>
-            )}
-            <DrawerClose asChild>
-              <Button type="button" variant="outline">
-                Cancel
-              </Button>
-            </DrawerClose>
-          </DrawerFooter>
-        </form>
-      </DrawerContent>
-    </Drawer>
+        <div className="space-y-1.5">
+          <Label htmlFor="symptom-note">Note (optional)</Label>
+          <Input
+            id="symptom-note"
+            value={note}
+            onChange={event => setNote(event.target.value)}
+          />
+        </div>
+      </div>
+
+      <DrawerFooter className="pt-2">
+        <Button disabled={!valid}>Save</Button>
+        {editing && (
+          <Button
+            type="button"
+            variant="outline"
+            className="text-destructive"
+            onClick={() => {
+              if (
+                window.confirm("Are you sure you want to delete this symptom?")
+              ) {
+                onDelete(editing)
+              }
+            }}
+          >
+            Delete
+          </Button>
+        )}
+        <DrawerClose asChild>
+          <Button type="button" variant="outline">
+            Cancel
+          </Button>
+        </DrawerClose>
+      </DrawerFooter>
+    </form>
   )
 }

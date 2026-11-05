@@ -1,0 +1,14 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  // oxlint's defaults (the correctness category, default plugins), plus the
+  // react plugin, which is off by default, and type-aware rules.
+  "plugins": ["eslint", "typescript", "unicorn", "oxc", "react"],
+  "options": {
+    "typeAware": true
+  },
+  "ignorePatterns": ["src/routeTree.gen.ts"],
+  "rules": {
+    // In the pedantic category, so the defaults don't include it.
+    "react/rules-of-hooks": "error"
+  }
+}

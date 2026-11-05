@@ -1,10 +1,9 @@
-import { useEffect, useState } from "react"
+import { useState } from "react"
 
 import type {
   DietException,
   DietRule,
   FoodGroup,
-  LocalDate,
   NewDietException,
   NewDietRule,
   NewFoodGroup,
@@ -24,18 +23,8 @@ import FoodGroupPicker from "@/components/diet/FoodGroupPicker"
 import ManageFoodGroups from "@/components/diet/ManageFoodGroups"
 import { rangesOverlap, todayLocalDate } from "@/lib/localDate"
 import { cn } from "@/lib/utils"
-
-type DietTab = "exception" | "rule"
-
-/**
- * How the drawer was opened, so it can preselect the right tab, food group,
- * date, or an existing record to edit.
- */
-export type DietDrawerIntent =
-  | { kind: "new"; tab?: DietTab; foodGroupId?: string; date?: LocalDate }
-  | { kind: "editException"; exception: DietException }
-  | { kind: "editRule"; rule: DietRule }
-  | { kind: "manage" }
+import { initialDietDrawerState } from "@/components/diet/drawerState"
+import type { DietDrawerIntent } from "@/components/diet/drawerState"
 
 type DietDrawerProps = {
   open: boolean
@@ -67,72 +56,49 @@ type DietDrawerProps = {
  * reachable from the picker. Tapping timeline elements opens this drawer with a
  * matching intent (preselected group/date, or an existing record to edit).
  */
-export default function DietDrawer(props: DietDrawerProps) {
-  const { open, onOpenChange, intent, foodGroups } = props
+export default function DietDrawer({
+  open,
+  onOpenChange,
+  ...formProps
+}: DietDrawerProps) {
+  return (
+    <Drawer open={open} onOpenChange={onOpenChange}>
+      <DrawerContent>
+        {/* The content only mounts while the drawer is open, so each opening
+            starts afresh from its intent. */}
+        <DietForm {...formProps} close={() => onOpenChange(false)} />
+      </DrawerContent>
+    </Drawer>
+  )
+}
 
-  const [tab, setTab] = useState<DietTab>("exception")
-  const [managing, setManaging] = useState(false)
+function DietForm(
+  props: Omit<DietDrawerProps, "open" | "onOpenChange"> & {
+    close: () => void
+  },
+) {
+  const { foodGroups, close } = props
+
+  const [initial] = useState(() =>
+    initialDietDrawerState(props.intent, todayLocalDate()),
+  )
+  const [tab, setTab] = useState(initial.tab)
+  const [managing, setManaging] = useState(initial.managing)
 
   // Exception form state
-  const [exFoodGroupId, setExFoodGroupId] = useState<string>()
-  const [exDate, setExDate] = useState<LocalDate>(todayLocalDate())
-  const [exNote, setExNote] = useState("")
-  const [editingExceptionId, setEditingExceptionId] = useState<string>()
+  const [exFoodGroupId, setExFoodGroupId] = useState(initial.exFoodGroupId)
+  const [exDate, setExDate] = useState(initial.exDate)
+  const [exNote, setExNote] = useState(initial.exNote)
+  const editingExceptionId = initial.editingExceptionId
 
   // Rule form state
-  const [ruleFoodGroupId, setRuleFoodGroupId] = useState<string>()
-  const [ruleStart, setRuleStart] = useState<LocalDate>(todayLocalDate())
-  const [ruleEnd, setRuleEnd] = useState<LocalDate>("")
-  const [ruleNote, setRuleNote] = useState("")
-  const [editingRuleId, setEditingRuleId] = useState<string>()
-
-  // Apply the opening intent whenever the drawer opens.
-  useEffect(() => {
-    if (!open || !intent) return
-    setManaging(intent.kind === "manage")
-
-    if (intent.kind === "manage") return
-
-    if (intent.kind === "editException") {
-      setTab("exception")
-      setEditingExceptionId(intent.exception.id)
-      setEditingRuleId(undefined)
-      setExFoodGroupId(intent.exception.foodGroupId)
-      setExDate(intent.exception.date)
-      setExNote(intent.exception.note ?? "")
-      return
-    }
-
-    if (intent.kind === "editRule") {
-      setTab("rule")
-      setEditingExceptionId(undefined)
-      setEditingRuleId(intent.rule.id)
-      setRuleFoodGroupId(intent.rule.foodGroupId)
-      setRuleStart(intent.rule.startDate)
-      setRuleEnd(intent.rule.endDate ?? "")
-      setRuleNote(intent.rule.note ?? "")
-      return
-    }
-
-    // kind === "new"
-    setTab(intent.tab ?? "exception")
-    setEditingExceptionId(undefined)
-    setEditingRuleId(undefined)
-    setExNote("")
-    setRuleNote("")
-    setRuleEnd("")
-    setExFoodGroupId(intent.foodGroupId)
-    setRuleFoodGroupId(intent.foodGroupId)
-    if (intent.date) {
-      setExDate(intent.date)
-      setRuleStart(intent.date)
-    } else {
-      setExDate(todayLocalDate())
-      setRuleStart(todayLocalDate())
-    }
-  }, [open, intent])
-
-  const close = () => onOpenChange(false)
+  const [ruleFoodGroupId, setRuleFoodGroupId] = useState(
+    initial.ruleFoodGroupId,
+  )
+  const [ruleStart, setRuleStart] = useState(initial.ruleStart)
+  const [ruleEnd, setRuleEnd] = useState(initial.ruleEnd)
+  const [ruleNote, setRuleNote] = useState(initial.ruleNote)
+  const editingRuleId = initial.editingRuleId
 
   const submitException = () => {
     if (!exFoodGroupId) return
@@ -208,198 +174,190 @@ export default function DietDrawer(props: DietDrawerProps) {
     props.exceptions.some(e => e.foodGroupId === foodGroupId)
 
   return (
-    <Drawer open={open} onOpenChange={onOpenChange}>
-      <DrawerContent>
-        <div className="mx-auto w-full max-w-sm">
-          {managing ? (
-            <ManageFoodGroups
-              foodGroups={foodGroups}
-              hasHistory={hasHistory}
-              onCreate={props.onAddFoodGroup}
-              onUpdate={props.onUpdateFoodGroup}
-              onDelete={props.onDeleteFoodGroup}
-              onBack={() => setManaging(false)}
-            />
-          ) : (
-            <>
-              <DrawerHeader className="pb-2">
-                <DrawerTitle>
-                  {editingExceptionId || editingRuleId
-                    ? "Edit diet change"
-                    : "Record diet change"}
-                </DrawerTitle>
-                <DrawerDescription>
-                  Track how your diet changes over time 🥗
-                </DrawerDescription>
-              </DrawerHeader>
+    <div className="mx-auto w-full max-w-sm">
+      {managing ? (
+        <ManageFoodGroups
+          foodGroups={foodGroups}
+          hasHistory={hasHistory}
+          onCreate={props.onAddFoodGroup}
+          onUpdate={props.onUpdateFoodGroup}
+          onDelete={props.onDeleteFoodGroup}
+          onBack={() => setManaging(false)}
+        />
+      ) : (
+        <>
+          <DrawerHeader className="pb-2">
+            <DrawerTitle>
+              {editingExceptionId || editingRuleId
+                ? "Edit diet change"
+                : "Record diet change"}
+            </DrawerTitle>
+            <DrawerDescription>
+              Track how your diet changes over time 🥗
+            </DrawerDescription>
+          </DrawerHeader>
 
-              {/* Exception / Rule tabs */}
-              <div className="px-4">
-                <div className="grid grid-cols-2 gap-1 rounded-lg bg-stone-200 p-1 dark:bg-stone-900">
-                  {(["exception", "rule"] as const).map(t => (
-                    <button
-                      key={t}
-                      type="button"
-                      onClick={() => setTab(t)}
-                      aria-pressed={tab === t}
-                      disabled={
-                        // Editing locks the tab to the record being edited.
-                        (!!editingExceptionId && t === "rule") ||
-                        (!!editingRuleId && t === "exception")
-                      }
-                      className={cn(
-                        "rounded-md py-1.5 text-sm font-medium capitalize transition-colors disabled:opacity-40",
-                        tab === t
-                          ? "bg-card text-foreground border shadow-sm"
-                          : "text-muted-foreground",
-                      )}
-                    >
-                      {t}
-                    </button>
-                  ))}
+          {/* Exception / Rule tabs */}
+          <div className="px-4">
+            <div className="grid grid-cols-2 gap-1 rounded-lg bg-stone-200 p-1 dark:bg-stone-900">
+              {(["exception", "rule"] as const).map(t => (
+                <button
+                  key={t}
+                  type="button"
+                  onClick={() => setTab(t)}
+                  aria-pressed={tab === t}
+                  disabled={
+                    // Editing locks the tab to the record being edited.
+                    (!!editingExceptionId && t === "rule") ||
+                    (!!editingRuleId && t === "exception")
+                  }
+                  className={cn(
+                    "rounded-md py-1.5 text-sm font-medium capitalize transition-colors disabled:opacity-40",
+                    tab === t
+                      ? "bg-card text-foreground border shadow-sm"
+                      : "text-muted-foreground",
+                  )}
+                >
+                  {t}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {tab === "exception" ? (
+            <form
+              onSubmit={e => {
+                e.preventDefault()
+                submitException()
+              }}
+              className="space-y-3 p-4"
+            >
+              <FoodGroupPicker
+                foodGroups={foodGroups}
+                selectedId={exFoodGroupId}
+                onSelect={setExFoodGroupId}
+                onManage={() => setManaging(true)}
+              />
+              <div>
+                <Label htmlFor="ex-date" className="text-sm">
+                  Date
+                </Label>
+                <Input
+                  id="ex-date"
+                  type="date"
+                  value={exDate}
+                  onChange={e => e.target.value && setExDate(e.target.value)}
+                />
+              </div>
+              <div>
+                <Label htmlFor="ex-note" className="text-sm">
+                  Note (optional)
+                </Label>
+                <Input
+                  id="ex-note"
+                  value={exNote}
+                  onChange={e => setExNote(e.target.value)}
+                  placeholder="e.g. tried kangaroo for the first time"
+                />
+              </div>
+              <div className="flex flex-col gap-2 pt-2">
+                <Button type="submit" disabled={!exFoodGroupId}>
+                  Save exception
+                </Button>
+                {editingExceptionId ? (
+                  <Button
+                    type="button"
+                    variant="destructive"
+                    onClick={deleteException}
+                  >
+                    Delete
+                  </Button>
+                ) : (
+                  <Button type="button" variant="outline" onClick={close}>
+                    Cancel
+                  </Button>
+                )}
+              </div>
+            </form>
+          ) : (
+            <form
+              onSubmit={e => {
+                e.preventDefault()
+                submitRule()
+              }}
+              className="space-y-3 p-4"
+            >
+              <FoodGroupPicker
+                foodGroups={foodGroups}
+                selectedId={ruleFoodGroupId}
+                onSelect={setRuleFoodGroupId}
+                onManage={() => setManaging(true)}
+              />
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <Label htmlFor="rule-start" className="text-sm">
+                    Start date
+                  </Label>
+                  <Input
+                    id="rule-start"
+                    type="date"
+                    value={ruleStart}
+                    onChange={e =>
+                      e.target.value && setRuleStart(e.target.value)
+                    }
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="rule-end" className="text-sm">
+                    End date (optional)
+                  </Label>
+                  <Input
+                    id="rule-end"
+                    type="date"
+                    value={ruleEnd}
+                    onChange={e => setRuleEnd(e.target.value)}
+                  />
                 </div>
               </div>
-
-              {tab === "exception" ? (
-                <form
-                  onSubmit={e => {
-                    e.preventDefault()
-                    submitException()
-                  }}
-                  className="space-y-3 p-4"
-                >
-                  <FoodGroupPicker
-                    foodGroups={foodGroups}
-                    selectedId={exFoodGroupId}
-                    onSelect={setExFoodGroupId}
-                    onManage={() => setManaging(true)}
-                  />
-                  <div>
-                    <Label htmlFor="ex-date" className="text-sm">
-                      Date
-                    </Label>
-                    <Input
-                      id="ex-date"
-                      type="date"
-                      value={exDate}
-                      onChange={e =>
-                        e.target.value && setExDate(e.target.value)
-                      }
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="ex-note" className="text-sm">
-                      Note (optional)
-                    </Label>
-                    <Input
-                      id="ex-note"
-                      value={exNote}
-                      onChange={e => setExNote(e.target.value)}
-                      placeholder="e.g. tried kangaroo for the first time"
-                    />
-                  </div>
-                  <div className="flex flex-col gap-2 pt-2">
-                    <Button type="submit" disabled={!exFoodGroupId}>
-                      Save exception
-                    </Button>
-                    {editingExceptionId ? (
-                      <Button
-                        type="button"
-                        variant="destructive"
-                        onClick={deleteException}
-                      >
-                        Delete
-                      </Button>
-                    ) : (
-                      <Button type="button" variant="outline" onClick={close}>
-                        Cancel
-                      </Button>
-                    )}
-                  </div>
-                </form>
-              ) : (
-                <form
-                  onSubmit={e => {
-                    e.preventDefault()
-                    submitRule()
-                  }}
-                  className="space-y-3 p-4"
-                >
-                  <FoodGroupPicker
-                    foodGroups={foodGroups}
-                    selectedId={ruleFoodGroupId}
-                    onSelect={setRuleFoodGroupId}
-                    onManage={() => setManaging(true)}
-                  />
-                  <div className="grid grid-cols-2 gap-2">
-                    <div>
-                      <Label htmlFor="rule-start" className="text-sm">
-                        Start date
-                      </Label>
-                      <Input
-                        id="rule-start"
-                        type="date"
-                        value={ruleStart}
-                        onChange={e =>
-                          e.target.value && setRuleStart(e.target.value)
-                        }
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="rule-end" className="text-sm">
-                        End date (optional)
-                      </Label>
-                      <Input
-                        id="rule-end"
-                        type="date"
-                        value={ruleEnd}
-                        onChange={e => setRuleEnd(e.target.value)}
-                      />
-                    </div>
-                  </div>
-                  <div>
-                    <Label htmlFor="rule-note" className="text-sm">
-                      Note (optional)
-                    </Label>
-                    <Input
-                      id="rule-note"
-                      value={ruleNote}
-                      onChange={e => setRuleNote(e.target.value)}
-                      placeholder="e.g. reintroducing dairy"
-                    />
-                  </div>
-                  {ruleOverlapError && (
-                    <p className="text-destructive text-sm">
-                      {ruleOverlapError}
-                    </p>
-                  )}
-                  <div className="flex flex-col gap-2 pt-2">
-                    <Button
-                      type="submit"
-                      disabled={!ruleFoodGroupId || !!ruleOverlapError}
-                    >
-                      Save rule
-                    </Button>
-                    {editingRuleId ? (
-                      <Button
-                        type="button"
-                        variant="destructive"
-                        onClick={deleteRule}
-                      >
-                        Delete
-                      </Button>
-                    ) : (
-                      <Button type="button" variant="outline" onClick={close}>
-                        Cancel
-                      </Button>
-                    )}
-                  </div>
-                </form>
+              <div>
+                <Label htmlFor="rule-note" className="text-sm">
+                  Note (optional)
+                </Label>
+                <Input
+                  id="rule-note"
+                  value={ruleNote}
+                  onChange={e => setRuleNote(e.target.value)}
+                  placeholder="e.g. reintroducing dairy"
+                />
+              </div>
+              {ruleOverlapError && (
+                <p className="text-destructive text-sm">{ruleOverlapError}</p>
               )}
-            </>
+              <div className="flex flex-col gap-2 pt-2">
+                <Button
+                  type="submit"
+                  disabled={!ruleFoodGroupId || !!ruleOverlapError}
+                >
+                  Save rule
+                </Button>
+                {editingRuleId ? (
+                  <Button
+                    type="button"
+                    variant="destructive"
+                    onClick={deleteRule}
+                  >
+                    Delete
+                  </Button>
+                ) : (
+                  <Button type="button" variant="outline" onClick={close}>
+                    Cancel
+                  </Button>
+                )}
+              </div>
+            </form>
           )}
-        </div>
-      </DrawerContent>
-    </Drawer>
+        </>
+      )}
+    </div>
   )
 }
