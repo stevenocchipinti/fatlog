@@ -14,8 +14,9 @@ import {
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { BRISTOL_TYPES } from "@/lib/bowelMovements"
+import { BRISTOL_TYPES, bristolZone } from "@/lib/bowelMovements"
 import BristolIcon from "@/components/stool/BristolIcon"
+import { ZONE_STYLES } from "@/components/stool/zoneStyles"
 import {
   fromDateTimeLocalValue,
   toDateTimeLocalValue,
@@ -96,31 +97,39 @@ function BowelMovementForm({
 
         <fieldset className="space-y-1.5">
           <legend className="mb-1.5 text-sm font-medium">Type</legend>
-          {BRISTOL_TYPES.map(info => (
-            <label key={info.type} className="block cursor-pointer">
-              <input
-                type="radio"
-                name="bristol-type"
-                value={info.type}
-                checked={bristolType === info.type}
-                onChange={() => setBristolType(info.type)}
-                className="peer sr-only"
-              />
-              <span
-                className={cn(
-                  "flex items-center gap-3 rounded-xl border p-2.5 transition-colors",
-                  "peer-checked:border-brand-1 peer-checked:bg-muted",
-                  "peer-focus-visible:ring-ring peer-focus-visible:ring-2",
-                )}
-              >
-                <span className="w-6 text-center text-lg font-semibold tabular-nums">
-                  {info.type}
+          {BRISTOL_TYPES.map(info => {
+            const zone = ZONE_STYLES[bristolZone(info.type)]
+            return (
+              <label key={info.type} className="block cursor-pointer">
+                <input
+                  type="radio"
+                  name="bristol-type"
+                  value={info.type}
+                  checked={bristolType === info.type}
+                  onChange={() => setBristolType(info.type)}
+                  className="peer sr-only"
+                />
+                <span
+                  className={cn(
+                    "flex items-center gap-3 rounded-xl border p-2.5 transition-colors",
+                    zone.checked,
+                    "peer-focus-visible:ring-ring peer-focus-visible:ring-2",
+                  )}
+                >
+                  <span
+                    className={cn(
+                      "w-6 text-center text-lg font-semibold tabular-nums",
+                      zone.text,
+                    )}
+                  >
+                    {info.type}
+                  </span>
+                  <BristolIcon type={info.type} className="!size-7 shrink-0" />
+                  <span className="flex-1 text-sm">{info.description}</span>
                 </span>
-                <BristolIcon type={info.type} className="!size-7 shrink-0" />
-                <span className="flex-1 text-sm">{info.description}</span>
-              </span>
-            </label>
-          ))}
+              </label>
+            )
+          })}
         </fieldset>
 
         <div className="space-y-1.5">

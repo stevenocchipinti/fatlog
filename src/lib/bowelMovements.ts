@@ -78,3 +78,12 @@ export const groupByLocalDay = (
     movements: dayMovements,
   }))
 }
+
+/**
+ * Where a Bristol type sits on the chart: 1–2 hard (constipated), 3–4 ideal,
+ * 5–7 loose.
+ */
+export type BristolZone = "hard" | "ideal" | "loose"
+
+export const bristolZone = (type: BristolType): BristolZone =>
+  type <= 2 ? "hard" : type <= 4 ? "ideal" : "loose"

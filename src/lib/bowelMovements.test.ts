@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest"
 
 import {
   BRISTOL_TYPES,
+  bristolZone,
   groupByLocalDay,
   parseBowelMovement,
   toBowelMovementRecord,
@@ -116,5 +117,19 @@ describe("groupByLocalDay", () => {
 
   it("is empty when there are no movements", () => {
     expect(groupByLocalDay([])).toEqual([])
+  })
+})
+
+describe("bristolZone", () => {
+  it("splits the chart into hard (1–2), ideal (3–4) and loose (5–7)", () => {
+    expect(([1, 2, 3, 4, 5, 6, 7] as const).map(bristolZone)).toEqual([
+      "hard",
+      "hard",
+      "ideal",
+      "ideal",
+      "loose",
+      "loose",
+      "loose",
+    ])
   })
 })

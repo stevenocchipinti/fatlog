@@ -7,8 +7,14 @@ import type { BowelMovement, LocalDate } from "@/types"
 import BowelMovementDrawer from "@/components/stool/BowelMovementDrawer"
 import { BRISTOL_TYPES, groupByLocalDay } from "@/lib/bowelMovements"
 import BristolIcon from "@/components/stool/BristolIcon"
+import StoolCalendar from "@/components/stool/StoolCalendar"
 import { useBowelMovements } from "@/lib/firebase"
-import { addDays, fromLocalDate, todayLocalDate } from "@/lib/localDate"
+import {
+  addDays,
+  fromLocalDate,
+  toLocalDate,
+  todayLocalDate,
+} from "@/lib/localDate"
 import { useRegisterPrimaryAction } from "@/lib/primaryAction"
 
 export const Route = createFileRoute("/_auth/stool")({
@@ -34,7 +40,30 @@ function StoolPage() {
   const [open, setOpen] = useState(false)
   const [editing, setEditing] = useState<BowelMovement>()
 
-  const days = useMemo(() => groupByLocalDay(bowelMovements), [bowelMovements])
+  const today = todayLocalDate()
+  const [month, setMonth] = useState(today)
+  const [selected, setSelected] = useState(today)
+
+  // Newest first, as listed under the calendar.
+  const byDate = useMemo(
+    () =>
+      new Map(
+        groupByLocalDay(bowelMovements).map(day => [day.date, day.movements]),
+      ),
+    [bowelMovements],
+  )
+  // Oldest first, so a day's chips read left to right in time order.
+  const chronologicalByDate = useMemo(
+    () =>
+      new Map(
+        [...byDate].map(([date, movements]) => [
+          date,
+          [...movements].reverse(),
+        ]),
+      ),
+    [byDate],
+  )
+  const selectedMovements = byDate.get(selected) ?? []
 
   const openNew = useCallback(() => {
     setEditing(undefined)
@@ -52,61 +81,68 @@ function StoolPage() {
           <p className="text-muted-foreground py-12 text-center text-sm">
             Loading…
           </p>
-        ) : days.length === 0 ? (
-          <div className="py-12 text-center">
-            <h2 className="text-lg font-semibold">No bowel movements yet</h2>
-            <p className="text-muted-foreground mt-1 text-sm">
-              Tap + to record one.
-            </p>
-          </div>
         ) : (
-          days.map(day => (
-            <section key={day.date} className="flex flex-col gap-1.5">
+          <>
+            <StoolCalendar
+              month={month}
+              onMonthChange={setMonth}
+              selected={selected}
+              onSelect={setSelected}
+              today={today}
+              movementsByDate={chronologicalByDate}
+            />
+            <section className="flex flex-col gap-1.5">
               <h2 className="text-muted-foreground text-sm font-medium">
-                {dayHeading(day.date)}
+                {dayHeading(selected)}
               </h2>
-              <ul className="flex flex-col gap-1.5">
-                {day.movements.map(movement => {
-                  const info = BRISTOL_TYPES[movement.bristolType - 1]
-                  return (
-                    <li key={movement.id}>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setEditing(movement)
-                          setOpen(true)
-                        }}
-                        className="bg-card hover:bg-muted/60 flex w-full items-center gap-3 rounded-xl border p-3 text-left transition-colors"
-                      >
-                        <span className="text-muted-foreground w-12 text-sm tabular-nums">
-                          {format(new Date(movement.timestamp), "HH:mm")}
-                        </span>
-                        <span
-                          className="bg-muted flex size-9 shrink-0 items-center justify-center rounded-full"
-                          title={info.description}
+              {selectedMovements.length === 0 ? (
+                <p className="text-muted-foreground py-4 text-center text-sm">
+                  Nothing recorded. Tap + to record a bowel movement.
+                </p>
+              ) : (
+                <ul className="flex flex-col gap-1.5">
+                  {selectedMovements.map(movement => {
+                    const info = BRISTOL_TYPES[movement.bristolType - 1]
+                    return (
+                      <li key={movement.id}>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setEditing(movement)
+                            setOpen(true)
+                          }}
+                          className="bg-card hover:bg-muted/60 flex w-full items-center gap-3 rounded-xl border p-3 text-left transition-colors"
                         >
-                          <BristolIcon
-                            type={movement.bristolType}
-                            className="!size-5"
-                          />
-                        </span>
-                        <span className="min-w-0 flex-1">
-                          <span className="block text-sm font-medium">
-                            Type {movement.bristolType}
+                          <span className="text-muted-foreground w-12 text-sm tabular-nums">
+                            {format(new Date(movement.timestamp), "HH:mm")}
                           </span>
-                          {movement.note && (
-                            <span className="text-muted-foreground block truncate text-sm">
-                              {movement.note}
+                          <span
+                            className="bg-muted flex size-9 shrink-0 items-center justify-center rounded-full"
+                            title={info.description}
+                          >
+                            <BristolIcon
+                              type={movement.bristolType}
+                              className="!size-5"
+                            />
+                          </span>
+                          <span className="min-w-0 flex-1">
+                            <span className="block text-sm font-medium">
+                              Type {movement.bristolType}
                             </span>
-                          )}
-                        </span>
-                      </button>
-                    </li>
-                  )
-                })}
-              </ul>
+                            {movement.note && (
+                              <span className="text-muted-foreground block truncate text-sm">
+                                {movement.note}
+                              </span>
+                            )}
+                          </span>
+                        </button>
+                      </li>
+                    )
+                  })}
+                </ul>
+              )}
             </section>
-          ))
+          </>
         )}
       </div>
 
@@ -117,6 +153,10 @@ function StoolPage() {
         onSubmit={bowelMovement => {
           if (editing) updateBowelMovement(editing.id, bowelMovement)
           else addBowelMovement(bowelMovement)
+          // Show the day it was saved to, which may not be the one selected.
+          const date = toLocalDate(new Date(bowelMovement.timestamp))
+          setSelected(date)
+          setMonth(date)
           setOpen(false)
         }}
         onDelete={bowelMovement => {

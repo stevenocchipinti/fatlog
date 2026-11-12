@@ -70,3 +70,34 @@ export const rangesOverlap = (
   const bEndBounded = bEnd ?? "9999-12-31"
   return aStart <= bEndBounded && bStart <= aEndBounded
 }
+
+/** The first day of the month containing `value`. */
+export const startOfMonth = (value: LocalDate): LocalDate =>
+  `${value.slice(0, 7)}-01`
+
+/** The first day of the month `months` away from the month containing `value`. */
+export const addMonths = (value: LocalDate, months: number): LocalDate => {
+  const date = fromLocalDate(startOfMonth(value))
+  date.setMonth(date.getMonth() + months)
+  return toLocalDate(date)
+}
+
+/**
+ * The month containing `value` as calendar weeks, Monday first. Days outside
+ * the month are `null`, so every week has seven slots.
+ */
+export const monthWeeks = (value: LocalDate): (LocalDate | null)[][] => {
+  const first = startOfMonth(value)
+  const leading = (fromLocalDate(first).getDay() + 6) % 7
+  const days: (LocalDate | null)[] = Array(leading).fill(null)
+  for (
+    let day = first;
+    day.slice(0, 7) === first.slice(0, 7);
+    day = addDays(day, 1)
+  )
+    days.push(day)
+  while (days.length % 7) days.push(null)
+  const weeks = []
+  for (let i = 0; i < days.length; i += 7) weeks.push(days.slice(i, i + 7))
+  return weeks
+}
