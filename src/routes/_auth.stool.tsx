@@ -16,6 +16,7 @@ import {
   todayLocalDate,
 } from "@/lib/localDate"
 import { useRegisterPrimaryAction } from "@/lib/primaryAction"
+import LoadingState from "@/components/LoadingState"
 
 export const Route = createFileRoute("/_auth/stool")({
   component: StoolPage,
@@ -78,9 +79,7 @@ function StoolPage() {
     <>
       <div className="mx-auto flex w-full max-w-md flex-1 flex-col gap-4 px-4 pb-2">
         {state !== "LOADED" ? (
-          <p className="text-muted-foreground py-12 text-center text-sm">
-            Loading…
-          </p>
+          <LoadingState />
         ) : (
           <>
             <StoolCalendar

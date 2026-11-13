@@ -18,9 +18,10 @@ import {
 import { Button } from "@/components/ui/button"
 import BottomNavigation from "@/components/BottomNavigation"
 import ProfileAvatar from "@/components/ProfileAvatar"
+import { Spinner } from "@/components/LoadingState"
 import { cn } from "@/lib/utils"
 import { PrimaryActionProvider } from "@/lib/primaryAction"
-import { useAuth, useProfiles } from "@/lib/firebase"
+import { useAuth, useDataLoading, useProfiles } from "@/lib/firebase"
 import { trackerRedirect } from "@/lib/profiles"
 import { AVAILABLE_TRACKERS, trackerForPath } from "@/lib/trackers"
 
@@ -43,6 +44,7 @@ const AuthComponent = () => {
   const navigate = Route.useNavigate()
   const { pathname } = useLocation()
   const tracker = trackerForPath(pathname)
+  const loading = useDataLoading()
 
   // Trackers that are both built and enabled for the active profile.
   const visibleTrackers = activeProfile
@@ -74,12 +76,20 @@ const AuthComponent = () => {
     <PrimaryActionProvider>
       <div className="flex h-dvh flex-col gap-2">
         <header className="flex items-center justify-between gap-4 pt-5 pl-6">
-          <h1
-            className="text-3xl font-extrabold text-gray-900 dark:text-white"
-            style={{ viewTransitionName: "tracker-title" }}
-          >
-            {tracker?.title ?? (pathname === "/profiles" ? "Profiles" : "")}
-          </h1>
+          <div className="flex items-center gap-3">
+            <h1
+              className="text-3xl font-extrabold text-gray-900 dark:text-white"
+              style={{ viewTransitionName: "tracker-title" }}
+            >
+              {tracker?.title ?? (pathname === "/profiles" ? "Profiles" : "")}
+            </h1>
+            {loading && (
+              <span role="status" className="text-muted-foreground">
+                <Spinner className="size-5" />
+                <span className="sr-only">Loading</span>
+              </span>
+            )}
+          </div>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost">

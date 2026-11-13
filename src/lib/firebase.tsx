@@ -636,6 +636,24 @@ export const useProfiles = () => {
   return context.profiles
 }
 
+/**
+ * Whether any of the account's or active profile's data is still waiting for
+ * its first response. Cached data may already be on screen meanwhile.
+ */
+export const useDataLoading = () => {
+  const account = useContext(AccountContext)
+  const data = useContext(ProfileDataContext)
+  if (!account || !data)
+    throw new Error("useDataLoading must be used within a FirebaseProvider")
+  return [
+    account.profiles.state,
+    data.checkins.state,
+    data.bowelMovements.state,
+    data.symptomEpisodes.state,
+    data.diet.state,
+  ].some(state => state !== "LOADED")
+}
+
 export const useCheckins = () => {
   const context = useContext(ProfileDataContext)
   if (!context)

@@ -41,6 +41,7 @@ import type {
 } from "chart.js"
 
 import type { BodyMetricDataPoint, TimeScaleOption } from "../types"
+import LoadingState from "./LoadingState"
 
 interface ZoomPluginOptions {
   pan?: {
@@ -121,6 +122,7 @@ interface BodyMetricsChartProps {
 
 export const BodyMetricsChart: React.FC<BodyMetricsChartProps> = ({
   data,
+  loading,
   timeScale = "ALL",
   visibleLines = { weight: true, fat: true, waist: true },
   selectedPoint = null,
@@ -453,6 +455,8 @@ export const BodyMetricsChart: React.FC<BodyMetricsChartProps> = ({
     <div className={`relative ${className} min-h-48`}>
       {chartData.datasets.length > 0 ? (
         <Line ref={chartRef} data={chartData} options={chartOptions as any} />
+      ) : loading ? (
+        <LoadingState className="h-full py-0" />
       ) : (
         <p className="text-muted-foreground flex h-full w-full items-center justify-center">
           No data yet

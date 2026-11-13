@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button"
 import { useSymptomEpisodes } from "@/lib/firebase"
 import { useRegisterPrimaryAction } from "@/lib/primaryAction"
 import { endEpisodeNow, splitOngoingAndPast } from "@/lib/symptoms"
+import LoadingState from "@/components/LoadingState"
 
 export const Route = createFileRoute("/_auth/symptoms")({
   component: SymptomsPage,
@@ -88,9 +89,7 @@ function SymptomsPage() {
     <>
       <div className="mx-auto flex w-full max-w-md flex-1 flex-col gap-4 px-4 pb-2">
         {state !== "LOADED" ? (
-          <p className="text-muted-foreground py-12 text-center text-sm">
-            Loading…
-          </p>
+          <LoadingState />
         ) : symptomEpisodes.length === 0 ? (
           <div className="py-12 text-center">
             <h2 className="text-lg font-semibold">No symptoms yet</h2>
