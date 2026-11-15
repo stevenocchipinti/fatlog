@@ -6,9 +6,13 @@ import type {
   NewFoodGroup,
 } from "@/types"
 
+import type { TimelineBand } from "@/components/diet/timeline"
 import {
+  TIMELINE_STYLE,
   buildTimelineRows,
   gapLabel,
+  layoutRuleLine,
+  layoutTimeline,
   ruleActiveOn,
   ruleStintLabel,
   todayLocalDate,
@@ -42,16 +46,22 @@ const dateFormatter = new Intl.DateTimeFormat(undefined, {
   day: "numeric",
   month: "short",
 })
+
+/** Width of the date column, shared by the rows, the overlay and the key bar. */
+const DATE_COLUMN = "4.5rem"
+/** Column rail: the foreground colour (white in dark mode) at 8% opacity. */
+const RAIL_COLOR = "color-mix(in srgb, var(--foreground) 8%, transparent)"
 const yearFormatter = new Intl.DateTimeFormat(undefined, { year: "numeric" })
 
 /**
  * Compact diet timeline: dates as rows (newest first), active food groups as
  * emoji-only columns.
  *
- * A diet rule renders as a continuous vertical lane across its active range,
- * continuing through collapsed gap rows and open-ended through Today. A diet
- * exception renders as a dot on its food group/date cell, which may sit on top
- * of a rule lane (a notable observation within the rule) or stand alone.
+ * A diet rule renders as one thin continuous line down its column's rail, from
+ * its end row (Today while active) to its start row. Gaps between dated rows
+ * are sized by how much time they skip, and the line turns dotted through the
+ * long ones. A diet exception renders as a ring on its food group/date cell,
+ * which may sit on a rule line or stand alone.
  */
 export default function DietTimeline({
   loading,
@@ -134,11 +144,14 @@ export default function DietTimeline({
     )
   }
 
-  // A single column-template shared by the header and every row so lanes stay
-  // aligned. Horizontal scroll only kicks in when columns exceed the width.
+  // A single column-template shared by the rows, the line overlay and the key
+  // bar so everything stays aligned. Horizontal scroll only kicks in when
+  // columns exceed the width.
   const gridStyle = {
-    gridTemplateColumns: `4.5rem repeat(${columns.length}, minmax(3rem, 1fr))`,
+    gridTemplateColumns: `${DATE_COLUMN} repeat(${columns.length}, minmax(3rem, 1fr))`,
   }
+
+  const { bands, height } = layoutTimeline(rows)
 
   const exceptionAt = (foodGroupId: string, date: LocalDate) =>
     visibleExceptions.find(
@@ -152,55 +165,84 @@ export default function DietTimeline({
 
   return (
     <div className="mx-auto w-full max-w-3xl overflow-x-auto px-2">
-      <div className="min-w-fit">
-        {rows.map((row, index) => {
-          if (row.kind === "gap") {
+      <div className="relative min-w-fit" style={{ height }}>
+        {/* Everything drawn: guides, rails, rule lines and rule marks. It sits
+            under the rows, which only hold labels, tap targets and exception
+            rings, and is positioned from the same fixed band heights. */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0 grid gap-x-1"
+          style={gridStyle}
+        >
+          {bands.map(
+            band =>
+              band.kind === "event" && (
+                <div
+                  key={band.date}
+                  className="bg-foreground/6 absolute right-0 h-px"
+                  style={{
+                    left: DATE_COLUMN,
+                    top: band.top + band.height / 2,
+                  }}
+                />
+              ),
+          )}
+          <div />
+          {columns.map(group => (
+            <div key={group.id} className="relative">
+              <div
+                className="absolute inset-y-0 left-1/2 w-px -translate-x-1/2"
+                style={{
+                  background: `linear-gradient(to bottom, transparent, ${RAIL_COLOR} ${TIMELINE_STYLE.railFade}px)`,
+                }}
+              />
+              {visibleRules
+                .filter(rule => rule.foodGroupId === group.id)
+                .map(rule => (
+                  <RuleLine
+                    key={rule.id}
+                    rule={rule}
+                    bands={bands}
+                    today={today}
+                  />
+                ))}
+            </div>
+          ))}
+        </div>
+
+        {bands.map((band, index) => {
+          if (band.kind === "gap") {
             return (
               <div
                 key={`gap-${index}`}
-                className="grid gap-x-1"
-                style={gridStyle}
+                className="flex items-center justify-end pr-2 text-[11px]"
+                style={{
+                  height: band.height,
+                  width: DATE_COLUMN,
+                  color: TIMELINE_STYLE.gapLabelColor,
+                }}
               >
-                <div className="text-muted-foreground/70 flex items-center justify-end pr-2 text-[0.65rem]">
-                  {gapLabel(row.days)}
-                </div>
-                {columns.map(group => (
-                  <Lane
-                    key={group.id}
-                    // A rule spanning this gap keeps its lane drawn through it.
-                    active={visibleRules.some(
-                      r =>
-                        r.foodGroupId === group.id &&
-                        // Active on the newer boundary implies it crosses the gap
-                        // since gaps sit between two active-or-boundary rows.
-                        crossesGap(r, rows, index),
-                    )}
-                    height="h-4"
-                  />
-                ))}
+                {band.days > 0 && gapLabel(band.days)}
               </div>
             )
           }
 
-          const date = row.date
+          const date = band.date
           const jsDate = fromLocalDate(date)
           return (
             <div
               key={date}
-              className={cn(
-                "grid items-stretch gap-x-1",
-                row.isToday ? "border-foreground/30" : "border-border/60",
-              )}
-              style={gridStyle}
+              className="grid items-stretch gap-x-1"
+              style={{ ...gridStyle, height: band.height }}
             >
-              <div className="flex flex-col items-end justify-center py-2 pr-2 text-right">
+              <div className="flex flex-col items-end justify-center pr-2 text-right">
                 <span
                   className={cn(
-                    "text-xs font-medium",
-                    row.isToday && "text-foreground",
+                    "text-[15px] leading-tight font-semibold",
+                    band.isToday && "text-foreground",
                   )}
                 >
-                  {row.isToday ? "Today" : dateFormatter.format(jsDate)}
+                  {band.isToday ? "Today" : dateFormatter.format(jsDate)}
                 </span>
                 <span className="text-muted-foreground/70 text-[0.65rem]">
                   {yearFormatter.format(jsDate)}
@@ -213,7 +255,7 @@ export default function DietTimeline({
                 return (
                   <div
                     key={group.id}
-                    className="relative flex min-h-9 items-center justify-center"
+                    className="relative flex items-center justify-center"
                   >
                     {rule && (
                       <button
@@ -221,9 +263,7 @@ export default function DietTimeline({
                         aria-label={`Edit rule for ${group.name}`}
                         onClick={() => onSelectRule(rule)}
                         className="absolute inset-y-0 left-1/2 z-10 w-6 -translate-x-1/2"
-                      >
-                        <span className="bg-brand-1/70 absolute inset-y-0 left-1/2 w-1.5 -translate-x-1/2 rounded-full" />
-                      </button>
+                      />
                     )}
                     {exception ? (
                       <button
@@ -231,7 +271,10 @@ export default function DietTimeline({
                         aria-label={`Edit exception for ${group.name}`}
                         title={exception.note || undefined}
                         onClick={() => onSelectException(exception)}
-                        className="bg-brand-2 ring-background relative z-20 size-3 rounded-full ring-2 transition-transform hover:scale-125"
+                        className="bg-background relative z-20 size-2.5 rounded-full transition-transform hover:scale-125"
+                        style={{
+                          border: `1.5px solid ${TIMELINE_STYLE.exceptionColor}`,
+                        }}
                       />
                     ) : (
                       <button
@@ -300,31 +343,65 @@ export default function DietTimeline({
   )
 }
 
-/** A vertical rule lane segment (used within gap rows). */
-function Lane({ active, height }: { active: boolean; height: string }) {
-  return (
-    <div className={cn("relative flex justify-center", height)}>
-      {active && (
-        <div className="bg-brand-1/70 absolute inset-y-0 w-1.5 rounded-full" />
-      )}
-    </div>
-  )
-}
-
 /**
- * Whether a rule's lane crosses the gap row at `gapIndex`. A gap sits between
- * the event row above it (newer) and below it (older); if the rule is active on
- * both bounding event dates it spans the gap.
+ * One rule drawn within its column: a thin continuous line centred on the
+ * rail, dotted only inside dotted gaps, with a ring where it starts and either
+ * a ring where it ended or a haloed dot at Today while it is still active.
  */
-function crossesGap(
-  rule: DietRule,
-  rows: ReturnType<typeof buildTimelineRows>,
-  gapIndex: number,
-): boolean {
-  const newer = rows[gapIndex - 1]
-  const older = rows[gapIndex + 1]
-  if (newer.kind !== "event" || older.kind !== "event") return false
-  return ruleActiveOn(rule, newer.date) && ruleActiveOn(rule, older.date)
+function RuleLine({
+  rule,
+  bands,
+  today,
+}: {
+  rule: DietRule
+  bands: Array<TimelineBand>
+  today: LocalDate
+}) {
+  const line = layoutRuleLine(rule, bands, today)
+  if (!line) return null
+  const { ruleColor, ruleWidth, dottedOpacity } = TIMELINE_STYLE
+
+  const ring = (y: number) => (
+    <div
+      className="bg-background absolute left-1/2 size-2.5 -translate-1/2 rounded-full"
+      style={{ top: y, border: `2px solid ${ruleColor}` }}
+    />
+  )
+
+  return (
+    <>
+      {line.segments.map(segment => (
+        <div
+          key={segment.top}
+          className="absolute left-1/2 -translate-x-1/2"
+          style={{
+            top: segment.top,
+            height: segment.height,
+            width: ruleWidth,
+            ...(segment.dash
+              ? {
+                  opacity: dottedOpacity,
+                  background: `repeating-linear-gradient(to bottom, ${ruleColor} 0 ${segment.dash.on}px, transparent ${segment.dash.on}px ${segment.dash.on + segment.dash.off}px)`,
+                }
+              : { background: ruleColor }),
+          }}
+        />
+      ))}
+      {ring(line.startY)}
+      {rule.endDate === undefined ? (
+        <div
+          className="absolute left-1/2 size-2 -translate-1/2 rounded-full"
+          style={{
+            top: line.endY,
+            background: ruleColor,
+            boxShadow: `0 0 0 4px color-mix(in srgb, ${ruleColor} 22%, transparent)`,
+          }}
+        />
+      ) : (
+        rule.endDate !== rule.startDate && ring(line.endY)
+      )}
+    </>
+  )
 }
 
 /**

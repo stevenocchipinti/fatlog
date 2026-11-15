@@ -58,6 +58,115 @@ export const buildTimelineRows = (
   return rows
 }
 
+/**
+ * Every tunable of the timeline's drawing, in px unless noted.
+ *
+ * `gaps` are tiers checked in order: a gap uses the first tier whose `maxDays`
+ * is at least its skipped-day count (the number shown in its label). `dash` is
+ * the line pattern for rule lines crossing the gap; `null` draws them solid.
+ */
+export const TIMELINE_STYLE = {
+  eventRowHeight: 64,
+  gaps: [
+    { maxDays: 1, height: 20, dash: null },
+    { maxDays: 14, height: 44, dash: null },
+    { maxDays: 60, height: 72, dash: { on: 4, off: 4 } },
+    { maxDays: Infinity, height: 72, dash: { on: 4, off: 10 } },
+  ] as Array<GapTier>,
+  /** Opacity of a rule line where it crosses a dotted gap. */
+  dottedOpacity: 0.75,
+  /** Distance over which column rails fade in from the top of the chart. */
+  railFade: 100,
+  ruleColor: "#1fb872",
+  ruleWidth: 2,
+  exceptionColor: "#6aa9ff",
+  gapLabelColor: "#8f8f8a",
+}
+
+export type Dash = { on: number; off: number }
+type GapTier = { maxDays: number; height: number; dash: Dash | null }
+
+/** A timeline row positioned vertically within the chart. */
+export type TimelineBand =
+  | {
+      kind: "event"
+      date: LocalDate
+      isToday: boolean
+      top: number
+      height: number
+    }
+  | {
+      kind: "gap"
+      days: number
+      top: number
+      height: number
+      dash: Dash | null
+    }
+
+/**
+ * Stack the timeline rows top to bottom with their fixed heights. Every pair
+ * of consecutive event rows gets a gap band between them, including adjacent
+ * dates (zero skipped days), so spacing always reflects elapsed time.
+ */
+export const layoutTimeline = (
+  rows: Array<TimelineRow>,
+): { bands: Array<TimelineBand>; height: number } => {
+  const bands: Array<TimelineBand> = []
+  let top = 0
+  const pushGap = (days: number) => {
+    const tier =
+      TIMELINE_STYLE.gaps.find(t => days <= t.maxDays) ??
+      TIMELINE_STYLE.gaps[TIMELINE_STYLE.gaps.length - 1]
+    bands.push({ kind: "gap", days, top, height: tier.height, dash: tier.dash })
+    top += tier.height
+  }
+
+  rows.forEach((row, index) => {
+    if (row.kind === "gap") return pushGap(row.days)
+    if (index > 0 && rows[index - 1].kind === "event") pushGap(0)
+    const height = TIMELINE_STYLE.eventRowHeight
+    bands.push({ ...row, top, height })
+    top += height
+  })
+
+  return { bands, height: top }
+}
+
+/** A vertical stretch of a rule line, solid unless `dash` is set. */
+export type LineSegment = { top: number; height: number; dash: Dash | null }
+
+/**
+ * Where to draw a rule: one continuous line from the centre of its end row
+ * (Today while still active) down to the centre of its start row, split into
+ * segments so that only the parts inside dotted gaps are dotted. Adjacent
+ * solid parts are merged. `null` when the rule has no rows in the layout.
+ */
+export const layoutRuleLine = (
+  rule: DietRule,
+  bands: Array<TimelineBand>,
+  today: LocalDate = todayLocalDate(),
+): { startY: number; endY: number; segments: Array<LineSegment> } | null => {
+  const centreOf = (date: LocalDate) => {
+    const band = bands.find(b => b.kind === "event" && b.date === date)
+    return band ? band.top + band.height / 2 : null
+  }
+  const startY = centreOf(rule.startDate)
+  const endY = centreOf(rule.endDate ?? today)
+  if (startY === null || endY === null) return null
+
+  const segments: Array<LineSegment> = []
+  for (const band of bands) {
+    const top = Math.max(band.top, endY)
+    const bottom = Math.min(band.top + band.height, startY)
+    if (bottom <= top) continue
+    const dash = band.kind === "gap" ? band.dash : null
+    const previous = segments.at(-1)
+    if (previous && !previous.dash && !dash) previous.height += bottom - top
+    else segments.push({ top, height: bottom - top, dash })
+  }
+  return { startY, endY, segments }
+}
+
 /** Human-readable duration label for a gap row, e.g. "10 days" or "1 day". */
 export const gapLabel = (days: number): string =>
   `${days} ${days === 1 ? "day" : "days"}`

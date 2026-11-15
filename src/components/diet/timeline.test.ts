@@ -3,6 +3,8 @@ import { describe, expect, it } from "vitest"
 import {
   buildTimelineRows,
   gapLabel,
+  layoutRuleLine,
+  layoutTimeline,
   ruleActiveOn,
   ruleStintLabel,
 } from "./timeline"
@@ -160,5 +162,110 @@ describe("ruleStintLabel", () => {
   it("rounds a same-day anchor up to one day", () => {
     expect(ruleStintLabel([activeRule(0)], [], today)).toBe("+1d")
     expect(ruleStintLabel([], [exception(0)], today)).toBe("-1d")
+  })
+})
+
+describe("layoutTimeline", () => {
+  const gapsFor = (dates: Array<string>) =>
+    layoutTimeline(
+      buildTimelineRows(
+        [],
+        dates.map((date, i) => ({ id: `e${i}`, foodGroupId: "meat", date })),
+        "2026-11-15",
+      ),
+    ).bands.filter(band => band.kind === "gap")
+
+  it("puts a short gap between adjacent dates", () => {
+    expect(gapsFor(["2026-11-14"])).toEqual([
+      { kind: "gap", days: 0, top: 64, height: 20, dash: null },
+    ])
+  })
+
+  it("sizes and dots gaps by how many days they skip", () => {
+    const tier = (skipped: number) => {
+      const [gap] = gapsFor([addDays("2026-11-15", -(skipped + 1))])
+      return [gap.height, gap.dash]
+    }
+
+    expect(tier(1)).toEqual([20, null])
+    expect(tier(2)).toEqual([44, null])
+    expect(tier(14)).toEqual([44, null])
+    expect(tier(15)).toEqual([72, { on: 4, off: 4 }])
+    expect(tier(60)).toEqual([72, { on: 4, off: 4 }])
+    expect(tier(61)).toEqual([72, { on: 4, off: 10 }])
+  })
+
+  it("stacks bands without overlap and reports the total height", () => {
+    const { bands, height } = layoutTimeline(
+      buildTimelineRows(
+        [],
+        [{ id: "e", foodGroupId: "meat", date: "2026-11-08" }],
+        "2026-11-15",
+      ),
+    )
+
+    expect(bands.map(band => [band.top, band.height])).toEqual([
+      [0, 64],
+      [64, 44],
+      [108, 64],
+    ])
+    expect(height).toBe(172)
+  })
+})
+
+describe("layoutRuleLine", () => {
+  const today = "2026-11-15"
+  const layout = (rule: DietRule, exceptions: Array<DietException> = []) =>
+    layoutRuleLine(
+      rule,
+      layoutTimeline(buildTimelineRows([rule], exceptions, today)).bands,
+      today,
+    )
+
+  it("runs an active rule from the Today row centre to its start row centre", () => {
+    // Today (0-64), 6 skipped days (64-108), start row (108-172).
+    const line = layout({
+      id: "r",
+      foodGroupId: "meat",
+      startDate: "2026-11-08",
+    })
+
+    expect(line).toEqual({
+      startY: 140,
+      endY: 32,
+      segments: [{ top: 32, height: 108, dash: null }],
+    })
+  })
+
+  it("dots only the part inside a dotted gap, exactly on its boundaries", () => {
+    // Today (0-64), 9 days (64-108), exception (108-172), 30 days (172-244),
+    // start row (244-308).
+    const line = layout(
+      { id: "r", foodGroupId: "meat", startDate: "2026-10-05" },
+      [{ id: "e", foodGroupId: "meat", date: "2026-11-05" }],
+    )
+
+    expect(line?.segments).toEqual([
+      { top: 32, height: 140, dash: null },
+      { top: 172, height: 72, dash: { on: 4, off: 4 } },
+      { top: 244, height: 32, dash: null },
+    ])
+  })
+
+  it("stops an ended rule at its end row", () => {
+    // Today (0-64), 4 days (64-108), end row (108-172), 8 days (172-216),
+    // start row (216-280).
+    const line = layout({
+      id: "r",
+      foodGroupId: "meat",
+      startDate: "2026-11-01",
+      endDate: "2026-11-10",
+    })
+
+    expect(line).toEqual({
+      startY: 248,
+      endY: 140,
+      segments: [{ top: 140, height: 108, dash: null }],
+    })
   })
 })
