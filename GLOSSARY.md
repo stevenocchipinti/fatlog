@@ -41,5 +41,5 @@ The 1–7 rating of a bowel movement's form according to the Bristol stool chart
 _Avoid_: Stool score, rating
 
 **Symptom episode**:
-A period of being unwell, described by a free-text symptom name, starting at a point in time and optionally ending at a later one, with an optional note. An episode without an end is ongoing.
+A period of being unwell, described by a free-text symptom name, starting at a point in time and optionally ending at a later one, with an optional note. An episode without an end is ongoing. An episode that ends the moment it starts is a one-off.
 _Avoid_: Symptom entry, illness, sickness log

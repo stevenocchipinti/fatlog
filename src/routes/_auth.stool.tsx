@@ -2,32 +2,21 @@ import { createFileRoute } from "@tanstack/react-router"
 import { format } from "date-fns"
 import { useCallback, useMemo, useState } from "react"
 
-import type { BowelMovement, LocalDate } from "@/types"
+import type { BowelMovement } from "@/types"
 
 import BowelMovementDrawer from "@/components/stool/BowelMovementDrawer"
 import { BRISTOL_TYPES, groupByLocalDay } from "@/lib/bowelMovements"
 import BristolIcon from "@/components/stool/BristolIcon"
 import StoolCalendar from "@/components/stool/StoolCalendar"
 import { useBowelMovements } from "@/lib/firebase"
-import {
-  addDays,
-  fromLocalDate,
-  toLocalDate,
-  todayLocalDate,
-} from "@/lib/localDate"
+import { dayHeading } from "@/lib/dayHeading"
+import { toLocalDate, todayLocalDate } from "@/lib/localDate"
 import { useRegisterPrimaryAction } from "@/lib/primaryAction"
 import Skeleton from "@/components/Skeleton"
 
 export const Route = createFileRoute("/_auth/stool")({
   component: StoolPage,
 })
-
-const dayHeading = (date: LocalDate) => {
-  const today = todayLocalDate()
-  if (date === today) return "Today"
-  if (date === addDays(today, -1)) return "Yesterday"
-  return format(fromLocalDate(date), "EEEE d MMMM")
-}
 
 function StoolPage() {
   const {

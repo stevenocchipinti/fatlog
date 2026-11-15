@@ -4,11 +4,14 @@ import { useCallback, useMemo, useState } from "react"
 
 import type { SymptomEpisode } from "@/types"
 
+import SymptomCalendar from "@/components/symptoms/SymptomCalendar"
 import SymptomEpisodeDrawer from "@/components/symptoms/SymptomEpisodeDrawer"
 import { Button } from "@/components/ui/button"
+import { dayHeading } from "@/lib/dayHeading"
 import { useSymptomEpisodes } from "@/lib/firebase"
+import { toLocalDate, todayLocalDate } from "@/lib/localDate"
 import { useRegisterPrimaryAction } from "@/lib/primaryAction"
-import { endEpisodeNow, splitOngoingAndPast } from "@/lib/symptoms"
+import { endEpisodeNow, symptomDays } from "@/lib/symptoms"
 import Skeleton from "@/components/Skeleton"
 
 export const Route = createFileRoute("/_auth/symptoms")({
@@ -46,10 +49,15 @@ function SymptomsPage() {
   const [open, setOpen] = useState(false)
   const [editing, setEditing] = useState<SymptomEpisode>()
 
-  const { ongoing, past } = useMemo(
-    () => splitOngoingAndPast(symptomEpisodes),
-    [symptomEpisodes],
+  const today = todayLocalDate()
+  const [month, setMonth] = useState(today)
+  const [selected, setSelected] = useState(today)
+
+  const days = useMemo(
+    () => symptomDays(symptomEpisodes, today),
+    [symptomEpisodes, today],
   )
+  const selectedEpisodes = days.get(selected)?.episodes ?? []
 
   const openNew = useCallback(() => {
     setEditing(undefined)
@@ -64,91 +72,72 @@ function SymptomsPage() {
     setOpen(true)
   }
 
-  const row = (episode: SymptomEpisode, action?: React.ReactNode) => (
-    <li key={episode.id} className="flex items-stretch gap-1.5">
-      <button
-        type="button"
-        onClick={() => edit(episode)}
-        className="bg-card hover:bg-muted/60 min-w-0 flex-1 rounded-xl border p-3 text-left transition-colors"
-      >
-        <span className="block text-sm font-medium">{episode.symptom}</span>
-        <span className="text-muted-foreground block text-sm">
-          {period(episode)}
-        </span>
-        {episode.note && (
-          <span className="text-muted-foreground block truncate text-sm">
-            {episode.note}
-          </span>
-        )}
-      </button>
-      {action}
-    </li>
-  )
-
   return (
     <>
       <div className="mx-auto flex w-full max-w-md flex-1 flex-col gap-4 px-4 pb-2">
-        {state === "INITIALIZING" ? (
-          // Nothing saved from an earlier visit yet: placeholder rows the size
-          // of real ones, so the list doesn't jump when it arrives.
-          <div
-            role="status"
-            aria-label="Loading symptoms"
-            className="flex flex-col gap-1.5"
-          >
-            <Skeleton className="h-5 w-16" />
-            {[0, 1, 2].map(index => (
-              <Skeleton key={index} className="h-[4.125rem] rounded-xl" />
-            ))}
-          </div>
-        ) : symptomEpisodes.length === 0 ? (
-          <div className="py-12 text-center">
-            <h2 className="text-lg font-semibold">No symptoms yet</h2>
-            <p className="text-muted-foreground mt-1 text-sm">
-              Tap + to record one.
+        <SymptomCalendar
+          month={month}
+          onMonthChange={setMonth}
+          selected={selected}
+          onSelect={setSelected}
+          today={today}
+          days={days}
+        />
+        <section className="flex flex-col gap-1.5">
+          <h2 className="text-muted-foreground text-sm font-medium">
+            {dayHeading(selected)}
+          </h2>
+          {state === "INITIALIZING" ? (
+            // Nothing saved from an earlier visit yet: hold the list's place
+            // rather than claim the day is empty.
+            <div role="status" aria-label="Loading symptoms">
+              <Skeleton className="h-[4.125rem] rounded-xl" />
+            </div>
+          ) : selectedEpisodes.length === 0 ? (
+            <p className="text-muted-foreground py-4 text-center text-sm">
+              Nothing recorded. Tap + to record a symptom.
             </p>
-          </div>
-        ) : (
-          <>
-            {ongoing.length > 0 && (
-              <section className="flex flex-col gap-1.5">
-                <h2 className="text-muted-foreground text-sm font-medium">
-                  Ongoing
-                </h2>
-                <ul className="flex flex-col gap-1.5">
-                  {ongoing.map(episode =>
-                    row(
-                      episode,
-                      <Button
-                        type="button"
-                        variant="outline"
-                        className="h-auto rounded-xl"
-                        onClick={() =>
-                          updateSymptomEpisode(
-                            episode.id,
-                            endEpisodeNow(episode, Date.now()),
-                          )
-                        }
-                      >
-                        End now
-                      </Button>,
-                    ),
+          ) : (
+            <ul className="flex flex-col gap-1.5">
+              {selectedEpisodes.map(episode => (
+                <li key={episode.id} className="flex items-stretch gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => edit(episode)}
+                    className="bg-card hover:bg-muted/60 min-w-0 flex-1 rounded-xl border p-3 text-left transition-colors"
+                  >
+                    <span className="block text-sm font-medium">
+                      {episode.symptom}
+                    </span>
+                    <span className="text-muted-foreground block text-sm">
+                      {period(episode)}
+                    </span>
+                    {episode.note && (
+                      <span className="text-muted-foreground block truncate text-sm">
+                        {episode.note}
+                      </span>
+                    )}
+                  </button>
+                  {episode.end === undefined && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="h-auto rounded-xl"
+                      onClick={() =>
+                        updateSymptomEpisode(
+                          episode.id,
+                          endEpisodeNow(episode, Date.now()),
+                        )
+                      }
+                    >
+                      End now
+                    </Button>
                   )}
-                </ul>
-              </section>
-            )}
-            {past.length > 0 && (
-              <section className="flex flex-col gap-1.5">
-                <h2 className="text-muted-foreground text-sm font-medium">
-                  Past
-                </h2>
-                <ul className="flex flex-col gap-1.5">
-                  {past.map(episode => row(episode))}
-                </ul>
-              </section>
-            )}
-          </>
-        )}
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
       </div>
 
       <SymptomEpisodeDrawer
@@ -159,6 +148,10 @@ function SymptomsPage() {
         onSubmit={episode => {
           if (editing) updateSymptomEpisode(editing.id, episode)
           else addSymptomEpisode(episode)
+          // Show the day it starts on, which may not be the one selected.
+          const date = toLocalDate(new Date(episode.start))
+          setSelected(date)
+          setMonth(date)
           setOpen(false)
         }}
         onDelete={episode => {

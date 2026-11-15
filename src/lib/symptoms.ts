@@ -1,4 +1,6 @@
-import type { NewSymptomEpisode, SymptomEpisode } from "@/types"
+import type { LocalDate, NewSymptomEpisode, SymptomEpisode } from "@/types"
+
+import { addDays, toLocalDate } from "@/lib/localDate"
 
 /** A symptom episode as stored at `/symptomEpisodes/<profileId>/<id>`. */
 export type StoredSymptomEpisode = {
@@ -38,18 +40,76 @@ export const toSymptomEpisodeRecord = ({
 const newestStartFirst = (a: SymptomEpisode, b: SymptomEpisode) =>
   b.start - a.start
 
+/** Whether an episode ended the moment it started: a point in time, not a period. */
+export const isOneOff = ({ start, end }: SymptomEpisode): boolean =>
+  end === start
+
+/** One day's stretch of an episode that lasted a while. */
+export type SymptomBar = {
+  episode: SymptomEpisode
+  /** The episode started on this day. */
+  startsHere: boolean
+  /** The episode ended on this day or, if it is ongoing, has reached today. */
+  endsHere: boolean
+}
+
+export type SymptomDay = {
+  /** Every episode touching the day, most recently started first. */
+  episodes: SymptomEpisode[]
+  /** The one-offs among them. */
+  oneOffs: SymptomEpisode[]
+  /**
+   * The episodes that lasted a while, by lane. An episode keeps one lane for
+   * its whole run so its bar lines up from day to day; a lane it doesn't use
+   * on a given day is left empty.
+   */
+  bars: (SymptomBar | undefined)[]
+}
+
 /**
- * Episodes split for the screen: ongoing ones (no end) to pin at the top, and
- * past ones below. Each group lists the most recently started first.
+ * What to show on each local day that has any symptoms. A one-off sits on its
+ * own day. Any other episode covers every day from its start to its end, and
+ * an ongoing one runs through `today`.
  */
-export const splitOngoingAndPast = (
+export const symptomDays = (
   episodes: readonly SymptomEpisode[],
-): { ongoing: SymptomEpisode[]; past: SymptomEpisode[] } => {
-  const sorted = [...episodes].sort(newestStartFirst)
-  return {
-    ongoing: sorted.filter(episode => episode.end === undefined),
-    past: sorted.filter(episode => episode.end !== undefined),
+  today: LocalDate,
+): Map<LocalDate, SymptomDay> => {
+  const days = new Map<LocalDate, SymptomDay>()
+  const dayFor = (date: LocalDate) => {
+    let day = days.get(date)
+    if (!day) days.set(date, (day = { episodes: [], oneOffs: [], bars: [] }))
+    return day
   }
+  // The last day each lane is taken up to.
+  const lanes: LocalDate[] = []
+
+  // Oldest first, so an episode that overlaps an earlier one stacks above it.
+  for (const episode of [...episodes].sort(newestStartFirst).reverse()) {
+    const first = toLocalDate(new Date(episode.start))
+    if (isOneOff(episode)) {
+      const day = dayFor(first)
+      day.episodes.unshift(episode)
+      day.oneOffs.unshift(episode)
+      continue
+    }
+    const ended =
+      episode.end === undefined ? today : toLocalDate(new Date(episode.end))
+    const last = ended < first ? first : ended
+    let lane = lanes.findIndex(takenTo => takenTo < first)
+    if (lane === -1) lane = lanes.length
+    lanes[lane] = last
+    for (let date = first; date <= last; date = addDays(date, 1)) {
+      const day = dayFor(date)
+      day.episodes.unshift(episode)
+      day.bars[lane] = {
+        episode,
+        startsHere: date === first,
+        endsHere: date === last,
+      }
+    }
+  }
+  return days
 }
 
 /**
