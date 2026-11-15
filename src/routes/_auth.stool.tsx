@@ -16,7 +16,7 @@ import {
   todayLocalDate,
 } from "@/lib/localDate"
 import { useRegisterPrimaryAction } from "@/lib/primaryAction"
-import LoadingState from "@/components/LoadingState"
+import Skeleton from "@/components/Skeleton"
 
 export const Route = createFileRoute("/_auth/stool")({
   component: StoolPage,
@@ -78,71 +78,71 @@ function StoolPage() {
   return (
     <>
       <div className="mx-auto flex w-full max-w-md flex-1 flex-col gap-4 px-4 pb-2">
-        {state === "INITIALIZING" ? (
-          <LoadingState />
-        ) : (
-          <>
-            <StoolCalendar
-              month={month}
-              onMonthChange={setMonth}
-              selected={selected}
-              onSelect={setSelected}
-              today={today}
-              movementsByDate={chronologicalByDate}
-            />
-            <section className="flex flex-col gap-1.5">
-              <h2 className="text-muted-foreground text-sm font-medium">
-                {dayHeading(selected)}
-              </h2>
-              {selectedMovements.length === 0 ? (
-                <p className="text-muted-foreground py-4 text-center text-sm">
-                  Nothing recorded. Tap + to record a bowel movement.
-                </p>
-              ) : (
-                <ul className="flex flex-col gap-1.5">
-                  {selectedMovements.map(movement => {
-                    const info = BRISTOL_TYPES[movement.bristolType - 1]
-                    return (
-                      <li key={movement.id}>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setEditing(movement)
-                            setOpen(true)
-                          }}
-                          className="bg-card hover:bg-muted/60 flex w-full items-center gap-3 rounded-xl border p-3 text-left transition-colors"
-                        >
-                          <span className="text-muted-foreground w-12 text-sm tabular-nums">
-                            {format(new Date(movement.timestamp), "HH:mm")}
+        <StoolCalendar
+          month={month}
+          onMonthChange={setMonth}
+          selected={selected}
+          onSelect={setSelected}
+          today={today}
+          movementsByDate={chronologicalByDate}
+        />
+        <section className="flex flex-col gap-1.5">
+          <h2 className="text-muted-foreground text-sm font-medium">
+            {dayHeading(selected)}
+          </h2>
+          {state === "INITIALIZING" ? (
+            // Nothing saved from an earlier visit yet: hold the list's place
+            // rather than claim the day is empty.
+            <div role="status" aria-label="Loading bowel movements">
+              <Skeleton className="h-[3.875rem] rounded-xl" />
+            </div>
+          ) : selectedMovements.length === 0 ? (
+            <p className="text-muted-foreground py-4 text-center text-sm">
+              Nothing recorded. Tap + to record a bowel movement.
+            </p>
+          ) : (
+            <ul className="flex flex-col gap-1.5">
+              {selectedMovements.map(movement => {
+                const info = BRISTOL_TYPES[movement.bristolType - 1]
+                return (
+                  <li key={movement.id}>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setEditing(movement)
+                        setOpen(true)
+                      }}
+                      className="bg-card hover:bg-muted/60 flex w-full items-center gap-3 rounded-xl border p-3 text-left transition-colors"
+                    >
+                      <span className="text-muted-foreground w-12 text-sm tabular-nums">
+                        {format(new Date(movement.timestamp), "HH:mm")}
+                      </span>
+                      <span
+                        className="bg-muted flex size-9 shrink-0 items-center justify-center rounded-full"
+                        title={info.description}
+                      >
+                        <BristolIcon
+                          type={movement.bristolType}
+                          className="!size-5"
+                        />
+                      </span>
+                      <span className="min-w-0 flex-1">
+                        <span className="block text-sm font-medium">
+                          Type {movement.bristolType}
+                        </span>
+                        {movement.note && (
+                          <span className="text-muted-foreground block truncate text-sm">
+                            {movement.note}
                           </span>
-                          <span
-                            className="bg-muted flex size-9 shrink-0 items-center justify-center rounded-full"
-                            title={info.description}
-                          >
-                            <BristolIcon
-                              type={movement.bristolType}
-                              className="!size-5"
-                            />
-                          </span>
-                          <span className="min-w-0 flex-1">
-                            <span className="block text-sm font-medium">
-                              Type {movement.bristolType}
-                            </span>
-                            {movement.note && (
-                              <span className="text-muted-foreground block truncate text-sm">
-                                {movement.note}
-                              </span>
-                            )}
-                          </span>
-                        </button>
-                      </li>
-                    )
-                  })}
-                </ul>
-              )}
-            </section>
-          </>
-        )}
+                        )}
+                      </span>
+                    </button>
+                  </li>
+                )
+              })}
+            </ul>
+          )}
+        </section>
       </div>
 
       <BowelMovementDrawer

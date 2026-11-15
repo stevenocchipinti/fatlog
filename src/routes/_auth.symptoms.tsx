@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button"
 import { useSymptomEpisodes } from "@/lib/firebase"
 import { useRegisterPrimaryAction } from "@/lib/primaryAction"
 import { endEpisodeNow, splitOngoingAndPast } from "@/lib/symptoms"
-import LoadingState from "@/components/LoadingState"
+import Skeleton from "@/components/Skeleton"
 
 export const Route = createFileRoute("/_auth/symptoms")({
   component: SymptomsPage,
@@ -89,7 +89,18 @@ function SymptomsPage() {
     <>
       <div className="mx-auto flex w-full max-w-md flex-1 flex-col gap-4 px-4 pb-2">
         {state === "INITIALIZING" ? (
-          <LoadingState />
+          // Nothing saved from an earlier visit yet: placeholder rows the size
+          // of real ones, so the list doesn't jump when it arrives.
+          <div
+            role="status"
+            aria-label="Loading symptoms"
+            className="flex flex-col gap-1.5"
+          >
+            <Skeleton className="h-5 w-16" />
+            {[0, 1, 2].map(index => (
+              <Skeleton key={index} className="h-[4.125rem] rounded-xl" />
+            ))}
+          </div>
         ) : symptomEpisodes.length === 0 ? (
           <div className="py-12 text-center">
             <h2 className="text-lg font-semibold">No symptoms yet</h2>
