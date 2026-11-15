@@ -78,7 +78,7 @@ function StoolPage() {
   return (
     <>
       <div className="mx-auto flex w-full max-w-md flex-1 flex-col gap-4 px-4 pb-2">
-        {state !== "LOADED" ? (
+        {state === "INITIALIZING" ? (
           <LoadingState />
         ) : (
           <>

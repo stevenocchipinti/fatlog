@@ -172,7 +172,19 @@ const parseProfile = (id: string, record: FirebaseProfile): Profile => ({
 
 type AuthState = "INITIALIZING" | "LOADING" | "LOGGED_OUT" | "LOGGED_IN"
 type ProfilesState = "INITIALIZING" | "LOADED"
-type LoadState = "INITIALIZING" | "LOADED"
+/**
+ * "CACHED" means the server hasn't answered yet but a copy saved from an
+ * earlier visit is on hand, so screens can show it rather than a placeholder.
+ */
+type LoadState = "INITIALIZING" | "CACHED" | "LOADED"
+
+const hasCached = (key: string) => {
+  try {
+    return window.localStorage.getItem(key) !== null
+  } catch {
+    return false
+  }
+}
 type DietState = LoadState
 
 export type AuthContext = {
@@ -444,6 +456,7 @@ export const FirebaseProvider = ({ children }: { children: ReactNode }) => {
  * Subscribes to one profile's collection at `/<collection>/<profileId>`,
  * parsing each record and caching the result in localStorage (under
  * `<cacheName>:<profileId>`) so the screen has data before the first response.
+ * `state` starts as "CACHED" when such a copy exists.
  * `parse` must be a stable (module-level) function. `reviveCached` rebuilds
  * values that don't survive a JSON round trip, such as Dates.
  */
@@ -460,12 +473,11 @@ const useProfileCollection = <TStored, T>({
   parse: (id: string, record: TStored) => T
   reviveCached?: (item: unknown) => T[]
 }) => {
-  const [state, setState] = useState<LoadState>("INITIALIZING")
-  const [data, setData] = useLocalStorage<T[]>(
-    `${cacheName}:${profileId ?? "none"}`,
-    [],
-    reviveCached,
+  const cacheKey = `${cacheName}:${profileId ?? "none"}`
+  const [state, setState] = useState<LoadState>(() =>
+    hasCached(cacheKey) ? "CACHED" : "INITIALIZING",
   )
+  const [data, setData] = useLocalStorage<T[]>(cacheKey, [], reviveCached)
 
   useEffect(() => {
     if (!profileId) return
@@ -526,7 +538,9 @@ const ProfileDataProvider = ({
     parse: parseSymptomEpisode,
   })
 
-  const [dietState, setDietState] = useState<DietState>("INITIALIZING")
+  const [dietState, setDietState] = useState<DietState>(() =>
+    hasCached(cacheKey("foodGroupData")) ? "CACHED" : "INITIALIZING",
+  )
   const [foodGroups, setFoodGroups] = useLocalStorage<FoodGroup[]>(
     cacheKey("foodGroupData"),
     [],
