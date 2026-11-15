@@ -1,6 +1,7 @@
 import { RouterProvider, createRouter } from "@tanstack/react-router"
 import { StrictMode } from "react"
 import ReactDOM from "react-dom/client"
+import { registerSW } from "virtual:pwa-register"
 
 // Import the generated route tree
 import { routeTree } from "./routeTree.gen"
@@ -51,6 +52,10 @@ if (rootElement && !rootElement.innerHTML) {
     </StrictMode>,
   )
 }
+
+// Caches the app itself for offline use (configured in vite.config.js). When a
+// new version has been deployed, it is downloaded and the page reloads onto it.
+registerSW({ immediate: true })
 
 // If you want to start measuring performance in your app, pass a function
 // to log results (for example: reportWebVitals(console.log))

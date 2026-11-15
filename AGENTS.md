@@ -18,6 +18,7 @@ Single-context: one `GLOSSARY.md` and `docs/adr/` at the repo root. See `docs/ag
 - **Signing in:** click "Login with Google", then in the auth emulator widget pick an existing account, or "Add new account" → "Auto-generate user information". Emulator data is wiped when the emulators restart, so a stale session shows a logged-out avatar (⨯). Sign in again.
 - **Inspecting data:** `curl -H "Authorization: Bearer owner" "http://localhost:9000/.json?ns=fatlog-app"`. The namespace is `fatlog-app`, from the legacy `fatlog-app.firebaseio.com` `databaseURL`.
 - **Stale dependencies:** Vite only re-bundles dependencies on startup, so after `npm install` or `npm update`, restart `npm run dev` before testing in the browser.
+- **Service worker:** production and beta builds precache the app (`vite-plugin-pwa`, configured in `vite.config.js`) so it opens offline; a new deploy downloads in the background and then reloads the page. `npm run dev` has no service worker. To try it locally, `npm run build:beta && npm run serve`. Paths under `/__/` (Firebase's sign-in redirect) are excluded from the offline fallback and must stay that way.
 - **Checks:** `npx tsc`, `npm run lint`, `npm test`. CI doesn't run these yet; it only builds and deploys.
 
 ## Hosting & deployment
