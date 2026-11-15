@@ -1,4 +1,3 @@
-import { flushSync } from "react-dom"
 import { useLocation, useNavigate } from "@tanstack/react-router"
 import React from "react"
 
@@ -41,10 +40,11 @@ export const useNavigateWithTransition = () => {
         root.dataset.navDirection = direction
       }
 
-      const transition = document.startViewTransition(() => {
-        flushSync(() => {
-          void navigate(navigateOptions)
-        })
+      // The router renders the new screen asynchronously, so the transition
+      // has to wait for it. `navigate` resolves once the screen is in the DOM;
+      // returning before then would snapshot the old screen as the new one.
+      const transition = document.startViewTransition(async () => {
+        await navigate(navigateOptions)
       })
 
       void transition.finished.finally(() => {
