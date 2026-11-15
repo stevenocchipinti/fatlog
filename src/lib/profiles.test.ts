@@ -1,8 +1,11 @@
 import { describe, expect, it } from "vitest"
 
 import {
+  isAccountId,
+  mergeProfiles,
   parseEnabledTrackers,
   profileSetupUpdate,
+  profileSharingUpdate,
   resolveActiveProfileId,
   toggleTracker,
   trackerRedirect,
@@ -16,6 +19,8 @@ const profile = (id: string, overrides: Partial<Profile> = {}): Profile => ({
   name: id,
   enabledTrackers: ["metrics", "diet"],
   archived: false,
+  owned: true,
+  sharedWith: [],
   ...overrides,
 })
 
@@ -169,5 +174,52 @@ describe("profileSetupUpdate", () => {
     expect(Object.keys(setup({ includeStarters: false }))).toEqual([
       "profiles/-child",
     ])
+  })
+})
+
+describe("isAccountId", () => {
+  it("accepts a Firebase auth uid", () => {
+    expect(isAccountId("Xk3vQ9mZp2aB7cD1eF4gH6iJ8kL0")).toBe(true)
+  })
+
+  it("rejects text that can't be a database key, or is too short to be an ID", () => {
+    expect(isAccountId("")).toBe(false)
+    expect(isAccountId("abc")).toBe(false)
+    expect(isAccountId("someone@example.com")).toBe(false)
+    expect(isAccountId("has a space in it")).toBe(false)
+    expect(isAccountId("profiles/other")).toBe(false)
+  })
+})
+
+describe("profileSharingUpdate", () => {
+  it("grants access and records it on the profile in one update", () => {
+    expect(profileSharingUpdate("-child", "uid-2", true)).toEqual({
+      "sharedWith/uid-2/-child": true,
+      "profiles/-child/sharedWith/uid-2": true,
+    })
+  })
+
+  it("removes both entries when sharing stops", () => {
+    expect(profileSharingUpdate("-child", "uid-2", false)).toEqual({
+      "sharedWith/uid-2/-child": null,
+      "profiles/-child/sharedWith/uid-2": null,
+    })
+  })
+})
+
+describe("mergeProfiles", () => {
+  const own = profile("uid-1")
+  const theirs = profile("-theirs", { owned: false })
+
+  it("lists shared profiles after the account's own", () => {
+    expect(mergeProfiles([own], [theirs])).toEqual([own, theirs])
+  })
+
+  it("leaves out a shared profile its owner has archived", () => {
+    expect(mergeProfiles([own], [{ ...theirs, archived: true }])).toEqual([own])
+  })
+
+  it("doesn't repeat a profile the account already owns", () => {
+    expect(mergeProfiles([own], [own])).toEqual([own])
   })
 })

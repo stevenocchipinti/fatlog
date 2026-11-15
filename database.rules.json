@@ -5,8 +5,9 @@
 //
 // Observations live under /<collection>/<profileId>. A profile is accessible
 // to its account holder when its ID is their auth uid (the account's own
-// profile, see docs/adr/0001) or when /profiles/<profileId>/owner is their uid.
-// The first clause is exactly what the pre-profiles code (prod) relies on.
+// profile, see docs/adr/0001), when /profiles/<profileId>/owner is their uid,
+// or when the owner has shared it with them (/sharedWith/<uid>/<profileId>).
+// The first clause is exactly what the pre-profiles code relies on.
 {
   "rules": {
     "profiles": {
@@ -15,7 +16,8 @@
       ".read": "auth != null && query.orderByChild == 'owner' && query.equalTo == auth.uid",
       ".indexOn": ["owner"],
       "$profileId": {
-        ".read": "auth != null && data.child('owner').val() === auth.uid",
+        // The owner, or an account the profile is shared with (read only).
+        ".read": "auth != null && (data.child('owner').val() === auth.uid || root.child('sharedWith').child(auth.uid).child($profileId).val() === true)",
         // Create: your own profile (ID = your uid) or a new push() ID, so you
         // can never claim another account's uid-keyed profile and thereby its
         // data. Update: only the existing owner.
@@ -27,40 +29,53 @@
         ".validate": "newData.hasChildren(['owner', 'name'])"
       }
     },
+    // /sharedWith/<uid>/<profileId>: true gives the account <uid> access to
+    // another account's profile: it can read the profile record and read and
+    // write its observations. It is also how that account finds the profiles
+    // shared with it. Only the profile's owner can add or remove an entry.
+    "sharedWith": {
+      "$uid": {
+        ".read": "auth != null && $uid === auth.uid",
+        "$profileId": {
+          ".write": "auth != null && root.child('profiles').child($profileId).child('owner').val() === auth.uid",
+          ".validate": "newData.val() === true"
+        }
+      }
+    },
     "checkins": {
       "$profileId": {
-        ".read": "auth != null && ($profileId === auth.uid || root.child('profiles').child($profileId).child('owner').val() === auth.uid)",
-        ".write": "auth != null && ($profileId === auth.uid || newData.parent().parent().child('profiles').child($profileId).child('owner').val() === auth.uid)"
+        ".read": "auth != null && ($profileId === auth.uid || root.child('profiles').child($profileId).child('owner').val() === auth.uid || root.child('sharedWith').child(auth.uid).child($profileId).val() === true)",
+        ".write": "auth != null && ($profileId === auth.uid || newData.parent().parent().child('profiles').child($profileId).child('owner').val() === auth.uid || root.child('sharedWith').child(auth.uid).child($profileId).val() === true)"
       }
     },
     "bowelMovements": {
       "$profileId": {
-        ".read": "auth != null && ($profileId === auth.uid || root.child('profiles').child($profileId).child('owner').val() === auth.uid)",
-        ".write": "auth != null && ($profileId === auth.uid || newData.parent().parent().child('profiles').child($profileId).child('owner').val() === auth.uid)"
+        ".read": "auth != null && ($profileId === auth.uid || root.child('profiles').child($profileId).child('owner').val() === auth.uid || root.child('sharedWith').child(auth.uid).child($profileId).val() === true)",
+        ".write": "auth != null && ($profileId === auth.uid || newData.parent().parent().child('profiles').child($profileId).child('owner').val() === auth.uid || root.child('sharedWith').child(auth.uid).child($profileId).val() === true)"
       }
     },
     "symptomEpisodes": {
       "$profileId": {
-        ".read": "auth != null && ($profileId === auth.uid || root.child('profiles').child($profileId).child('owner').val() === auth.uid)",
-        ".write": "auth != null && ($profileId === auth.uid || newData.parent().parent().child('profiles').child($profileId).child('owner').val() === auth.uid)"
+        ".read": "auth != null && ($profileId === auth.uid || root.child('profiles').child($profileId).child('owner').val() === auth.uid || root.child('sharedWith').child(auth.uid).child($profileId).val() === true)",
+        ".write": "auth != null && ($profileId === auth.uid || newData.parent().parent().child('profiles').child($profileId).child('owner').val() === auth.uid || root.child('sharedWith').child(auth.uid).child($profileId).val() === true)"
       }
     },
     "foodGroups": {
       "$profileId": {
-        ".read": "auth != null && ($profileId === auth.uid || root.child('profiles').child($profileId).child('owner').val() === auth.uid)",
-        ".write": "auth != null && ($profileId === auth.uid || newData.parent().parent().child('profiles').child($profileId).child('owner').val() === auth.uid)"
+        ".read": "auth != null && ($profileId === auth.uid || root.child('profiles').child($profileId).child('owner').val() === auth.uid || root.child('sharedWith').child(auth.uid).child($profileId).val() === true)",
+        ".write": "auth != null && ($profileId === auth.uid || newData.parent().parent().child('profiles').child($profileId).child('owner').val() === auth.uid || root.child('sharedWith').child(auth.uid).child($profileId).val() === true)"
       }
     },
     "dietRules": {
       "$profileId": {
-        ".read": "auth != null && ($profileId === auth.uid || root.child('profiles').child($profileId).child('owner').val() === auth.uid)",
-        ".write": "auth != null && ($profileId === auth.uid || newData.parent().parent().child('profiles').child($profileId).child('owner').val() === auth.uid)"
+        ".read": "auth != null && ($profileId === auth.uid || root.child('profiles').child($profileId).child('owner').val() === auth.uid || root.child('sharedWith').child(auth.uid).child($profileId).val() === true)",
+        ".write": "auth != null && ($profileId === auth.uid || newData.parent().parent().child('profiles').child($profileId).child('owner').val() === auth.uid || root.child('sharedWith').child(auth.uid).child($profileId).val() === true)"
       }
     },
     "dietExceptions": {
       "$profileId": {
-        ".read": "auth != null && ($profileId === auth.uid || root.child('profiles').child($profileId).child('owner').val() === auth.uid)",
-        ".write": "auth != null && ($profileId === auth.uid || newData.parent().parent().child('profiles').child($profileId).child('owner').val() === auth.uid)"
+        ".read": "auth != null && ($profileId === auth.uid || root.child('profiles').child($profileId).child('owner').val() === auth.uid || root.child('sharedWith').child(auth.uid).child($profileId).val() === true)",
+        ".write": "auth != null && ($profileId === auth.uid || newData.parent().parent().child('profiles').child($profileId).child('owner').val() === auth.uid || root.child('sharedWith').child(auth.uid).child($profileId).val() === true)"
       }
     }
   }

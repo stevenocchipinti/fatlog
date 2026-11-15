@@ -34,8 +34,10 @@ import useLocalStorage from "./useLocalStorage"
 import { parseBowelMovement, toBowelMovementRecord } from "./bowelMovements"
 import { parseSymptomEpisode, toSymptomEpisodeRecord } from "./symptoms"
 import {
+  mergeProfiles,
   parseEnabledTrackers,
   profileSetupUpdate,
+  profileSharingUpdate,
   resolveActiveProfileId,
 } from "./profiles"
 
@@ -161,14 +163,24 @@ type FirebaseProfile = {
   emoji?: string
   trackers?: StoredTrackers
   archived?: boolean
+  sharedWith?: Record<string, true>
 }
-const parseProfile = (id: string, record: FirebaseProfile): Profile => ({
+const parseProfile = (
+  id: string,
+  record: FirebaseProfile,
+  uid: string,
+): Profile => ({
   id,
   name: record.name,
   ...(record.emoji ? { emoji: record.emoji } : {}),
   enabledTrackers: parseEnabledTrackers(record.trackers),
   archived: record.archived ?? false,
+  owned: record.owner === uid,
+  sharedWith: Object.keys(record.sharedWith ?? {}),
 })
+
+const sameIds = (a: readonly string[] | null, b: readonly string[]) =>
+  a !== null && a.length === b.length && a.every((id, i) => id === b[i])
 
 type AuthState = "INITIALIZING" | "LOADING" | "LOGGED_OUT" | "LOGGED_IN"
 type ProfilesState = "INITIALIZING" | "LOADED"
@@ -202,7 +214,10 @@ export type ProfileChanges = {
 
 export type ProfilesContext = {
   state: ProfilesState
-  /** The account's profiles, archived ones included. */
+  /**
+   * The account's own profiles, archived ones included, followed by the
+   * profiles other accounts have shared with it.
+   */
   profiles: Profile[]
   /** The profile being viewed and recorded against; null until known. */
   activeProfile: Profile | null
@@ -210,6 +225,8 @@ export type ProfilesContext = {
   addProfile: (profile: { name: string; emoji?: string }) => string | null
   updateProfile: (id: string, changes: ProfileChanges) => void
   setProfileArchived: (id: string, archived: boolean) => void
+  /** Share an owned profile with another account, or stop sharing it. */
+  setProfileShared: (id: string, accountId: string, shared: boolean) => void
 }
 
 export type CheckinsContext = {
@@ -264,6 +281,12 @@ export const FirebaseProvider = ({ children }: { children: ReactNode }) => {
   )
 
   const [storedProfiles, setStoredProfiles] = useState<Profile[] | null>(null)
+  // The IDs of the profiles shared with this account, then each one's record
+  // (null if it can't be read). Both are null/absent until the server answers.
+  const [sharedIds, setSharedIds] = useState<string[] | null>(null)
+  const [sharedProfiles, setSharedProfiles] = useState<
+    Record<string, Profile | null>
+  >({})
   const [rememberedId, setRememberedId] = useLocalStorage<string | null>(
     "activeProfileId",
     null,
@@ -287,6 +310,8 @@ export const FirebaseProvider = ({ children }: { children: ReactNode }) => {
         setAuthState("LOGGED_OUT")
         setUser(null)
         setStoredProfiles(null)
+        setSharedIds(null)
+        setSharedProfiles({})
       }
     })
     return unsubscribeAuth
@@ -303,12 +328,59 @@ export const FirebaseProvider = ({ children }: { children: ReactNode }) => {
         const val = snapshot.val() as Record<string, FirebaseProfile> | null
         setStoredProfiles(
           val
-            ? Object.entries(val).map(([id, value]) => parseProfile(id, value))
+            ? Object.entries(val).map(([id, value]) =>
+                parseProfile(id, value, uid),
+              )
             : [],
         )
       },
     )
   }, [uid])
+
+  // Profiles other accounts have shared with this one are listed under
+  // /sharedWith/<uid>. A failed read counts as "none", so it can't hold up
+  // the account's own profiles.
+  useEffect(() => {
+    if (!uid) return
+    const setIds = (ids: string[]) =>
+      setSharedIds(prev => (sameIds(prev, ids) ? prev : ids))
+    return onValue(
+      ref(db, `/sharedWith/${uid}`),
+      snapshot => {
+        const val = snapshot.val() as Record<string, unknown> | null
+        setIds(
+          Object.keys(val ?? {})
+            .filter(id => val?.[id] === true)
+            .sort(),
+        )
+      },
+      () => setIds([]),
+    )
+  }, [uid])
+
+  useEffect(() => {
+    if (!uid || !sharedIds) return
+    const unsubscribes = sharedIds.map(id => {
+      const store = (profile: Profile | null) =>
+        setSharedProfiles(prev => ({ ...prev, [id]: profile }))
+      return onValue(
+        ref(db, `/profiles/${id}`),
+        snapshot => {
+          const val = snapshot.val() as FirebaseProfile | null
+          store(val ? parseProfile(id, val, uid) : null)
+        },
+        () => store(null),
+      )
+    })
+    return () => unsubscribes.forEach(unsubscribe => unsubscribe())
+  }, [uid, sharedIds])
+
+  // Shared profiles have to be in before the active profile is resolved, or a
+  // device that remembers one would open on the account's own profile first.
+  const profilesLoaded =
+    !!storedProfiles &&
+    !!sharedIds &&
+    sharedIds.every(id => id in sharedProfiles)
 
   // The account holder's own profile (ID = uid, see ADR 0001) is created
   // lazily the first time they load the app. Existing data already lives under
@@ -341,8 +413,8 @@ export const FirebaseProvider = ({ children }: { children: ReactNode }) => {
   // Until the own profile's record exists it still has to be usable, so it is
   // synthesized from the Google account.
   const profiles = useMemo(() => {
-    if (!uid || !storedProfiles) return []
-    return storedProfiles.some(profile => profile.id === uid)
+    if (!uid || !storedProfiles || !sharedIds) return []
+    const owned = storedProfiles.some(profile => profile.id === uid)
       ? storedProfiles
       : [
           {
@@ -350,13 +422,19 @@ export const FirebaseProvider = ({ children }: { children: ReactNode }) => {
             name: displayName || "Me",
             enabledTrackers: parseEnabledTrackers(undefined),
             archived: false,
+            owned: true,
+            sharedWith: [],
           },
           ...storedProfiles,
         ]
-  }, [uid, displayName, storedProfiles])
+    return mergeProfiles(
+      owned,
+      sharedIds.flatMap(id => sharedProfiles[id] ?? []),
+    )
+  }, [uid, displayName, storedProfiles, sharedIds, sharedProfiles])
 
   const activeProfileId =
-    uid && storedProfiles
+    uid && profilesLoaded
       ? resolveActiveProfileId(uid, rememberedId, profiles)
       : null
   const activeProfile =
@@ -421,16 +499,27 @@ export const FirebaseProvider = ({ children }: { children: ReactNode }) => {
     [uid],
   )
 
+  const setProfileShared = useCallback(
+    (id: string, accountId: string, shared: boolean) => {
+      write(
+        shared ? "share the profile" : "stop sharing the profile",
+        update(ref(db), profileSharingUpdate(id, accountId, shared)),
+      )
+    },
+    [],
+  )
+
   const accountContext: AccountContext = {
     auth: { login, logout, user, state: authState },
     profiles: {
-      state: storedProfiles ? "LOADED" : "INITIALIZING",
+      state: profilesLoaded ? "LOADED" : "INITIALIZING",
       profiles,
       activeProfile,
       setActiveProfileId: setRememberedId,
       addProfile,
       updateProfile,
       setProfileArchived,
+      setProfileShared,
     },
   }
 

@@ -10,4 +10,4 @@ Observations are keyed by profile (`/checkins/<profileId>`, `/dietRules/<profile
 ## Consequences
 
 - Do not "tidy up" the account holder's profile to use a generated ID. That would orphan all of their historical data.
-- Sharing a profile with a second account (for example a co-parent) later would mean replacing the single `owner` with a set of members. The keying of observations stays the same.
+- Sharing a profile with a second account (for example a co-parent) keeps the single `owner` and adds `/sharedWith/<uid>/<profileId>`, which the rules accept as a third way in. The keying of observations stays the same.

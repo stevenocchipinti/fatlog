@@ -24,6 +24,14 @@ _Avoid_: Cheat meal, food log
 A person whose observations are recorded, such as the account holder or one of their children. Every observation belongs to exactly one profile. An account always has its own profile and may manage additional profiles for people who do not sign in themselves. The account's own profile cannot be removed; other profiles are archived rather than deleted.
 _Avoid_: User, account, member, child account
 
+**Shared profile**:
+A profile its owning account has given another account access to, by that account's ID. The other account can view and record the profile's observations but cannot rename, archive or re-share it.
+_Avoid_: Family, group, member
+
+**Account ID**:
+The identifier an account holder copies from their Profiles page and gives to another account holder, so that person can share a profile with them.
+_Avoid_: Invite code, username
+
 **Active profile**:
 The profile currently being viewed and recorded against on a device.
 _Avoid_: Current user, logged-in user

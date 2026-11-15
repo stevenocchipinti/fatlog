@@ -9,7 +9,52 @@ export type Profile = {
   emoji?: string
   enabledTrackers: TrackerId[]
   archived: boolean
+  /**
+   * False for a profile another account shared with this one. Only the owner
+   * can change the profile itself; observations are open to both.
+   */
+  owned: boolean
+  /** The auth uids of the accounts this profile is shared with. */
+  sharedWith: string[]
 }
+
+/**
+ * Whether `value` could be an account ID (a Firebase auth uid). It ends up as
+ * a database key, so it must not contain the characters a key can't.
+ */
+export const isAccountId = (value: string): boolean =>
+  /^[A-Za-z0-9_:-]{6,128}$/.test(value)
+
+/**
+ * The multi-path `update()` that shares a profile with another account, or
+ * stops sharing it. `/sharedWith/<accountId>/<profileId>` grants the access
+ * and is how that account finds the profile; the copy on the profile record
+ * lets the owner see who it is shared with.
+ */
+export const profileSharingUpdate = (
+  profileId: string,
+  accountId: string,
+  shared: boolean,
+): Record<string, true | null> => ({
+  [`sharedWith/${accountId}/${profileId}`]: shared || null,
+  [`profiles/${profileId}/sharedWith/${accountId}`]: shared || null,
+})
+
+/**
+ * The profiles an account sees: the ones it owns followed by the unarchived
+ * ones shared with it. Only the owner can restore an archived profile, so
+ * there is no use showing one to anyone else.
+ */
+export const mergeProfiles = (
+  owned: readonly Profile[],
+  shared: readonly Profile[],
+): Profile[] => [
+  ...owned,
+  ...shared.filter(
+    profile =>
+      !profile.archived && !owned.some(other => other.id === profile.id),
+  ),
+]
 
 /**
  * Which profile is active: the one remembered on this device if it is still
