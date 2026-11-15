@@ -66,12 +66,12 @@ export const buildTimelineRows = (
  * the line pattern for rule lines crossing the gap; `null` draws them solid.
  */
 export const TIMELINE_STYLE = {
-  eventRowHeight: 64,
+  eventRowHeight: 52,
   gaps: [
-    { maxDays: 1, height: 20, dash: null },
-    { maxDays: 14, height: 44, dash: null },
-    { maxDays: 60, height: 72, dash: { on: 4, off: 4 } },
-    { maxDays: Infinity, height: 72, dash: { on: 4, off: 10 } },
+    { maxDays: 1, height: 12, dash: null },
+    { maxDays: 14, height: 32, dash: null },
+    { maxDays: 60, height: 56, dash: { on: 4, off: 4 } },
+    { maxDays: Infinity, height: 56, dash: { on: 4, off: 10 } },
   ] as Array<GapTier>,
   /** Opacity of a rule line where it crosses a dotted gap. */
   dottedOpacity: 0.75,

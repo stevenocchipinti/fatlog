@@ -177,7 +177,7 @@ describe("layoutTimeline", () => {
 
   it("puts a short gap between adjacent dates", () => {
     expect(gapsFor(["2026-11-14"])).toEqual([
-      { kind: "gap", days: 0, top: 64, height: 20, dash: null },
+      { kind: "gap", days: 0, top: 52, height: 12, dash: null },
     ])
   })
 
@@ -187,12 +187,12 @@ describe("layoutTimeline", () => {
       return [gap.height, gap.dash]
     }
 
-    expect(tier(1)).toEqual([20, null])
-    expect(tier(2)).toEqual([44, null])
-    expect(tier(14)).toEqual([44, null])
-    expect(tier(15)).toEqual([72, { on: 4, off: 4 }])
-    expect(tier(60)).toEqual([72, { on: 4, off: 4 }])
-    expect(tier(61)).toEqual([72, { on: 4, off: 10 }])
+    expect(tier(1)).toEqual([12, null])
+    expect(tier(2)).toEqual([32, null])
+    expect(tier(14)).toEqual([32, null])
+    expect(tier(15)).toEqual([56, { on: 4, off: 4 }])
+    expect(tier(60)).toEqual([56, { on: 4, off: 4 }])
+    expect(tier(61)).toEqual([56, { on: 4, off: 10 }])
   })
 
   it("stacks bands without overlap and reports the total height", () => {
@@ -205,11 +205,11 @@ describe("layoutTimeline", () => {
     )
 
     expect(bands.map(band => [band.top, band.height])).toEqual([
-      [0, 64],
-      [64, 44],
-      [108, 64],
+      [0, 52],
+      [52, 32],
+      [84, 52],
     ])
-    expect(height).toBe(172)
+    expect(height).toBe(136)
   })
 })
 
@@ -223,7 +223,7 @@ describe("layoutRuleLine", () => {
     )
 
   it("runs an active rule from the Today row centre to its start row centre", () => {
-    // Today (0-64), 6 skipped days (64-108), start row (108-172).
+    // Today (0-52), 6 skipped days (52-84), start row (84-136).
     const line = layout({
       id: "r",
       foodGroupId: "meat",
@@ -231,30 +231,30 @@ describe("layoutRuleLine", () => {
     })
 
     expect(line).toEqual({
-      startY: 140,
-      endY: 32,
-      segments: [{ top: 32, height: 108, dash: null }],
+      startY: 110,
+      endY: 26,
+      segments: [{ top: 26, height: 84, dash: null }],
     })
   })
 
   it("dots only the part inside a dotted gap, exactly on its boundaries", () => {
-    // Today (0-64), 9 days (64-108), exception (108-172), 30 days (172-244),
-    // start row (244-308).
+    // Today (0-52), 9 days (52-84), exception (84-136), 30 days (136-192),
+    // start row (192-244).
     const line = layout(
       { id: "r", foodGroupId: "meat", startDate: "2026-10-05" },
       [{ id: "e", foodGroupId: "meat", date: "2026-11-05" }],
     )
 
     expect(line?.segments).toEqual([
-      { top: 32, height: 140, dash: null },
-      { top: 172, height: 72, dash: { on: 4, off: 4 } },
-      { top: 244, height: 32, dash: null },
+      { top: 26, height: 110, dash: null },
+      { top: 136, height: 56, dash: { on: 4, off: 4 } },
+      { top: 192, height: 26, dash: null },
     ])
   })
 
   it("stops an ended rule at its end row", () => {
-    // Today (0-64), 4 days (64-108), end row (108-172), 8 days (172-216),
-    // start row (216-280).
+    // Today (0-52), 4 days (52-84), end row (84-136), 8 days (136-168),
+    // start row (168-220).
     const line = layout({
       id: "r",
       foodGroupId: "meat",
@@ -263,9 +263,9 @@ describe("layoutRuleLine", () => {
     })
 
     expect(line).toEqual({
-      startY: 248,
-      endY: 140,
-      segments: [{ top: 140, height: 108, dash: null }],
+      startY: 194,
+      endY: 110,
+      segments: [{ top: 110, height: 84, dash: null }],
     })
   })
 })
