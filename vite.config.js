@@ -15,7 +15,7 @@ export default defineConfig(({ mode }) => {
   return {
     publicDir: beta ? "public-beta" : "public",
     plugins: [
-      tanstackRouter({ target: "react", autoCodeSplitting: true }),
+      tanstackRouter({ target: "react", autoCodeSplitting: false }),
       viteReact(),
       tailwindcss(),
       {
