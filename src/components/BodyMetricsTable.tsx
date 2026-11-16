@@ -77,6 +77,7 @@ const BodyMetricsTable = ({
     <div className="flex min-h-0 flex-1 flex-col px-2">
       <Card
         className="container mx-auto flex flex-1 flex-col gap-0 overflow-hidden rounded-3xl border shadow-none"
+        data-tab-header
         style={{ viewTransitionName: "tab-header" }}
       >
         <Table

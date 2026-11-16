@@ -14,6 +14,7 @@ afterEach(() => {
   navigate.mockReset()
   Reflect.deleteProperty(document, "startViewTransition")
   delete document.documentElement.dataset.navDirection
+  delete document.documentElement.dataset.tabHeaderMorph
 })
 
 /** Lets promise callbacks that are already queued run. */
@@ -69,5 +70,33 @@ describe("TransitionLink", () => {
     finishTransition()
     await settle()
     expect(document.documentElement.dataset.navDirection).toBeUndefined()
+  })
+
+  it("morphs the header card only when both screens have one", async () => {
+    const root = document.documentElement
+    const transitionTo = async (newScreenHasCard: boolean) => {
+      const card = document.createElement("div")
+      card.dataset.tabHeader = ""
+      document.body.append(card)
+      navigate.mockImplementation(() => {
+        if (!newScreenHasCard) card.remove()
+        return Promise.resolve()
+      })
+      document.startViewTransition = ((update: () => Promise<void>) => {
+        void update()
+        return { finished: new Promise<void>(() => {}) }
+      }) as unknown as typeof document.startViewTransition
+
+      clickDiet()
+      await settle()
+      card.remove()
+      cleanup()
+    }
+
+    await transitionTo(false)
+    expect(root.dataset.tabHeaderMorph).toBeUndefined()
+
+    await transitionTo(true)
+    expect(root.dataset.tabHeaderMorph).toBe("")
   })
 })

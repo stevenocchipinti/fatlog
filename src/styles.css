@@ -206,17 +206,22 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   }
 }
 
-/* Content area — default fade */
+/* Content area — default fade. The header card (tab-header) is its own
+   snapshot so it can morph between Metrics and Diet (see "Card morph" below);
+   on any other switch it gets the same animation as the screen, so it leaves
+   or arrives as part of it. */
 ::view-transition-group(app-screen) {
   animation-duration: 280ms;
 }
 
-::view-transition-old(app-screen) {
+::view-transition-old(app-screen),
+::view-transition-old(tab-header) {
   animation: fade-out 220ms ease both;
   mix-blend-mode: normal;
 }
 
-::view-transition-new(app-screen) {
+::view-transition-new(app-screen),
+::view-transition-new(tab-header) {
   animation: fade-in 280ms cubic-bezier(0.22, 1, 0.36, 1) both;
   mix-blend-mode: normal;
 }
@@ -246,22 +251,26 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 
 /* Direction: backward to an earlier tracker (slide in from the left) */
 html[data-nav-direction="backward"]::view-transition-old(app-screen),
+html[data-nav-direction="backward"]::view-transition-old(tab-header),
 html[data-nav-direction="backward"]::view-transition-old(tracker-title) {
   animation: slide-out-to-right 240ms ease both;
 }
 
 html[data-nav-direction="backward"]::view-transition-new(app-screen),
+html[data-nav-direction="backward"]::view-transition-new(tab-header),
 html[data-nav-direction="backward"]::view-transition-new(tracker-title) {
   animation: slide-in-from-left 320ms cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
 /* Direction: forward to a later tracker (slide in from the right) */
 html[data-nav-direction="forward"]::view-transition-old(app-screen),
+html[data-nav-direction="forward"]::view-transition-old(tab-header),
 html[data-nav-direction="forward"]::view-transition-old(tracker-title) {
   animation: slide-out-to-left 240ms ease both;
 }
 
 html[data-nav-direction="forward"]::view-transition-new(app-screen),
+html[data-nav-direction="forward"]::view-transition-new(tab-header),
 html[data-nav-direction="forward"]::view-transition-new(tracker-title) {
   animation: slide-in-from-right 320ms cubic-bezier(0.22, 1, 0.36, 1) both;
 }
@@ -284,12 +293,15 @@ html[data-nav-direction="forward"]::view-transition-new(tracker-title) {
   display: none;
 }
 
-/* Card morph (diet header card ↔ metrics table card). The group itself is
-   drawn as the card (background, border, radius) and grows/shrinks in place.
-   Both snapshots are pinned to its top at their natural size and clipped to
-   it, rather than the default of scaling to its width, which let the tall
-   metrics card hang out below the box and over the bottom bar. */
-::view-transition-group(tab-header) {
+/* Card morph (diet header card ↔ metrics table card), only when both screens
+   have the card (data-tab-header-morph, set in lib/viewTransitions.tsx). These
+   rules must stay below the direction rules above, which they override. The
+   group itself is drawn as the card (background, border, radius) and
+   grows/shrinks in place. Both snapshots are pinned to its top at their
+   natural size and clipped to it, rather than the default of scaling to its
+   width, which let the tall metrics card hang out below the box and over the
+   bottom bar. */
+html[data-tab-header-morph]::view-transition-group(tab-header) {
   animation-duration: 320ms;
   animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
   box-sizing: border-box;
@@ -299,26 +311,25 @@ html[data-nav-direction="forward"]::view-transition-new(tracker-title) {
   background: var(--card);
 }
 
-::view-transition-image-pair(tab-header) {
+html[data-tab-header-morph]::view-transition-image-pair(tab-header) {
   position: absolute;
   inset: -1px;
 }
 
-::view-transition-old(tab-header),
-::view-transition-new(tab-header) {
+html[data-tab-header-morph]::view-transition-old(tab-header),
+html[data-tab-header-morph]::view-transition-new(tab-header) {
   block-size: 100%;
   object-fit: none;
   object-position: top;
-  mix-blend-mode: normal;
 }
 
 /* Each snapshot carries its own border, so only show it while the box is
    close to that snapshot's size: the old one fades out fast, the new one fades
    in once the box has nearly arrived. */
-::view-transition-old(tab-header) {
+html[data-tab-header-morph]::view-transition-old(tab-header) {
   animation: fade-out 100ms ease both;
 }
 
-::view-transition-new(tab-header) {
+html[data-tab-header-morph]::view-transition-new(tab-header) {
   animation: fade-in 160ms ease 140ms both;
 }

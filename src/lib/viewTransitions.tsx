@@ -17,6 +17,9 @@ const shouldHandleLinkClick = (event: React.MouseEvent<HTMLAnchorElement>) => {
   )
 }
 
+/** Whether the current screen has a header card (marked `data-tab-header`). */
+const hasTabHeader = () => document.querySelector("[data-tab-header]") !== null
+
 export const useNavigateWithTransition = () => {
   const { pathname } = useLocation()
   const navigate = useNavigate()
@@ -40,15 +43,21 @@ export const useNavigateWithTransition = () => {
         root.dataset.navDirection = direction
       }
 
+      // The header card only morphs when both screens have one. Otherwise it
+      // leaves or arrives with the rest of the screen (see styles.css).
+      const hadTabHeader = hasTabHeader()
+
       // The router renders the new screen asynchronously, so the transition
       // has to wait for it. `navigate` resolves once the screen is in the DOM;
       // returning before then would snapshot the old screen as the new one.
       const transition = document.startViewTransition(async () => {
         await navigate(navigateOptions)
+        if (hadTabHeader && hasTabHeader()) root.dataset.tabHeaderMorph = ""
       })
 
       void transition.finished.finally(() => {
         delete root.dataset.navDirection
+        delete root.dataset.tabHeaderMorph
       })
     },
     [navigate, pathname],
