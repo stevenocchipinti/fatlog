@@ -36,6 +36,7 @@ import { parseSymptomEpisode, toSymptomEpisodeRecord } from "./symptoms"
 import {
   mergeProfiles,
   parseEnabledTrackers,
+  profileDataDeletionUpdate,
   profileSetupUpdate,
   profileSharingUpdate,
   resolveActiveProfileId,
@@ -229,6 +230,8 @@ export type ProfilesContext = {
   addProfile: (profile: { name: string; emoji?: string }) => string | null
   updateProfile: (id: string, changes: ProfileChanges) => void
   setProfileArchived: (id: string, archived: boolean) => void
+  /** Permanently erase an owned profile and all of its observations. */
+  deleteProfile: (id: string) => void
   /** Share an owned profile with another account, or stop sharing it. */
   setProfileShared: (id: string, accountId: string, shared: boolean) => void
 }
@@ -441,6 +444,7 @@ export const FirebaseProvider = ({ children }: { children: ReactNode }) => {
           ...storedProfiles,
         ]
     return mergeProfiles(
+      uid,
       owned,
       sharedIds.flatMap(id => sharedProfiles[id] ?? []),
     )
@@ -532,6 +536,22 @@ export const FirebaseProvider = ({ children }: { children: ReactNode }) => {
     [uid],
   )
 
+  const deleteProfile = useCallback(
+    (id: string) => {
+      // The account's own profile can't be removed.
+      if (id === uid) return
+      const profile = storedProfiles?.find(stored => stored.id === id)
+      if (!profile) return
+      write(
+        "delete the profile",
+        update(ref(db), profileDataDeletionUpdate(id, profile.sharedWith)).then(
+          () => remove(ref(db, `/profiles/${id}`)),
+        ),
+      )
+    },
+    [uid, storedProfiles],
+  )
+
   const setProfileShared = useCallback(
     (id: string, accountId: string, shared: boolean) => {
       write(
@@ -556,6 +576,7 @@ export const FirebaseProvider = ({ children }: { children: ReactNode }) => {
       addProfile,
       updateProfile,
       setProfileArchived,
+      deleteProfile,
       setProfileShared,
     },
   }

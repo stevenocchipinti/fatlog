@@ -199,7 +199,7 @@ const AuthComponent = () => {
           page content is never hidden behind it.
         */}
         <main
-          className="relative flex min-h-0 flex-1 flex-col justify-end gap-4 overflow-y-auto"
+          className="relative flex min-h-0 flex-1 flex-col justify-end-safe gap-4 overflow-y-auto"
           style={{ viewTransitionName: "app-screen" }}
         >
           {showScreen ? (

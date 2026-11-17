@@ -4,6 +4,7 @@ import {
   isAccountId,
   mergeProfiles,
   parseEnabledTrackers,
+  profileDataDeletionUpdate,
   profileSetupUpdate,
   profileSharingUpdate,
   resolveActiveProfileId,
@@ -251,14 +252,39 @@ describe("mergeProfiles", () => {
   const theirs = profile("-theirs", { owned: false })
 
   it("lists shared profiles after the account's own", () => {
-    expect(mergeProfiles([own], [theirs])).toEqual([own, theirs])
+    expect(mergeProfiles("uid-1", [own], [theirs])).toEqual([own, theirs])
+  })
+
+  it("puts the account holder's own profile first", () => {
+    const child = profile("-child")
+    expect(mergeProfiles("uid-1", [child, own], [theirs])).toEqual([
+      own,
+      child,
+      theirs,
+    ])
   })
 
   it("leaves out a shared profile its owner has archived", () => {
-    expect(mergeProfiles([own], [{ ...theirs, archived: true }])).toEqual([own])
+    expect(
+      mergeProfiles("uid-1", [own], [{ ...theirs, archived: true }]),
+    ).toEqual([own])
   })
 
   it("doesn't repeat a profile the account already owns", () => {
-    expect(mergeProfiles([own], [own])).toEqual([own])
+    expect(mergeProfiles("uid-1", [own], [own])).toEqual([own])
+  })
+})
+
+describe("profileDataDeletionUpdate", () => {
+  it("erases every collection and revokes each share, leaving the record", () => {
+    expect(profileDataDeletionUpdate("-child", ["uid-2"])).toEqual({
+      "checkins/-child": null,
+      "bowelMovements/-child": null,
+      "symptomEpisodes/-child": null,
+      "foodGroups/-child": null,
+      "dietRules/-child": null,
+      "dietExceptions/-child": null,
+      "sharedWith/uid-2/-child": null,
+    })
   })
 })

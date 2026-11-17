@@ -4,9 +4,10 @@ import {
   ArchiveRestore,
   ArchiveX,
   Check,
+  ChevronDown,
   Copy,
-  Pencil,
   Plus,
+  Trash2,
   X,
 } from "lucide-react"
 
@@ -19,6 +20,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useAuth, useProfiles } from "@/lib/firebase"
+import { cn } from "@/lib/utils"
 import { isAccountId, toggleTracker } from "@/lib/profiles"
 import { useRegisterPrimaryAction } from "@/lib/primaryAction"
 import { AVAILABLE_TRACKERS, TRACKER_IDS } from "@/lib/trackers"
@@ -36,6 +38,7 @@ function ProfilesPage() {
     addProfile,
     updateProfile,
     setProfileArchived,
+    deleteProfile,
     setProfileShared,
   } = useProfiles()
 
@@ -57,43 +60,10 @@ function ProfilesPage() {
   return (
     <div className="mx-auto flex w-full max-w-md flex-1 flex-col gap-4 px-6 pb-4">
       <ul className="flex flex-col gap-2">
-        {active.map(profile => (
-          <li key={profile.id} className="bg-card rounded-xl border p-3">
-            {editingId === profile.id ? (
-              <ProfileForm
-                initial={profile}
-                submitLabel="Save"
-                onSubmit={changes => {
-                  updateProfile(profile.id, changes)
-                  setEditingId(undefined)
-                }}
-                onCancel={() => setEditingId(undefined)}
-                onArchive={
-                  profile.id === user?.uid
-                    ? undefined
-                    : () => {
-                        if (
-                          window.confirm(
-                            `Archive ${profile.name}? Their data is kept.`,
-                          )
-                        ) {
-                          setProfileArchived(profile.id, true)
-                          setEditingId(undefined)
-                        }
-                      }
-                }
-              >
-                {user && (
-                  <ProfileSharing
-                    profile={profile}
-                    ownAccountId={user.uid}
-                    onChange={(accountId, shared) =>
-                      setProfileShared(profile.id, accountId, shared)
-                    }
-                  />
-                )}
-              </ProfileForm>
-            ) : (
+        {active.map(profile => {
+          const expanded = editingId === profile.id
+          return (
+            <li key={profile.id} className="bg-card rounded-xl border p-3">
               <div className="flex items-center gap-3">
                 <ProfileAvatar profile={profile} photoURL={photoFor(profile)} />
                 <span className="flex-1 truncate font-medium">
@@ -114,16 +84,64 @@ function ProfilesPage() {
                   <Button
                     variant="ghost"
                     size="icon"
-                    aria-label={`Edit ${profile.name}`}
-                    onClick={() => setEditingId(profile.id)}
+                    aria-label={
+                      expanded
+                        ? `Close ${profile.name} without saving`
+                        : `Edit ${profile.name}`
+                    }
+                    aria-expanded={expanded}
+                    onClick={() =>
+                      setEditingId(expanded ? undefined : profile.id)
+                    }
                   >
-                    <Pencil />
+                    <ChevronDown
+                      className={cn(
+                        "transition-transform",
+                        expanded && "rotate-180",
+                      )}
+                    />
                   </Button>
                 )}
               </div>
-            )}
-          </li>
-        ))}
+              {expanded && (
+                <div className="mt-3 border-t pt-3">
+                  <ProfileForm
+                    initial={profile}
+                    submitLabel="Save"
+                    onSubmit={changes => {
+                      updateProfile(profile.id, changes)
+                      setEditingId(undefined)
+                    }}
+                    onArchive={
+                      profile.id === user?.uid
+                        ? undefined
+                        : () => {
+                            if (
+                              window.confirm(
+                                `Archive ${profile.name}? Their data is kept.`,
+                              )
+                            ) {
+                              setProfileArchived(profile.id, true)
+                              setEditingId(undefined)
+                            }
+                          }
+                    }
+                  >
+                    {user && (
+                      <ProfileSharing
+                        profile={profile}
+                        ownAccountId={user.uid}
+                        onChange={(accountId, shared) =>
+                          setProfileShared(profile.id, accountId, shared)
+                        }
+                      />
+                    )}
+                  </ProfileForm>
+                </div>
+              )}
+            </li>
+          )
+        })}
       </ul>
 
       {adding ? (
@@ -135,6 +153,7 @@ function ProfilesPage() {
               setAdding(false)
             }}
             onCancel={() => setAdding(false)}
+            autoFocus
             hideTrackers
           />
         </div>
@@ -164,6 +183,22 @@ function ProfilesPage() {
                   onClick={() => setProfileArchived(profile.id, false)}
                 >
                   <ArchiveRestore />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  aria-label={`Delete ${profile.name} permanently`}
+                  onClick={() => {
+                    if (
+                      window.confirm(
+                        `Permanently delete ${profile.name} and everything recorded for them? This can't be undone.`,
+                      )
+                    ) {
+                      deleteProfile(profile.id)
+                    }
+                  }}
+                >
+                  <Trash2 />
                 </Button>
               </li>
             ))}
@@ -302,6 +337,7 @@ function ProfileForm({
   initial,
   submitLabel,
   hideTrackers = false,
+  autoFocus = false,
   onSubmit,
   onCancel,
   onArchive,
@@ -310,8 +346,11 @@ function ProfileForm({
   initial?: Profile
   submitLabel: string
   hideTrackers?: boolean
+  /** Focus the name field, e.g. for a new profile. */
+  autoFocus?: boolean
   onSubmit: (changes: ProfileChanges) => void
-  onCancel: () => void
+  /** Shows a Cancel button; an expanded profile closes from its chevron. */
+  onCancel?: () => void
   onArchive?: () => void
   /** Extra sections shown above the buttons. */
   children?: ReactNode
@@ -357,7 +396,7 @@ function ProfileForm({
             id="profile-name"
             value={name}
             onChange={event => setName(event.target.value)}
-            autoFocus
+            autoFocus={autoFocus}
           />
         </div>
       </div>
@@ -392,17 +431,21 @@ function ProfileForm({
             <ArchiveX /> Archive
           </Button>
         )}
+        {onCancel && (
+          <Button
+            type="button"
+            variant="ghost"
+            className="ml-auto"
+            onClick={onCancel}
+          >
+            Cancel
+          </Button>
+        )}
         <Button
-          type="button"
-          variant="ghost"
-          size="icon"
-          className="ml-auto"
-          aria-label="Cancel"
-          onClick={onCancel}
+          type="submit"
+          className={cn(!onCancel && "ml-auto")}
+          disabled={!name.trim()}
         >
-          <X />
-        </Button>
-        <Button type="submit" disabled={!name.trim()}>
           <Check /> {submitLabel}
         </Button>
       </div>

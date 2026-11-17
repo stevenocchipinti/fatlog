@@ -40,16 +40,50 @@ export const profileSharingUpdate = (
   [`profiles/${profileId}/sharedWith/${accountId}`]: shared || null,
 })
 
+/** Every collection of observations kept under `/<collection>/<profileId>`. */
+export const PROFILE_DATA_COLLECTIONS = [
+  "checkins",
+  "bowelMovements",
+  "symptomEpisodes",
+  "foodGroups",
+  "dietRules",
+  "dietExceptions",
+] as const
+
 /**
- * The profiles an account sees: the ones it owns followed by the unarchived
- * ones shared with it. Only the owner can restore an archived profile, so
- * there is no use showing one to anyone else.
+ * The multi-path `update()` that erases a profile's observations and revokes
+ * everyone it is shared with. The profile record itself has to go in a second
+ * write afterwards: the rules check the record's owner as it will be after the
+ * write, so removing it in the same update would deny removing the data.
+ */
+export const profileDataDeletionUpdate = (
+  profileId: string,
+  sharedWith: readonly string[],
+): Record<string, null> => ({
+  ...Object.fromEntries(
+    PROFILE_DATA_COLLECTIONS.map(collection => [
+      `${collection}/${profileId}`,
+      null,
+    ]),
+  ),
+  ...Object.fromEntries(
+    sharedWith.map(accountId => [`sharedWith/${accountId}/${profileId}`, null]),
+  ),
+})
+
+/**
+ * The profiles an account sees: its own profile (ID = its uid, see ADR 0001),
+ * then the others it owns, then the unarchived ones shared with it. Only the
+ * owner can restore an archived profile, so there is no use showing one to
+ * anyone else.
  */
 export const mergeProfiles = (
+  accountId: string,
   owned: readonly Profile[],
   shared: readonly Profile[],
 ): Profile[] => [
-  ...owned,
+  ...owned.filter(profile => profile.id === accountId),
+  ...owned.filter(profile => profile.id !== accountId),
   ...shared.filter(
     profile =>
       !profile.archived && !owned.some(other => other.id === profile.id),
