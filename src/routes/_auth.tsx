@@ -18,11 +18,12 @@ import {
 import { Button } from "@/components/ui/button"
 import BottomNavigation from "@/components/BottomNavigation"
 import ProfileAvatar from "@/components/ProfileAvatar"
-import { Spinner } from "@/components/LoadingState"
+import LoadingState, { Spinner } from "@/components/LoadingState"
 import { cn } from "@/lib/utils"
 import { PrimaryActionProvider } from "@/lib/primaryAction"
 import { useAuth, useDataLoading, useProfiles } from "@/lib/firebase"
 import { trackerRedirect } from "@/lib/profiles"
+import { rememberTracker, rememberedTracker } from "@/lib/rememberedTracker"
 import { AVAILABLE_TRACKERS, trackerForPath } from "@/lib/trackers"
 
 export const Route = createFileRoute("/_auth")({
@@ -37,7 +38,7 @@ export const Route = createFileRoute("/_auth")({
 })
 
 const AuthComponent = () => {
-  const { user, login, logout } = useAuth()
+  const { user, login, logout, state: authState } = useAuth()
   const { profiles, activeProfile, setActiveProfileId } = useProfiles()
 
   const router = useRouter()
@@ -46,23 +47,42 @@ const AuthComponent = () => {
   const tracker = trackerForPath(pathname)
   const loading = useDataLoading()
 
-  // Trackers that are both built and enabled for the active profile.
+  // Trackers that are both built and enabled for the active profile. Which
+  // those are isn't known on a device's first launch until the profile loads,
+  // and guessing would show tabs and a screen the profile may have turned off.
   const visibleTrackers = activeProfile
     ? AVAILABLE_TRACKERS.filter(({ id }) =>
         activeProfile.enabledTrackers.includes(id),
       )
-    : AVAILABLE_TRACKERS
+    : []
 
   // A profile that has this tracker turned off can't be on its screen.
   const redirectTo = activeProfile
     ? trackerRedirect(
         pathname,
         visibleTrackers.map(({ id }) => id),
+        rememberedTracker(),
       )
     : undefined
   useEffect(() => {
     if (redirectTo) void navigate({ to: redirectTo, replace: true })
   }, [redirectTo, navigate])
+
+  // A session that has ended (found out a moment after launch) has no profile
+  // to wait for.
+  useEffect(() => {
+    if (authState === "LOGGED_OUT") void navigate({ to: "/" })
+  }, [authState, navigate])
+
+  // A tracker's screen is held back until the profile is known to have it.
+  const awaitingProfile = !!tracker && !activeProfile
+  const showScreen = !awaitingProfile && !redirectTo
+
+  // The next launch reopens on the tracker being viewed now.
+  const viewedTrackerId = tracker && showScreen ? tracker.id : undefined
+  useEffect(() => {
+    if (viewedTrackerId) rememberTracker(viewedTrackerId)
+  }, [viewedTrackerId])
 
   const handleLogout = () => {
     if (window.confirm("Are you sure you want to logout?")) {
@@ -81,9 +101,11 @@ const AuthComponent = () => {
               className="text-3xl font-extrabold text-gray-900 dark:text-white"
               style={{ viewTransitionName: "tracker-title" }}
             >
-              {tracker?.title ?? (pathname === "/profiles" ? "Profiles" : "")}
+              {tracker
+                ? showScreen && tracker.title
+                : pathname === "/profiles" && "Profiles"}
             </h1>
-            {loading && (
+            {loading && !awaitingProfile && (
               <span role="status" className="text-muted-foreground">
                 <Spinner className="size-5" />
                 <span className="sr-only">Loading</span>
@@ -180,7 +202,11 @@ const AuthComponent = () => {
           className="relative flex min-h-0 flex-1 flex-col justify-end gap-4 overflow-y-auto"
           style={{ viewTransitionName: "app-screen" }}
         >
-          <Outlet />
+          {showScreen ? (
+            <Outlet />
+          ) : (
+            awaitingProfile && <LoadingState className="flex-1" />
+          )}
         </main>
         <BottomNavigation trackers={visibleTrackers} />
       </div>

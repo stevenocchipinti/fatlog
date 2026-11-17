@@ -7,6 +7,7 @@ import {
   profileSetupUpdate,
   profileSharingUpdate,
   resolveActiveProfileId,
+  reviveCachedAccount,
   toggleTracker,
   trackerRedirect,
 } from "./profiles"
@@ -115,12 +116,50 @@ describe("trackerRedirect", () => {
     expect(trackerRedirect("/metrics", ["diet", "symptoms"])).toBe("/diet")
   })
 
+  it("prefers the tracker last viewed on this device when it's enabled", () => {
+    expect(
+      trackerRedirect("/metrics", ["diet", "bowelMovements"], "bowelMovements"),
+    ).toBe("/stool")
+  })
+
+  it("ignores a remembered tracker the profile has disabled", () => {
+    expect(trackerRedirect("/metrics", ["diet"], "symptoms")).toBe("/diet")
+  })
+
   it("leaves an enabled tracker's route alone", () => {
     expect(trackerRedirect("/diet", ["diet"])).toBeUndefined()
   })
 
   it("leaves routes that aren't trackers alone", () => {
     expect(trackerRedirect("/profiles", ["diet"])).toBeUndefined()
+  })
+})
+
+describe("reviveCachedAccount", () => {
+  it("round-trips a saved account through JSON", () => {
+    const account = {
+      accountId: "uid-1",
+      profiles: [profile("uid-1", { emoji: "🦊", sharedWith: ["uid-2"] })],
+    }
+    expect(
+      reviveCachedAccount(JSON.parse(JSON.stringify(account)) as unknown),
+    ).toEqual(account)
+  })
+
+  it("drops trackers that no longer exist", () => {
+    const revived = reviveCachedAccount({
+      accountId: "uid-1",
+      profiles: [{ ...profile("uid-1"), enabledTrackers: ["diet", "sleep"] }],
+    })
+    expect(revived?.profiles[0].enabledTrackers).toEqual(["diet"])
+  })
+
+  it("rejects a copy that isn't the current shape", () => {
+    expect(reviveCachedAccount(null)).toBeNull()
+    expect(reviveCachedAccount({ accountId: "uid-1" })).toBeNull()
+    expect(
+      reviveCachedAccount({ accountId: "uid-1", profiles: [{ id: "uid-1" }] }),
+    ).toBeNull()
   })
 })
 

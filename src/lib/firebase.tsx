@@ -39,6 +39,7 @@ import {
   profileSetupUpdate,
   profileSharingUpdate,
   resolveActiveProfileId,
+  reviveCachedAccount,
 } from "./profiles"
 
 import { TRACKER_IDS } from "./trackers"
@@ -58,7 +59,7 @@ import type {
   NewSymptomEpisode,
   SymptomEpisode,
 } from "@/types"
-import type { Profile, StoredTrackers } from "./profiles"
+import type { CachedAccount, Profile, StoredTrackers } from "./profiles"
 import type { TrackerId } from "./trackers"
 import type { User } from "firebase/auth"
 import type { ReactNode } from "react"
@@ -183,7 +184,6 @@ const sameIds = (a: readonly string[] | null, b: readonly string[]) =>
   a !== null && a.length === b.length && a.every((id, i) => id === b[i])
 
 type AuthState = "INITIALIZING" | "LOADING" | "LOGGED_OUT" | "LOGGED_IN"
-type ProfilesState = "INITIALIZING" | "LOADED"
 /**
  * "CACHED" means the server hasn't answered yet but a copy saved from an
  * earlier visit is on hand, so screens can show it rather than a placeholder.
@@ -198,6 +198,7 @@ const hasCached = (key: string) => {
   }
 }
 type DietState = LoadState
+type ProfilesState = LoadState
 
 export type AuthContext = {
   login: () => void
@@ -219,7 +220,10 @@ export type ProfilesContext = {
    * profiles other accounts have shared with it.
    */
   profiles: Profile[]
-  /** The profile being viewed and recorded against; null until known. */
+  /**
+   * The profile being viewed and recorded against; null until known. On a
+   * device that has been used before it is known from the first render.
+   */
   activeProfile: Profile | null
   setActiveProfileId: (id: string) => void
   addProfile: (profile: { name: string; emoji?: string }) => string | null
@@ -291,6 +295,14 @@ export const FirebaseProvider = ({ children }: { children: ReactNode }) => {
     "activeProfileId",
     null,
   )
+  // The profiles as last loaded on this device, so a launch can open on the
+  // active profile and its saved data without waiting for the server.
+  const [cachedAccount, setCachedAccount, forgetCachedAccount] =
+    useLocalStorage<CachedAccount | null>(
+      "profileData",
+      null,
+      reviveCachedAccount,
+    )
 
   const login = () => {
     setAuthState("LOADING")
@@ -312,10 +324,11 @@ export const FirebaseProvider = ({ children }: { children: ReactNode }) => {
         setStoredProfiles(null)
         setSharedIds(null)
         setSharedProfiles({})
+        forgetCachedAccount()
       }
     })
     return unsubscribeAuth
-  }, [setAuthState])
+  }, [setAuthState, forgetCachedAccount])
 
   // An account can only list profiles it owns, so the query must say so (the
   // database rules require exactly this query).
@@ -412,7 +425,7 @@ export const FirebaseProvider = ({ children }: { children: ReactNode }) => {
 
   // Until the own profile's record exists it still has to be usable, so it is
   // synthesized from the Google account.
-  const profiles = useMemo(() => {
+  const loadedProfiles = useMemo(() => {
     if (!uid || !storedProfiles || !sharedIds) return []
     const owned = storedProfiles.some(profile => profile.id === uid)
       ? storedProfiles
@@ -433,9 +446,29 @@ export const FirebaseProvider = ({ children }: { children: ReactNode }) => {
     )
   }, [uid, displayName, storedProfiles, sharedIds, sharedProfiles])
 
+  useEffect(() => {
+    if (uid && profilesLoaded)
+      setCachedAccount({ accountId: uid, profiles: loadedProfiles })
+  }, [uid, profilesLoaded, loadedProfiles, setCachedAccount])
+
+  // Until the server answers, go by the saved copy. Auth is restored a moment
+  // after the first render, so before then the copy is taken to be this
+  // account's; once the account is known, another account's copy is ignored.
+  const usableCache =
+    cachedAccount &&
+    authState === "LOGGED_IN" &&
+    (!uid || cachedAccount.accountId === uid)
+      ? cachedAccount
+      : null
+  const accountId = uid ?? usableCache?.accountId
+  const profiles = profilesLoaded
+    ? loadedProfiles
+    : (usableCache?.profiles ?? [])
+  const profilesKnown = profilesLoaded || !!usableCache
+
   const activeProfileId =
-    uid && profilesLoaded
-      ? resolveActiveProfileId(uid, rememberedId, profiles)
+    accountId && profilesKnown
+      ? resolveActiveProfileId(accountId, rememberedId, profiles)
       : null
   const activeProfile =
     profiles.find(profile => profile.id === activeProfileId) ?? null
@@ -512,7 +545,11 @@ export const FirebaseProvider = ({ children }: { children: ReactNode }) => {
   const accountContext: AccountContext = {
     auth: { login, logout, user, state: authState },
     profiles: {
-      state: profilesLoaded ? "LOADED" : "INITIALIZING",
+      state: profilesLoaded
+        ? "LOADED"
+        : usableCache
+          ? "CACHED"
+          : "INITIALIZING",
       profiles,
       activeProfile,
       setActiveProfileId: setRememberedId,

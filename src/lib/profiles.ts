@@ -106,16 +106,75 @@ export const toggleTracker = (
 }
 
 /**
+ * The tracker route to open the app on: the one last viewed on this device if
+ * the profile still has it enabled, otherwise its first enabled tracker.
+ */
+export const startRoute = (
+  rememberedId: string | null,
+  enabled: readonly TrackerId[],
+): string | undefined =>
+  (
+    TRACKERS.find(
+      tracker => tracker.id === rememberedId && enabled.includes(tracker.id),
+    ) ?? TRACKERS.find(tracker => enabled.includes(tracker.id))
+  )?.route
+
+/**
  * Where to go instead when `pathname` is a tracker the active profile has
- * disabled: the first enabled tracker's route. `undefined` means stay.
+ * disabled: see `startRoute`. `undefined` means stay.
  */
 export const trackerRedirect = (
   pathname: string,
   enabled: readonly TrackerId[],
+  rememberedId: string | null = null,
 ): string | undefined => {
   const current = trackerForPath(pathname)
   if (!current || enabled.includes(current.id)) return undefined
-  return TRACKERS.find(tracker => enabled.includes(tracker.id))?.route
+  return startRoute(rememberedId, enabled)
+}
+
+/**
+ * An account's profiles as last seen on this device, kept so the next launch
+ * knows the active profile and its trackers before the server answers.
+ */
+export type CachedAccount = { accountId: string; profiles: Profile[] }
+
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === "object" && value !== null
+
+/**
+ * Reads a `CachedAccount` back from storage. Anything that isn't the current
+ * shape (an older version's copy, say) is dropped rather than trusted.
+ */
+export const reviveCachedAccount = (item: unknown): CachedAccount | null => {
+  if (!isRecord(item) || typeof item.accountId !== "string") return null
+  if (!Array.isArray(item.profiles)) return null
+  const profiles: Profile[] = []
+  for (const value of item.profiles as unknown[]) {
+    if (
+      !isRecord(value) ||
+      typeof value.id !== "string" ||
+      typeof value.name !== "string" ||
+      !Array.isArray(value.enabledTrackers) ||
+      !Array.isArray(value.sharedWith)
+    )
+      return null
+    const enabled = TRACKER_IDS.filter(id =>
+      (value.enabledTrackers as unknown[]).includes(id),
+    )
+    profiles.push({
+      id: value.id,
+      name: value.name,
+      ...(typeof value.emoji === "string" ? { emoji: value.emoji } : {}),
+      enabledTrackers: enabled.length > 0 ? enabled : [...TRACKER_IDS],
+      archived: value.archived === true,
+      owned: value.owned === true,
+      sharedWith: (value.sharedWith as unknown[]).filter(
+        id => typeof id === "string",
+      ),
+    })
+  }
+  return { accountId: item.accountId, profiles }
 }
 
 /**

@@ -1,10 +1,26 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router"
+import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router"
 import { useEffect } from "react"
 import { useAuth } from "@/lib/firebase"
 import FullScreenLoading from "@/components/FullScreenLoading"
 import { Button } from "@/components/ui/button"
+import { rememberedTracker } from "@/lib/rememberedTracker"
+import { TRACKERS } from "@/lib/trackers"
+
+/**
+ * The tracker last viewed on this device. If the active profile has since
+ * turned it off, the app shell moves on to one it has.
+ */
+const launchRoute = () =>
+  TRACKERS.find(tracker => tracker.id === rememberedTracker())?.route ??
+  "/metrics"
 
 export const Route = createFileRoute("/")({
+  // The app launches here. Someone already signed in goes straight to their
+  // tracker, without a loading screen in between.
+  beforeLoad: ({ context }) => {
+    if (context.auth.state === "LOGGED_IN")
+      throw redirect({ to: launchRoute() })
+  },
   component: App,
 })
 
@@ -13,7 +29,7 @@ function App() {
   const navigate = useNavigate()
 
   useEffect(() => {
-    if (state === "LOGGED_IN") void navigate({ to: "/metrics" })
+    if (state === "LOGGED_IN") void navigate({ to: launchRoute() })
   }, [navigate, state, user])
 
   if (state === "LOGGED_IN") {

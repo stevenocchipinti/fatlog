@@ -18,7 +18,8 @@ import { TransitionLink } from "@/lib/viewTransitions"
  * own row rather than over the page, so it never hides content. With a single
  * tracker there's nothing to switch between, so on that tracker's page the
  * pill is hidden; the + stays put. Off a tracker page (Manage profiles) the
- * pill always shows, as it's the way back.
+ * pill always shows, as it's the way back. Before the profile's trackers are
+ * known there are no tabs to show.
  */
 export default function BottomNavigation({
   trackers = AVAILABLE_TRACKERS,
@@ -28,7 +29,9 @@ export default function BottomNavigation({
   const { primaryAction } = usePrimaryActionSlot()
   const { pathname } = useLocation()
   const currentTrackerId = trackerForPath(pathname)?.id
-  const showTabs = trackers.length > 1 || currentTrackerId === undefined
+  const showTabs =
+    trackers.length > 1 ||
+    (trackers.length === 1 && currentTrackerId === undefined)
 
   return (
     <div className="flex shrink-0 items-center gap-3 px-4 pt-2 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
