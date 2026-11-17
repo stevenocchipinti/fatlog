@@ -3,7 +3,9 @@ import { describe, expect, it } from "vitest"
 import {
   endEpisodeNow,
   isEndBeforeStart,
+  firstEmoji,
   isOneOff,
+  lastEmojiFor,
   parseSymptomEpisode,
   suggestSymptomNames,
   symptomDays,
@@ -61,6 +63,15 @@ describe("toSymptomEpisodeRecord", () => {
     expect(record).not.toHaveProperty("note")
   })
 
+  it("keeps just the first emoji, and omits a blank one", () => {
+    expect(
+      toSymptomEpisodeRecord({ symptom: "Cold", start: 1, emoji: " 🤧🤒 " }),
+    ).toEqual({ symptom: "Cold", start: 1, emoji: "🤧" })
+    expect(
+      toSymptomEpisodeRecord({ symptom: "Cold", start: 1, emoji: "  " }),
+    ).not.toHaveProperty("emoji")
+  })
+
   it("keeps an end equal to the start: a one-off episode is not ongoing", () => {
     expect(
       toSymptomEpisodeRecord({ symptom: "Upset stomach", start: 5, end: 5 }),
@@ -82,6 +93,27 @@ const episode = (
 
 /** A local time on a day of November 2026. */
 const at = (day: number, hour = 12) => new Date(2026, 10, day, hour).getTime()
+
+describe("firstEmoji", () => {
+  it("keeps an emoji made of several code points whole", () => {
+    expect(firstEmoji("👩‍👩‍👧x")).toBe("👩‍👩‍👧")
+    expect(firstEmoji("👍🏽")).toBe("👍🏽")
+    expect(firstEmoji("")).toBe("")
+  })
+})
+
+describe("lastEmojiFor", () => {
+  it("is the emoji the most recent episode of that name had, ignoring case", () => {
+    const episodes = [
+      { ...episode("a", 1, 1, "Headache"), emoji: "🤕" },
+      { ...episode("b", 3, 3, "headache"), emoji: "💥" },
+      episode("c", 5, 5, "Cold"),
+    ]
+    expect(lastEmojiFor(episodes, "HEADACHE")).toBe("💥")
+    expect(lastEmojiFor(episodes, "Cold")).toBe("")
+    expect(lastEmojiFor(episodes, "Cramp")).toBe("")
+  })
+})
 
 describe("isOneOff", () => {
   it("is true only when the episode ended the moment it started", () => {

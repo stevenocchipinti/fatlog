@@ -6,8 +6,9 @@ import { cn } from "@/lib/utils"
 
 import type { CalendarDay } from "@/components/MonthCalendar"
 import type { SymptomBar, SymptomDay } from "@/lib/symptoms"
+import type { SymptomEpisode } from "@/types"
 
-/** One-offs beyond this are summarised as "+n" so a cell never overflows. */
+/** Markers beyond this are summarised as "+n" so a cell never overflows. */
 const MAX_DOTS = 3
 
 /** Overlapping episodes beyond this aren't drawn; the day's list still has them. */
@@ -25,10 +26,11 @@ type SymptomCalendarProps = {
 }
 
 /**
- * A month of symptoms. A one-off shows as a dot on its day. An episode that
- * lasted a while shows as a bar running along the bottom of every day it
- * covers, rounded where it starts and ends. An ongoing episode's bar fades out
- * at today instead of ending.
+ * A month of symptoms. A one-off shows as its emoji, or a dot if it has none,
+ * on its day. An episode that lasted a while shows as a bar running along the
+ * bottom of every day it covers, rounded where it starts and ends, plus its
+ * emoji (if it has one) on the day it started. An ongoing episode's bar fades
+ * out at today instead of ending.
  */
 export default function SymptomCalendar({
   days,
@@ -65,8 +67,14 @@ const ONGOING_END = "h-1.5 bg-linear-to-r from-rose-500 from-35% to-transparent"
 const symptomDay = (date: LocalDate, day?: SymptomDay): CalendarDay => {
   if (!day) return { summary: "nothing recorded" }
 
-  const overflow = day.oneOffs.length > MAX_DOTS
-  const dots = overflow ? MAX_DOTS - 1 : day.oneOffs.length
+  const markers = day.episodes.filter(
+    episode =>
+      day.oneOffs.includes(episode) ||
+      (episode.emoji &&
+        day.bars.some(bar => bar?.episode === episode && bar.startsHere)),
+  )
+  const overflow = markers.length > MAX_DOTS
+  const shown = overflow ? MAX_DOTS - 1 : markers.length
   const weekday = fromLocalDate(date).getDay()
 
   return {
@@ -75,17 +83,17 @@ const symptomDay = (date: LocalDate, day?: SymptomDay): CalendarDay => {
         end === undefined ? `${symptom} (ongoing)` : symptom,
       )
       .join(", "),
-    content: dots > 0 && (
+    content: shown > 0 && (
       <span
         aria-hidden
         className="flex items-center justify-center gap-0.5 pt-1"
       >
-        {Array.from({ length: dots }, (_, index) => (
-          <span key={index} className={cn(DOT, "size-1.5")} />
+        {markers.slice(0, shown).map(episode => (
+          <Marker key={episode.id} episode={episode} />
         ))}
         {overflow && (
           <span className="text-[9px] leading-none font-bold text-rose-600 dark:text-rose-400">
-            +{day.oneOffs.length - dots}
+            +{markers.length - shown}
           </span>
         )}
       </span>
@@ -106,6 +114,12 @@ const symptomDay = (date: LocalDate, day?: SymptomDay): CalendarDay => {
       </span>
     ),
   }
+}
+
+/** An episode's emoji, or the default dot when it has none. */
+function Marker({ episode }: { episode: SymptomEpisode }) {
+  if (!episode.emoji) return <span className={cn(DOT, "size-1.5")} />
+  return <span className="text-[10px] leading-none">{episode.emoji}</span>
 }
 
 /**

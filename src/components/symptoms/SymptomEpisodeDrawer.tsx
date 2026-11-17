@@ -18,7 +18,11 @@ import {
   fromDateTimeLocalValue,
   toDateTimeLocalValue,
 } from "@/lib/dateTimeLocal"
-import { isEndBeforeStart, suggestSymptomNames } from "@/lib/symptoms"
+import {
+  isEndBeforeStart,
+  lastEmojiFor,
+  suggestSymptomNames,
+} from "@/lib/symptoms"
 
 type SymptomEpisodeDrawerProps = {
   open: boolean
@@ -33,7 +37,8 @@ type SymptomEpisodeDrawerProps = {
 
 /**
  * Records or edits a symptom episode: a free-text symptom name (suggesting
- * names from this profile's past episodes), when it started (defaulting to
+ * names from this profile's past episodes, which bring their last emoji with
+ * them), an optional emoji to mark it by, when it started (defaulting to
  * now), and either that it is ongoing or when it ended, plus an optional note.
  * Unticking "Still ongoing" starts the end at the start time, which records a
  * quick one-off. Editing also offers a confirmed delete.
@@ -62,6 +67,7 @@ function SymptomEpisodeForm({
   onDelete,
 }: Omit<SymptomEpisodeDrawerProps, "open" | "onOpenChange">) {
   const [symptom, setSymptom] = useState(editing?.symptom ?? "")
+  const [emoji, setEmoji] = useState(editing?.emoji ?? "")
   const [start, setStart] = useState(() =>
     toDateTimeLocalValue(editing ? editing.start : Date.now()),
   )
@@ -91,7 +97,7 @@ function SymptomEpisodeForm({
       onSubmit={event => {
         event.preventDefault()
         if (!valid) return
-        onSubmit({ symptom, start: startTime, end: endTime, note })
+        onSubmit({ symptom, emoji, start: startTime, end: endTime, note })
       }}
     >
       <DrawerHeader className="pb-2">
@@ -104,12 +110,22 @@ function SymptomEpisodeForm({
       <div className="min-h-0 space-y-3 overflow-y-auto p-4" data-vaul-no-drag>
         <div className="space-y-1.5">
           <Label htmlFor="symptom-name">Symptom</Label>
-          <Input
-            id="symptom-name"
-            value={symptom}
-            onChange={event => setSymptom(event.target.value)}
-            autoComplete="off"
-          />
+          <div className="flex gap-2">
+            <Input
+              value={emoji}
+              onChange={event => setEmoji(event.target.value)}
+              aria-label="Emoji (optional)"
+              placeholder="🙂"
+              className="w-12 shrink-0 px-1 text-center text-lg placeholder:opacity-30"
+              autoComplete="off"
+            />
+            <Input
+              id="symptom-name"
+              value={symptom}
+              onChange={event => setSymptom(event.target.value)}
+              autoComplete="off"
+            />
+          </div>
           {suggestions.length > 0 && (
             <div
               className="flex flex-wrap gap-1.5"
@@ -120,10 +136,15 @@ function SymptomEpisodeForm({
                 <button
                   key={name}
                   type="button"
-                  onClick={() => setSymptom(name)}
+                  onClick={() => {
+                    setSymptom(name)
+                    if (!emoji.trim()) setEmoji(lastEmojiFor(history, name))
+                  }}
                   className="bg-muted hover:bg-muted/70 rounded-full px-2.5 py-1 text-sm transition-colors"
                 >
-                  {name}
+                  {[lastEmojiFor(history, name), name]
+                    .filter(Boolean)
+                    .join(" ")}
                 </button>
               ))}
             </div>

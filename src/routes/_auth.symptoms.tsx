@@ -107,6 +107,11 @@ function SymptomsPage() {
                     className="bg-card hover:bg-muted/60 min-w-0 flex-1 rounded-xl border p-3 text-left transition-colors"
                   >
                     <span className="block text-sm font-medium">
+                      {episode.emoji && (
+                        <span aria-hidden className="mr-1.5">
+                          {episode.emoji}
+                        </span>
+                      )}
                       {episode.symptom}
                     </span>
                     <span className="text-muted-foreground block text-sm">

@@ -77,4 +77,18 @@ describe("SymptomCalendar", () => {
     expect(day("Monday 9 November").textContent).toBe("9")
     expect(day("Tuesday 10 November").textContent).toBe("10+2")
   })
+
+  it("shows an episode's emoji in place of the dot, and on the day a bar starts", () => {
+    renderCalendar([
+      { ...episode("Headache", at(9), at(9)), emoji: "🤕" },
+      { ...episode("Cold", at(3), at(5)), emoji: "🤧" },
+      episode("Cramp", at(9, 8), at(9, 8)),
+    ])
+    expect(day("Monday 9 November").textContent).toBe("9🤕")
+    expect(
+      day("Monday 9 November").parentElement!.querySelectorAll(".bg-rose-500"),
+    ).toHaveLength(1)
+    expect(day("Tuesday 3 November").textContent).toBe("3🤧")
+    expect(day("Wednesday 4 November").textContent).toBe("4")
+  })
 })

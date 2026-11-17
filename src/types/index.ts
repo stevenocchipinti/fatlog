@@ -116,6 +116,8 @@ export type SymptomEpisode = {
   start: number
   /** When it ended, in epoch milliseconds; absent while the episode is ongoing. */
   end?: number
+  /** One emoji to mark it by on the calendar and in the day's list; absent shows the default dot. */
+  emoji?: string
   note?: string
 }
 

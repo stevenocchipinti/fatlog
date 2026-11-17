@@ -7,6 +7,7 @@ export type StoredSymptomEpisode = {
   symptom: string
   start: number
   end?: number
+  emoji?: string
   note?: string
 }
 
@@ -18,21 +19,35 @@ export const parseSymptomEpisode = (
   symptom: record.symptom,
   start: record.start,
   ...(record.end !== undefined ? { end: record.end } : {}),
+  ...(record.emoji ? { emoji: record.emoji } : {}),
   ...(record.note ? { note: record.note } : {}),
 })
 
-/** The record to store: the database rejects `undefined`, so a missing end or blank note is omitted. */
+/**
+ * The first character of what was typed, as the eye sees it: an emoji built
+ * from several code points (a flag, a skin tone, a family) stays whole.
+ * Empty when nothing but whitespace was typed.
+ */
+export const firstEmoji = (typed: string): string => {
+  const [first] = new Intl.Segmenter().segment(typed.trim())
+  return first?.segment ?? ""
+}
+
+/** The record to store: the database rejects `undefined`, so a missing end, emoji or note is omitted. */
 export const toSymptomEpisodeRecord = ({
   symptom,
   start,
   end,
+  emoji,
   note,
 }: NewSymptomEpisode): StoredSymptomEpisode => {
+  const trimmedEmoji = firstEmoji(emoji ?? "")
   const trimmedNote = note?.trim()
   return {
     symptom: symptom.trim(),
     start,
     ...(end !== undefined ? { end } : {}),
+    ...(trimmedEmoji ? { emoji: trimmedEmoji } : {}),
     ...(trimmedNote ? { note: trimmedNote } : {}),
   }
 }
@@ -134,6 +149,21 @@ export const suggestSymptomNames = (
     if (key.includes(lowerQuery) && symptom !== query) names.push(symptom)
   }
   return names.slice(0, limit)
+}
+
+/**
+ * The emoji last used for a symptom of this name (ignoring case), so picking
+ * a past name brings its emoji with it. Empty if it never had one.
+ */
+export const lastEmojiFor = (
+  episodes: readonly SymptomEpisode[],
+  name: string,
+): string => {
+  const key = name.trim().toLowerCase()
+  const last = [...episodes]
+    .sort(newestStartFirst)
+    .find(({ symptom }) => symptom.toLowerCase() === key)
+  return last?.emoji ?? ""
 }
 
 /** The episode as it should be stored once ended at `now`; an end never precedes the start. */
