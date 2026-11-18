@@ -74,8 +74,19 @@ function ProfilesPage() {
         {active.map(profile => {
           const expanded = editingId === profile.id
           return (
-            <li key={profile.id} className="bg-card rounded-xl border p-3">
-              <div className="flex items-center gap-3">
+            <li key={profile.id} className="bg-card rounded-xl border">
+              {/* Only the owner can change a profile, so only theirs opens. */}
+              <ProfileHeader
+                toggle={
+                  profile.owned
+                    ? {
+                        expanded,
+                        controls: `profile-${profile.id}-form`,
+                        onToggle: () => toggle(profile.id),
+                      }
+                    : undefined
+                }
+              >
                 <ProfileAvatar profile={profile} photoURL={photoFor(profile)} />
                 <span className="flex-1 truncate font-medium">
                   {profile.name}
@@ -90,29 +101,7 @@ function ProfilesPage() {
                     </span>
                   )}
                 </span>
-                {/* Only the owner can change a profile. */}
-                {profile.owned && (
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    aria-label={
-                      expanded
-                        ? `Close ${profile.name} without saving`
-                        : `Edit ${profile.name}`
-                    }
-                    aria-expanded={expanded}
-                    aria-controls={`profile-${profile.id}-form`}
-                    onClick={() => toggle(profile.id)}
-                  >
-                    <ChevronDown
-                      className={cn(
-                        "transition-transform",
-                        expanded && "rotate-180",
-                      )}
-                    />
-                  </Button>
-                )}
-              </div>
+              </ProfileHeader>
               {profile.owned && (
                 <div
                   id={`profile-${profile.id}-form`}
@@ -126,7 +115,7 @@ function ProfilesPage() {
                   )}
                   inert={!expanded}
                 >
-                  <div className="mt-3 border-t pt-3">
+                  <div className="mx-3 mb-3 border-t pt-3">
                     <ProfileForm
                       key={formKeys[profile.id] ?? 0}
                       initial={profile}
@@ -232,6 +221,44 @@ function ProfilesPage() {
 
       {user && <AccountId accountId={user.uid} />}
     </div>
+  )
+}
+
+/**
+ * A profile's name row. With `toggle`, the whole row is the button that opens
+ * and closes the profile's edit form below it.
+ */
+function ProfileHeader({
+  toggle,
+  children,
+}: {
+  toggle?: { expanded: boolean; controls: string; onToggle: () => void }
+  children: ReactNode
+}) {
+  const row = "flex w-full items-center gap-3 p-3"
+  if (!toggle) return <div className={row}>{children}</div>
+  return (
+    <button
+      type="button"
+      className={cn(
+        row,
+        "focus-visible:ring-ring cursor-pointer rounded-xl text-left focus-visible:ring-1 focus-visible:outline-none",
+      )}
+      aria-expanded={toggle.expanded}
+      aria-controls={toggle.controls}
+      onClick={toggle.onToggle}
+    >
+      {children}
+      <span className="flex size-9 items-center justify-center">
+        <ChevronDown
+          aria-hidden
+          className={cn(
+            "size-4 transition-transform motion-reduce:transition-none",
+            toggle.expanded && "rotate-180",
+          )}
+        />
+      </span>
+    </button>
   )
 }
 
