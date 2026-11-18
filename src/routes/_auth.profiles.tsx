@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router"
-import { useCallback, useState } from "react"
+import { useCallback, useId, useState } from "react"
 import {
   ArchiveRestore,
   ArchiveX,
@@ -44,6 +44,17 @@ function ProfilesPage() {
 
   const [adding, setAdding] = useState(false)
   const [editingId, setEditingId] = useState<string>()
+  // A form stays mounted while it collapses, so it can animate closed. Each
+  // opening gives it a fresh key, which drops whatever was left unsaved.
+  const [formKeys, setFormKeys] = useState<Record<string, number>>({})
+  const toggle = (id: string) => {
+    if (editingId === id) {
+      setEditingId(undefined)
+    } else {
+      setEditingId(id)
+      setFormKeys(keys => ({ ...keys, [id]: (keys[id] ?? 0) + 1 }))
+    }
+  }
 
   // The bottom bar's + adds a profile on this page.
   useRegisterPrimaryAction(
@@ -90,9 +101,8 @@ function ProfilesPage() {
                         : `Edit ${profile.name}`
                     }
                     aria-expanded={expanded}
-                    onClick={() =>
-                      setEditingId(expanded ? undefined : profile.id)
-                    }
+                    aria-controls={`profile-${profile.id}-form`}
+                    onClick={() => toggle(profile.id)}
                   >
                     <ChevronDown
                       className={cn(
@@ -103,40 +113,54 @@ function ProfilesPage() {
                   </Button>
                 )}
               </div>
-              {expanded && (
-                <div className="mt-3 border-t pt-3">
-                  <ProfileForm
-                    initial={profile}
-                    submitLabel="Save"
-                    onSubmit={changes => {
-                      updateProfile(profile.id, changes)
-                      setEditingId(undefined)
-                    }}
-                    onArchive={
-                      profile.id === user?.uid
-                        ? undefined
-                        : () => {
-                            if (
-                              window.confirm(
-                                `Archive ${profile.name}? Their data is kept.`,
-                              )
-                            ) {
-                              setProfileArchived(profile.id, true)
-                              setEditingId(undefined)
+              {profile.owned && (
+                <div
+                  id={`profile-${profile.id}-form`}
+                  // Animates between 0 and the form's natural height
+                  // (interpolate-size, in styles.css). Browsers without it
+                  // open and close instantly. Inert while closed, so the
+                  // hidden form can't be focused or read out.
+                  className={cn(
+                    "overflow-hidden transition-[height] duration-300 ease-out motion-reduce:transition-none",
+                    expanded ? "h-auto" : "h-0",
+                  )}
+                  inert={!expanded}
+                >
+                  <div className="mt-3 border-t pt-3">
+                    <ProfileForm
+                      key={formKeys[profile.id] ?? 0}
+                      initial={profile}
+                      submitLabel="Save"
+                      onSubmit={changes => {
+                        updateProfile(profile.id, changes)
+                        setEditingId(undefined)
+                      }}
+                      onArchive={
+                        profile.id === user?.uid
+                          ? undefined
+                          : () => {
+                              if (
+                                window.confirm(
+                                  `Archive ${profile.name}? Their data is kept.`,
+                                )
+                              ) {
+                                setProfileArchived(profile.id, true)
+                                setEditingId(undefined)
+                              }
                             }
+                      }
+                    >
+                      {user && (
+                        <ProfileSharing
+                          profile={profile}
+                          ownAccountId={user.uid}
+                          onChange={(accountId, shared) =>
+                            setProfileShared(profile.id, accountId, shared)
                           }
-                    }
-                  >
-                    {user && (
-                      <ProfileSharing
-                        profile={profile}
-                        ownAccountId={user.uid}
-                        onChange={(accountId, shared) =>
-                          setProfileShared(profile.id, accountId, shared)
-                        }
-                      />
-                    )}
-                  </ProfileForm>
+                        />
+                      )}
+                    </ProfileForm>
+                  </div>
                 </div>
               )}
             </li>
@@ -261,6 +285,7 @@ function ProfileSharing({
   onChange: (accountId: string, shared: boolean) => void
 }) {
   const [accountId, setAccountId] = useState("")
+  const shareId = useId()
   const trimmed = accountId.trim()
   const canShare =
     isAccountId(trimmed) &&
@@ -275,7 +300,7 @@ function ProfileSharing({
 
   return (
     <div className="flex flex-col gap-1.5">
-      <Label htmlFor="profile-share">Sharing</Label>
+      <Label htmlFor={shareId}>Sharing</Label>
       {profile.sharedWith.length > 0 && (
         <ul className="flex flex-col gap-1">
           {profile.sharedWith.map(id => (
@@ -302,7 +327,7 @@ function ProfileSharing({
       )}
       <div className="flex gap-2">
         <Input
-          id="profile-share"
+          id={shareId}
           value={accountId}
           onChange={event => setAccountId(event.target.value)}
           // Enter would otherwise submit the profile form around this.
@@ -356,6 +381,8 @@ function ProfileForm({
   children?: ReactNode
 }) {
   const [name, setName] = useState(initial?.name ?? "")
+  const emojiId = useId()
+  const nameId = useId()
   const [emoji, setEmoji] = useState(initial?.emoji ?? "")
   const [enabled, setEnabled] = useState<TrackerId[]>(
     initial?.enabledTrackers ?? [...TRACKER_IDS],
@@ -381,9 +408,9 @@ function ProfileForm({
     >
       <div className="flex gap-2">
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="profile-emoji">Emoji</Label>
+          <Label htmlFor={emojiId}>Emoji</Label>
           <Input
-            id="profile-emoji"
+            id={emojiId}
             value={emoji}
             onChange={event => setEmoji(event.target.value)}
             className="w-16 px-1 text-center text-lg"
@@ -391,9 +418,9 @@ function ProfileForm({
           />
         </div>
         <div className="flex flex-1 flex-col gap-1.5">
-          <Label htmlFor="profile-name">Name</Label>
+          <Label htmlFor={nameId}>Name</Label>
           <Input
-            id="profile-name"
+            id={nameId}
             value={name}
             onChange={event => setName(event.target.value)}
             autoFocus={autoFocus}

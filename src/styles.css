@@ -7,6 +7,8 @@
 }
 
 :root {
+  /* Lets height etc. transition to and from auto (e.g. the profile accordion). */
+  interpolate-size: allow-keywords;
   --brand-1: var(--color-green-500);
   --brand-2: var(--color-blue-500);
   --background: var(--color-stone-100);
